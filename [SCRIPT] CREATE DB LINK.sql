@@ -7,16 +7,17 @@ FOREIGN DATA WRAPPER dblink_fdw
 	OPTIONS (host 'postgre-dev.regla.cloud', dbname 'NTT_IMPAIRMENT', port '5432');
 
 ---- STEP #3
-GRANT USAGE ON FOREIGN SERVER workflow_db_access TO postgres;
+GRANT USAGE ON FOREIGN SERVER workflow_db_access TO reglaalloy01;
 
 ---- STEP #4
 CREATE USER MAPPING
-FOR postgres
+FOR reglaalloy01
 SERVER workflow_db_access
 OPTIONS (user 'postgres', password 'iN4q9A4kGadfunmzyPV1yYV');
 
 ---- STEP #5 CHECK DB LINK CONNECTION
 SELECT dblink_connect('conn_db_link', 'workflow_db_access');
+SELECT dblink_disconnect('conn_db_link');
 
 ---- STEP #6 TRY ACCESS TABLE FROM ANOTHER DATABASE WITH dblink
 
