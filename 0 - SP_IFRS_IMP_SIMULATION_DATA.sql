@@ -488,19 +488,6 @@ BEGIN
         RAISE NOTICE 'PUBLISH MODE!';
     END IF;
     -------- ====== BODY ======
-
-    -- -------- ====== LOG ======
-    -- V_TABLEDEST = V_TABLENAME;
-    -- V_COLUMNDEST = '-';
-    -- V_SPNAME = 'SP_IFRS_IMP_SIMULATION_DATA';
-    -- V_OPERATION = 'INSERT';
-    
-    -- CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2);
-    -------- ====== LOG ======
-
-    -------- ====== RESULT ======
-    -- V_QUERYS = 'XXX';
-    -------- ====== RESULT ======
 END;
 
 $$;
