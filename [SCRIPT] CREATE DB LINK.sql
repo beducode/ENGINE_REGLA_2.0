@@ -21,5 +21,5 @@ SELECT dblink_disconnect('conn_db_link');
 
 ---- STEP #6 TRY ACCESS TABLE FROM ANOTHER DATABASE WITH dblink
 
-SELECT * FROM dblink('conn_db_link', 'SELECT pkid, segment_code, ccf_method FROM "CcfConfiguration"') 
+SELECT * FROM dblink('workflow_db_access', 'SELECT pkid, segment_code, ccf_method FROM "CcfConfiguration"') 
 	AS IFRS_CCF_RULES_CONFIG(PKID BIGINT, SEGMENT_CODE VARCHAR(50), CCF_METHOD VARCHAR(500)); 

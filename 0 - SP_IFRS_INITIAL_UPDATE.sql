@@ -86,6 +86,8 @@ BEGIN
     -------- ====== VARIABLE ======
 
     -------- ====== PRE SIMULATION TABLE ======
+
+
     IF P_PRC = 'S' THEN
         V_STR_QUERY := 'DROP TABLE IF EXISTS ' || V_TABLEINSERT1 || '';
         V_STR_QUERY := V_STR_QUERY || '';
@@ -123,6 +125,14 @@ BEGIN
     -------- ====== PRE SIMULATION TABLE ======
     
     -------- ====== BODY ======
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_RUNNING_LOGS WHERE RUN_ID = ''' || P_RUNID || ''' AND DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_RUNNING_LOGS (DOWNLOAD_DATE, RUN_ID, PROCESS_ID, PROCESS_DATE)
+    SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, ''' || P_RUNID || ''', PG_BACKEND_PID(), CURRENT_DATE';
+    EXECUTE (V_STR_QUERY);
     -------- ====== PD ======
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' (
@@ -132,7 +142,7 @@ BEGIN
     )
     SELECT * FROM dblink(''workflow_db_access'', ''SELECT pkid, pd_name, RIGHT(segment_code, 2) AS segment_code, pd_method, calculation_method_id, bucket_code, expected_lifetime, windows_moving,
     historical_data, effective_end_date, CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete,
-    created_by, created_date, created_host, default_ratio_by, CASE pd_method WHEN ''''MAA_CORP'''' THEN 0 WHEN ''''z'''' THEN 0 ELSE 1 END AS lag_1month_flag,
+    created_by, created_date, created_host, default_ratio_by, CASE pd_method WHEN ''''MAA_CORP'''' THEN 0 WHEN ''''EXT'''' THEN 0 ELSE 1 END AS lag_1month_flag,
     ''''PENDING'''' AS running_status
     FROM "PdConfiguration_Dev" ORDER BY pkid ASC'') 
     AS IFRS_PD_RULES_CONFIG_DATA(
@@ -143,31 +153,29 @@ BEGIN
     EXECUTE (V_STR_QUERY);
     -------- ====== PD ======
 
+    -------- ====== CCF ======
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' (
+    PKID, CCF_RULE_NAME, SEGMENTATION_ID, CALC_METHOD, AVERAGE_METHOD, DEFAULT_RULE_ID, CUT_OFF_DATE,
+    CCF_OVERRIDE, ACTIVE_FLAG, IS_DELETE, CREATEDBY, CREATEDDATE,
+    CREATEDHOST, LAG_1MONTH_FLAG, RUNNING_STATUS
+    )
+    SELECT * FROM dblink(''workflow_db_access'', ''SELECT pkid, ccf_name, CASE WHEN RIGHT(segment_code, 3)::INT > 100 THEN RIGHT(segment_code, 3) ELSE RIGHT(segment_code, 2) END AS segment_code, ccf_method, calculation_method, calculation_method_id, effective_end_date, expected_ccf,
+    CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete, created_by, created_date, created_host,
+    CASE calculation_method WHEN ''''Simple'''' THEN 0 ELSE 1 END AS lag_1month_flag, ''''PENDING'''' AS running_status
+    FROM "CcfConfiguration_Dev" ORDER BY pkid ASC'') 
+    AS IFRS_CCF_RULES_CONFIG_DATA(
+    PKID BIGINT, CCF_RULE_NAME VARCHAR(250), SEGMENTATION_ID BIGINT, CALC_METHOD VARCHAR(20), AVERAGE_METHOD VARCHAR(20), DEFAULT_RULE_ID BIGINT, CUT_OFF_DATE DATE,
+    CCF_OVERRIDE BIGINT, ACTIVE_FLAG BIGINT, IS_DELETE BIGINT, CREATEDBY VARCHAR(36), CREATEDDATE DATE,
+    CREATEDHOST VARCHAR(30), LAG_1MONTH_FLAG BIGINT, RUNNING_STATUS VARCHAR(20)
+    )';
+    EXECUTE (V_STR_QUERY);
+    -------- ====== CCF ======
+
     -- V_STR_QUERY := '';
     -- V_STR_QUERY := V_STR_QUERY || '';
     -- EXECUTE (V_STR_QUERY);
-
-    -- GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
-    -- V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
-    -- V_RETURNROWS := 0;
-
-    -- RAISE NOTICE 'XXX | AFFECTED RECORD : %', V_RETURNROWS2;
-    -------- ====== BODY ======
-
-    -- -------- ====== LOG ======
-    -- V_TABLEDEST = V_TABLEINSERT4;
-    -- V_COLUMNDEST = '-';
-    -- V_SPNAME = 'XXX';
-    -- V_OPERATION = 'INSERT';
-    
-    -- CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
-    -- -------- ====== LOG ======
-
-    -- -------- ====== RESULT ======
-    -- V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT4 || '';
-    -- CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
-    -- -------- ====== RESULT ======
-
+    COMMIT;
 END;
 
 $$;
