@@ -1,7 +1,7 @@
 ---- DROP PROCEDURE SP_IFRS_IMP_FILL_IMA_PREV_CURR;
 
 CREATE OR REPLACE PROCEDURE SP_IFRS_IMP_FILL_IMA_PREV_CURR(
-    IN P_RUNID VARCHAR(100) DEFAULT 'SYSTEMS', 
+    IN P_RUNID VARCHAR(5) DEFAULT 'S0000', 
     IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
     IN P_PRC VARCHAR(1) DEFAULT 'S')
 LANGUAGE PLPGSQL AS $$
@@ -1070,8 +1070,7 @@ BEGIN
     ,EARLY_PAYMENT        
     ,EARLY_PAYMENT_FLAG        
     ,EARLY_PAYMENT_DATE        
-    ,SEGMENT_FLAG
-    ,RUNID       
+    ,SEGMENT_FLAG    
     )                                                    
     SELECT                                                 
     DOWNLOAD_DATE                                
@@ -1249,8 +1248,7 @@ BEGIN
     ,EARLY_PAYMENT        
     ,EARLY_PAYMENT_FLAG        
     ,EARLY_PAYMENT_DATE        
-    ,SEGMENT_FLAG
-    ,''' || P_RUNID || ''' AS RUNID       
+    ,SEGMENT_FLAG 
     FROM    ' || V_TABLEINSERT1 || '                     
     WHERE   DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' ';
     EXECUTE (V_STR_QUERY);
