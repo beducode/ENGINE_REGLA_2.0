@@ -103,13 +103,17 @@ BEGIN
 
     -------- ====== BODY ======
     IF P_PRC = 'S' THEN
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT1 || ' ';
-        EXECUTE (V_STR_QUERY);
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT1 || ' ';
+            EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM TMP_IFRS_ECL_IMA WHERE 0=1';
-        EXECUTE (V_STR_QUERY);
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM TMP_IFRS_ECL_IMA WHERE 0=1';
+            EXECUTE (V_STR_QUERY);
+        ELSE
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT1 || '';
+            EXECUTE (V_STR_QUERY);
     END IF;
 
     V_STR_QUERY := '';
@@ -534,6 +538,7 @@ FROM
     WHERE B.CCF_RULES_ID IS NULL
     AND B.CCF_EFF_DATE IS NULL';
     EXECUTE (V_STR_QUERY);
+    
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT1 || ' A
