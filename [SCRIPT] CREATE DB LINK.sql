@@ -23,3 +23,19 @@ SELECT dblink_disconnect('conn_db_link');
 
 SELECT * FROM dblink('workflow_db_access', 'SELECT pkid, segment_code, ccf_method FROM "CcfConfiguration"') 
 	AS IFRS_CCF_RULES_CONFIG(PKID BIGINT, SEGMENT_CODE VARCHAR(50), CCF_METHOD VARCHAR(500)); 
+
+
+#2
+
+CREATE SERVER workflow_ifrs_db_access
+FOREIGN DATA WRAPPER dblink_fdw
+	OPTIONS (host 'postgre-dev.regla.cloud', dbname 'NTT_IFRS9', port '5432');
+
+GRANT USAGE ON FOREIGN SERVER workflow_ifrs_db_access TO reglaalloy01;
+
+CREATE USER MAPPING
+FOR reglaalloy01
+SERVER workflow_ifrs_db_access
+OPTIONS (user 'postgres', password 'iN4q9A4kGadfunmzyPV1yYV');
+
+SELECT dblink_connect('conn_db_link', 'workflow_ifrs_db_access');

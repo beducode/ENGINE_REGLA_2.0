@@ -62,11 +62,13 @@ BEGIN
         V_TABLEINSERT2 := 'IFRS_CCF_RULES_CONFIG_' || P_RUNID || '';
         V_TABLEINSERT3 := 'IFRS_EAD_RULES_CONFIG_' || P_RUNID || '';
         V_TABLEINSERT4 := 'IFRS_LGD_RULES_CONFIG_' || P_RUNID || '';
+        V_TABLEINSERT5 := 'IFRS_MASTER_PRODUCT_PARAM_' || P_RUNID || '';
     ELSE 
         V_TABLEINSERT1 := 'IFRS_PD_RULES_CONFIG';
         V_TABLEINSERT2 := 'IFRS_CCF_RULES_CONFIG';
         V_TABLEINSERT3 := 'IFRS_EAD_RULES_CONFIG';
         V_TABLEINSERT4 := 'IFRS_LGD_RULES_CONFIG';
+        V_TABLEINSERT5 := 'IFRS_MASTER_PRODUCT_PARAM';
     END IF;
 
     IF P_DOWNLOAD_DATE IS NULL 
@@ -129,6 +131,15 @@ BEGIN
         V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_LGD_RULES_CONFIG WHERE 0=1';
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
+
+        
+        V_STR_QUERY := 'DROP TABLE IF EXISTS ' || V_TABLEINSERT5 || '';
+        V_STR_QUERY := V_STR_QUERY || '';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT5 || ' AS SELECT * FROM IFRS_MASTER_PRODUCT_PARAM WHERE 0=1';
+        V_STR_QUERY := V_STR_QUERY || '';
+        EXECUTE (V_STR_QUERY);
         -------- ====== PRE SIMULATION TABLE ======
 
         -------- ====== BODY ======
@@ -143,7 +154,7 @@ BEGIN
         historical_data, effective_end_date, CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete,
         created_by, created_date, created_host, default_ratio_by, CASE pd_method WHEN ''''MAA_CORP'''' THEN 0 WHEN ''''EXT'''' THEN 0 ELSE 1 END AS lag_1month_flag,
         ''''PENDING'''' AS running_status
-        FROM "PdConfiguration" ORDER BY pkid ASC'') 
+        FROM "PdConfiguration_Dev" ORDER BY pkid ASC'') 
         AS IFRS_PD_RULES_CONFIG_DATA(
         PKID BIGINT, TM_RULE_NAME VARCHAR(250), SEGMENTATION_ID BIGINT, PD_METHOD VARCHAR(50), CALC_METHOD VARCHAR(20), BUCKET_GROUP VARCHAR(30), EXPECTED_LIFE BIGINT, INCREMENT_PERIOD BIGINT,
         HISTORICAL_DATA BIGINT, CUT_OFF_DATE DATE, ACTIVE_FLAG BIGINT, IS_DELETE BIGINT, CREATEDBY VARCHAR(36), CREATEDDATE DATE,
@@ -166,7 +177,7 @@ BEGIN
         SELECT * FROM dblink(''workflow_db_access'', ''SELECT pkid, ccf_name, CASE WHEN RIGHT(segment_code, 3)::INT > 100 THEN RIGHT(segment_code, 3) ELSE RIGHT(segment_code, 2) END AS segment_code, ccf_method, calculation_method, calculation_method_id, effective_end_date, expected_ccf,
         CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete, created_by, created_date, created_host,
         CASE calculation_method WHEN ''''Simple'''' THEN 0 ELSE 1 END AS lag_1month_flag, ''''PENDING'''' AS running_status
-        FROM "CcfConfiguration" ORDER BY pkid ASC'') 
+        FROM "CcfConfiguration_Dev" ORDER BY pkid ASC'') 
         AS IFRS_CCF_RULES_CONFIG_DATA(
         PKID BIGINT, CCF_RULE_NAME VARCHAR(250), SEGMENTATION_ID BIGINT, CALC_METHOD VARCHAR(20), AVERAGE_METHOD VARCHAR(20), DEFAULT_RULE_ID BIGINT, CUT_OFF_DATE DATE,
         CCF_OVERRIDE BIGINT, ACTIVE_FLAG BIGINT, IS_DELETE BIGINT, CREATEDBY VARCHAR(36), CREATEDDATE DATE,
@@ -187,7 +198,7 @@ BEGIN
         SELECT * FROM dblink(''workflow_db_access'', ''SELECT pkid, syscode_ead_config
         ,RIGHT(segment_code, 2) AS segment_code, balance_source
         ,CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete 
-        FROM "EadConfiguration" ORDER BY pkid ASC'') 
+        FROM "EadConfiguration_Dev" ORDER BY pkid ASC'') 
         AS IFRS_EAD_RULES_CONFIG_DATA (
         PKID BIGINT, EAD_RULE_NAME VARCHAR(100)
         ,SEGMENTATION_ID BIGINT, EAD_BALANCE VARCHAR(250)
@@ -209,7 +220,7 @@ BEGIN
         SELECT * FROM dblink(''workflow_db_access'', ''SELECT pkid, RIGHT(default_criteria, 2) AS default_criteria, lgd_name, RIGHT(segment_code, 2) AS segment_code,lgd_method
         ,historical_data, workout_period, lgd_min, lgd_max, effective_end_date, calculation_method, CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete,
         created_by, created_date, created_host, CASE direct_cost WHEN ''''0'''' THEN 0 ELSE 1 END AS lag_1month_flag, ''''PENDING'''' AS running_status
-        FROM "LgdConfiguration" ORDER BY pkid ASC'') 
+        FROM "LgdConfiguration_Dev" ORDER BY pkid ASC'') 
         AS IFRS_LGD_RULES_CONFIG_DATA(
         PKID BIGINT, DEFAULT_RULE_ID BIGINT, LGD_RULE_NAME VARCHAR(250), SEGMENTATION_ID BIGINT, LGD_METHOD VARCHAR(50), LGW_HISTORICAL_DATA BIGINT, WORKOUT_PERIOD BIGINT
         ,MIN_VALUE BIGINT, MAX_VALUE BIGINT,CUT_OFF_DATE DATE, CALC_METHOD VARCHAR(250), ACTIVE_FLAG BIGINT, IS_DELETE BIGINT, CREATEDBY VARCHAR(36), CREATEDDATE DATE,
@@ -221,6 +232,27 @@ BEGIN
         V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
         V_RETURNROWS := 0;
         -------- ====== LGD ======
+
+
+        -------- ====== MASTER PRODUCT PARAM ======
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT5 || ' (
+        PKID, DATA_SOURCE, PRD_TYPE, PRD_CODE, PRD_GROUP , IS_DELETE, 
+        CREATEDBY, CREATEDDATE, CREATEDHOST, UPDATEDBY, UPDATEDDATE, UPDATEDHOST
+        )
+        SELECT * FROM dblink(''workflow_ifrs_db_access'', ''SELECT pkid, data_source, product_type, product_code, product_group, CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 
+        created_by, created_date, created_host, updated_by, updated_date, updated_host 
+        FROM "MstProduct" ORDER BY pkid ASC'') 
+        AS IFRS_MASTER_PRODUCT_PARAM_DATA(
+        PKID BIGINT, DATA_SOURCE VARCHAR(20), PRD_TYPE VARCHAR(50), PRD_CODE VARCHAR(20), PRD_GROUP VARCHAR(20), IS_DELETE INT, 
+        CREATEDBY VARCHAR(36), CREATEDDATE DATE, CREATEDHOST VARCHAR(30), UPDATEDBY VARCHAR(36), UPDATEDDATE DATE, UPDATEDHOST VARCHAR(30)
+        )';
+        EXECUTE (V_STR_QUERY);
+
+        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+        V_RETURNROWS := 0;
+        -------- ====== MASTER PRODUCT PARAM ======
 
         RAISE NOTICE 'SP_IFRS_INITIAL_UPDATE | AFFECTED RECORD : %', V_RETURNROWS2;
     ELSE
@@ -239,7 +271,7 @@ BEGIN
         historical_data, effective_end_date, CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete,
         created_by, created_date, created_host, default_ratio_by, CASE pd_method WHEN ''''MAA_CORP'''' THEN 0 WHEN ''''EXT'''' THEN 0 ELSE 1 END AS lag_1month_flag,
         ''''PENDING'''' AS running_status
-        FROM "PdConfiguration" ORDER BY pkid ASC'') 
+        FROM "PdConfiguration_Dev" ORDER BY pkid ASC'') 
         AS IFRS_PD_RULES_CONFIG_DATA(
         PKID BIGINT, TM_RULE_NAME VARCHAR(250), SEGMENTATION_ID BIGINT, PD_METHOD VARCHAR(50), CALC_METHOD VARCHAR(20), BUCKET_GROUP VARCHAR(30), EXPECTED_LIFE BIGINT, INCREMENT_PERIOD BIGINT,
         HISTORICAL_DATA BIGINT, CUT_OFF_DATE DATE, ACTIVE_FLAG BIGINT, IS_DELETE BIGINT, CREATEDBY VARCHAR(36), CREATEDDATE DATE,
@@ -266,7 +298,7 @@ BEGIN
         SELECT * FROM dblink(''workflow_db_access'', ''SELECT pkid, ccf_name, CASE WHEN RIGHT(segment_code, 3)::INT > 100 THEN RIGHT(segment_code, 3) ELSE RIGHT(segment_code, 2) END AS segment_code, ccf_method, calculation_method, calculation_method_id, effective_end_date, expected_ccf,
         CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete, created_by, created_date, created_host,
         CASE calculation_method WHEN ''''Simple'''' THEN 0 ELSE 1 END AS lag_1month_flag, ''''PENDING'''' AS running_status
-        FROM "CcfConfiguration" ORDER BY pkid ASC'') 
+        FROM "CcfConfiguration_Dev" ORDER BY pkid ASC'') 
         AS IFRS_CCF_RULES_CONFIG_DATA(
         PKID BIGINT, CCF_RULE_NAME VARCHAR(250), SEGMENTATION_ID BIGINT, CALC_METHOD VARCHAR(20), AVERAGE_METHOD VARCHAR(20), DEFAULT_RULE_ID BIGINT, CUT_OFF_DATE DATE,
         CCF_OVERRIDE BIGINT, ACTIVE_FLAG BIGINT, IS_DELETE BIGINT, CREATEDBY VARCHAR(36), CREATEDDATE DATE,
@@ -291,7 +323,7 @@ BEGIN
         SELECT * FROM dblink(''workflow_db_access'', ''SELECT pkid, syscode_ead_config
         ,RIGHT(segment_code, 2) AS segment_code, balance_source
         ,CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete 
-        FROM "EadConfiguration" ORDER BY pkid ASC'') 
+        FROM "EadConfiguration_Dev" ORDER BY pkid ASC'') 
         AS IFRS_EAD_RULES_CONFIG_DATA (
         PKID BIGINT, EAD_RULE_NAME VARCHAR(100)
         ,SEGMENTATION_ID BIGINT, EAD_BALANCE VARCHAR(250)
@@ -317,7 +349,7 @@ BEGIN
         SELECT * FROM dblink(''workflow_db_access'', ''SELECT pkid, RIGHT(default_criteria, 2) AS default_criteria, lgd_name, RIGHT(segment_code, 2) AS segment_code,lgd_method
         ,historical_data, workout_period, lgd_min, lgd_max, effective_end_date, calculation_method, CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 0 AS is_delete,
         created_by, created_date, created_host, CASE direct_cost WHEN ''''0'''' THEN 0 ELSE 1 END AS lag_1month_flag, ''''PENDING'''' AS running_status
-        FROM "LgdConfiguration" ORDER BY pkid ASC'') 
+        FROM "LgdConfiguration_Dev" ORDER BY pkid ASC'') 
         AS IFRS_LGD_RULES_CONFIG_DATA(
         PKID BIGINT, DEFAULT_RULE_ID BIGINT, LGD_RULE_NAME VARCHAR(250), SEGMENTATION_ID BIGINT, LGD_METHOD VARCHAR(50), LGW_HISTORICAL_DATA BIGINT, WORKOUT_PERIOD BIGINT
         ,MIN_VALUE BIGINT, MAX_VALUE BIGINT,CUT_OFF_DATE DATE, CALC_METHOD VARCHAR(250), ACTIVE_FLAG BIGINT, IS_DELETE BIGINT, CREATEDBY VARCHAR(36), CREATEDDATE DATE,
@@ -329,6 +361,30 @@ BEGIN
         V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
         V_RETURNROWS := 0;
         -------- ====== LGD ======
+
+        -------- ====== MASTER PRODUCT PARAM ======
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT5 || '';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT5 || ' (
+        PKID, DATA_SOURCE, PRD_TYPE, PRD_CODE, PRD_GROUP , IS_DELETE, 
+        CREATEDBY, CREATEDDATE, CREATEDHOST, UPDATEDBY, UPDATEDDATE, UPDATEDHOST
+        )
+        SELECT * FROM dblink(''workflow_ifrs_db_access'', ''SELECT pkid, data_source, product_type, product_code, product_group, CASE WHEN is_active = TRUE THEN 1 ELSE 0 END AS is_active, 
+        created_by, created_date, created_host, updated_by, updated_date, updated_host 
+        FROM "MstProduct" ORDER BY pkid ASC'') 
+        AS IFRS_MASTER_PRODUCT_PARAM_DATA(
+        PKID BIGINT, DATA_SOURCE VARCHAR(20), PRD_TYPE VARCHAR(50), PRD_CODE VARCHAR(20), PRD_GROUP VARCHAR(20), IS_DELETE INT, 
+        CREATEDBY VARCHAR(36), CREATEDDATE DATE, CREATEDHOST VARCHAR(30), UPDATEDBY VARCHAR(36), UPDATEDDATE DATE, UPDATEDHOST VARCHAR(30)
+        )';
+        EXECUTE (V_STR_QUERY);
+
+        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+        V_RETURNROWS := 0;
+        -------- ====== MASTER PRODUCT PARAM ======
 
         RAISE NOTICE 'SP_IFRS_INITIAL_UPDATE | AFFECTED RECORD : %', V_RETURNROWS2;
     END IF;
