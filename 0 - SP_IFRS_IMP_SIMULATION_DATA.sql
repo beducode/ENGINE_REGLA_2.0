@@ -29,6 +29,9 @@ DECLARE
     ---- RESULT
     V_QUERYS TEXT;
     V_CODITION2 TEXT;
+    V_STEPID VARCHAR(20);
+    V_RUNID VARCHAR(20);
+    V_COND TEXT;
 
     ---
     V_LOG_SEQ INTEGER;
@@ -78,7 +81,7 @@ BEGIN
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
-    -------- RECORD RUN_ID--------
+    -------- RECORD RUN_ID --------
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_RUNNING_LOGS WHERE RUN_ID = ''' || P_RUNID || ''' AND DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
@@ -87,35 +90,74 @@ BEGIN
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_RUNNING_LOGS (DOWNLOAD_DATE, RUN_ID, PROCESS_ID, PROCESS_DATE)
     SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, ''' || P_RUNID || ''', PG_BACKEND_PID(), CURRENT_DATE';
     EXECUTE (V_STR_QUERY);
-    -------- RECORD RUN_ID--------
+    -------- RECORD RUN_ID --------
 
+    -------- CLEAN HISTORY --------
+    FOR V_STEPID IN
+        SELECT SPLIT_PART(RUN_ID,'_',2) AS STEP_ID FROM IFRS_RUNNING_LOGS WHERE SPLIT_PART(RUN_ID,'_',1) = 'S'
+        GROUP BY SPLIT_PART(RUN_ID,'_',2)
+    LOOP
+        RAISE NOTICE '---> %', V_STEPID;
+        FOR V_COND IN
+            SELECT ARRAY(
+            SELECT '%' || LOWER(RUN_ID) || '%' FROM IFRS_RUNNING_LOGS
+            WHERE RUN_ID NOT IN(
+            SELECT RUN_ID FROM IFRS_RUNNING_LOGS WHERE SPLIT_PART(RUN_ID,'_',2) = '11111'
+            AND SPLIT_PART(RUN_ID,'_',1) = 'S'
+            ORDER BY PKID DESC
+            LIMIT 5)
+            AND SPLIT_PART(RUN_ID,'_',2) = '11111'
+            AND SPLIT_PART(RUN_ID,'_',1) = 'S')
+        LOOP
 
-    -------- ====== CLEAN DB ======
-    FOR V_CLEANTABLENAME IN
-        SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES A
-        WHERE TABLE_CATALOG = 'IFRS9'
-        AND TABLE_SCHEMA = 'public' 
-        AND TABLE_TYPE = 'BASE TABLE'
-        AND RIGHT(TABLE_NAME,10) ~ '[0-9][0-9][0-9][0-9]'
-        AND RIGHT(TABLE_NAME,10) NOT IN (SELECT LOWER(RIGHT(RUN_ID,10)) FROM (SELECT MAX(PROCESS_DATE), RUN_ID FROM IFRS_LOGS_PROCESS
-        WHERE RUN_ID <> 'S_000_0000'
-        GROUP BY RUN_ID
-        ORDER BY MAX(PROCESS_DATE) DESC
-        LIMIT 5) LOGS)
-        UNION ALL
-        SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES A
-        WHERE TABLE_CATALOG = 'IFRS9'
-        AND TABLE_SCHEMA = 'public' 
-        AND TABLE_TYPE = 'BASE TABLE'
-        AND RIGHT(TABLE_NAME,LENGTH('S_000_0000')) = LOWER('S_000_0000')
-	LOOP	
-		V_STR_QUERY := '';
-		V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_CLEANTABLENAME || '';
-		EXECUTE (V_STR_QUERY);
-		RAISE NOTICE 'DROP TABLE SUCCESSFULLY ---> %', V_STR_QUERY;
-	END LOOP;
+        END LOOP;
+    END LOOP;
+
+    FOR V_STEPID IN
+		-------- GROUP STEP ID --------
+        EXECUTE 'SELECT SPLIT_PART(RUN_ID,''_'',2) AS STEP_ID FROM IFRS_RUNNING_LOGS WHERE SPLIT_PART(RUN_ID,''_'',1) = ''S''
+        GROUP BY SPLIT_PART(RUN_ID,''_'',2)'
+		-------- GROUP STEP ID --------
+    LOOP
+        -- RAISE NOTICE '---> %', V_STEPID;
+        FOR V_COND IN
+			-------- CONVERT TO ARRAY --------
+    		EXECUTE 'SELECT ARRAY(
+            SELECT ''%'' || LOWER(RUN_ID) || ''%'' FROM IFRS_RUNNING_LOGS
+            WHERE RUN_ID NOT IN(
+            SELECT RUN_ID FROM IFRS_RUNNING_LOGS WHERE SPLIT_PART(RUN_ID,''_'',2) = ''' || V_STEPID || '''
+            AND SPLIT_PART(RUN_ID,''_'',1) = ''S''
+            ORDER BY PKID DESC
+            LIMIT 5)
+            AND SPLIT_PART(RUN_ID,''_'',2) = ''' || V_STEPID || '''
+            AND SPLIT_PART(RUN_ID,''_'',1) = ''S'')'
+			-------- CONVERT TO ARRAY --------
+        LOOP
+			-- RAISE NOTICE '---> %', V_COND;
+			V_STR_QUERY := '';
+			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_RUNNING_LOGS WHERE RUN_ID LIKE ANY(''' || UPPER(V_COND) || ''')';
+			EXECUTE (V_STR_QUERY);
+			RAISE NOTICE '---> %', V_STR_QUERY;
+		    -------- ====== CLEAN DB ======
+			    FOR V_CODITION2 IN
+			        EXECUTE 'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES A
+			        WHERE TABLE_CATALOG = ''IFRS9''
+			        AND TABLE_SCHEMA = ''public''
+			        AND TABLE_TYPE = ''BASE TABLE''
+			        AND TABLE_NAME LIKE ANY(''' || V_COND || ''')'
+				LOOP	
+					V_STR_QUERY := '';
+					V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_CODITION2 || '';
+					EXECUTE (V_STR_QUERY);
+					RAISE NOTICE '---> %', V_STR_QUERY;
+				END LOOP;
+			    -------- ====== CLEAN DB ======
+        END LOOP;
+    END LOOP;
+    -------- CLEAN HISTORY --------
+
     
-    -------- ====== BODY ======
+    ------ ====== BODY ======
     IF P_PRC = 'S' THEN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLENAME || ' ';
@@ -527,7 +569,7 @@ BEGIN
     ELSE
         RAISE NOTICE 'PUBLISH MODE!';
     END IF;
-    -------- ====== BODY ======
+    ------ ====== BODY ======
 END;
 
 $$;
