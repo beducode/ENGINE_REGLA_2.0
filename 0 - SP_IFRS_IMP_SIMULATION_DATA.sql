@@ -92,27 +92,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
     -------- RECORD RUN_ID --------
 
-    -------- CLEAN HISTORY --------
-    FOR V_STEPID IN
-        SELECT SPLIT_PART(RUN_ID,'_',2) AS STEP_ID FROM IFRS_RUNNING_LOGS WHERE SPLIT_PART(RUN_ID,'_',1) = 'S'
-        GROUP BY SPLIT_PART(RUN_ID,'_',2)
-    LOOP
-        RAISE NOTICE '---> %', V_STEPID;
-        FOR V_COND IN
-            SELECT ARRAY(
-            SELECT '%' || LOWER(RUN_ID) || '%' FROM IFRS_RUNNING_LOGS
-            WHERE RUN_ID NOT IN(
-            SELECT RUN_ID FROM IFRS_RUNNING_LOGS WHERE SPLIT_PART(RUN_ID,'_',2) = '11111'
-            AND SPLIT_PART(RUN_ID,'_',1) = 'S'
-            ORDER BY PKID DESC
-            LIMIT 5)
-            AND SPLIT_PART(RUN_ID,'_',2) = '11111'
-            AND SPLIT_PART(RUN_ID,'_',1) = 'S')
-        LOOP
-
-        END LOOP;
-    END LOOP;
-
+    ------ CLEAN HISTORY --------
     FOR V_STEPID IN
 		-------- GROUP STEP ID --------
         EXECUTE 'SELECT SPLIT_PART(RUN_ID,''_'',2) AS STEP_ID FROM IFRS_RUNNING_LOGS WHERE SPLIT_PART(RUN_ID,''_'',1) = ''S''
@@ -148,6 +128,11 @@ BEGIN
 				LOOP	
 					V_STR_QUERY := '';
 					V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_CODITION2 || '';
+					EXECUTE (V_STR_QUERY);
+					RAISE NOTICE '---> %', V_STR_QUERY;
+
+                    V_STR_QUERY := '';
+					V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_LOGS_PROCESS WHERE TABLE_DEST = ''' || UPPER(V_CODITION2) || '''';
 					EXECUTE (V_STR_QUERY);
 					RAISE NOTICE '---> %', V_STR_QUERY;
 				END LOOP;
