@@ -55,7 +55,7 @@ BEGIN
     END IF;
 
     IF COALESCE(P_RUNID, NULL) IS NULL THEN
-        P_RUNID := 'SYSTEMS';
+        P_RUNID := 'S_00000_0000';
     END IF;
 
     IF P_PRC = 'S' THEN 

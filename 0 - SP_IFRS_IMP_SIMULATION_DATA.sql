@@ -53,7 +53,7 @@ BEGIN
     END IF;
 
     IF COALESCE(P_RUNID, NULL) IS NULL THEN
-        P_RUNID := 'SYSTEMS';
+        P_RUNID := 'S_00000_0000';
     END IF;
 
     IF P_PRC = 'S' THEN 
@@ -141,7 +141,6 @@ BEGIN
     END LOOP;
     -------- CLEAN HISTORY --------
 
-<<<<<<< HEAD
     -------- ====== CLEAN DB ======
     FOR V_CLEANTABLENAME IN
         SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES A
@@ -166,8 +165,6 @@ BEGIN
 		EXECUTE (V_STR_QUERY);
 		RAISE NOTICE 'DROP TABLE SUCCESSFULLY ---> %', V_STR_QUERY;
 	END LOOP;
-=======
->>>>>>> 3acce2db0c842b6009ccf747bd5cb3f3f6e4a2f8
     
     ------ ====== BODY ======
     IF P_PRC = 'S' THEN
