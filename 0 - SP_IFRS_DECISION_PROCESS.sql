@@ -35,6 +35,7 @@ DECLARE
     ---- RESULT
     V_QUERYS TEXT;
     V_DECISION BIGINT;
+    V_CHECKDECISION BIGINT;
 
     --- VARIABLE
     V_SP_NAME VARCHAR(100);
@@ -72,6 +73,16 @@ BEGIN
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
+    -- RAISE NOTICE '---> %', P_RUNID;
+    -- RAISE NOTICE '---> %', V_CURRDATE;
+    -- RAISE NOTICE '---> %', P_PRC;
+    -- RAISE NOTICE '---> %', P_SPNAME;
+    -- RAISE NOTICE '---> %', P_QUERY;
+    -- RAISE NOTICE '---> %', P_STEP_MAX;
+    -- RAISE NOTICE '---> %', P_STEP_DECISION;
+
+    -- RAISE NOTICE '================================================';
+
     -------- ====== DECISION LOGS ======
 
     -------- ====== GET TABLE NAME ======
@@ -79,7 +90,16 @@ BEGIN
 
     V_TABLENAMEDEC := V_TABLENAME || '_DECISION';
 
+    -- RAISE NOTICE '---> %', V_TABLENAMEDEC;
+
+    -- RAISE NOTICE '================================================';
+    
+
     EXECUTE 'SELECT COUNT(*) FROM IFRS_DECISION_LOGS WHERE RUN_ID = UPPER(''' || P_RUNID || ''') AND DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ' INTO V_DECISION;
+
+    -- RAISE NOTICE '---> %', V_DECISION;
+
+    -- RAISE NOTICE '================================================';
     
     IF V_DECISION = 0 THEN
         V_STR_QUERY := '';
@@ -87,17 +107,20 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_DECISION_LOGS (DOWNLOAD_DATE, RUN_ID, PROCESS_ID, PROCESS_DATE)
-        SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, UPPER(''' || P_RUNID || '''), PG_BACKEND_PID(), CURRENT_DATE';
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_DECISION_LOGS (DOWNLOAD_DATE, RUN_ID, MAX_STEP, STEP, PROCESS_ID, PROCESS_DATE)
+        SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, UPPER(''' || P_RUNID || '''), ' || P_STEP_MAX || ', ' || P_STEP_DECISION || ', PG_BACKEND_PID(), CURRENT_DATE';
         EXECUTE (V_STR_QUERY);
+        -- RAISE NOTICE '---> %', V_STR_QUERY;
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLENAMEDEC || ' ';
         EXECUTE (V_STR_QUERY);
+        -- RAISE NOTICE '---> %', V_STR_QUERY;
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLENAMEDEC || ' AS SELECT * FROM ' || V_TABLENAME || ' WHERE 0=1';
         EXECUTE (V_STR_QUERY);
+        -- RAISE NOTICE '---> %', V_STR_QUERY;
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'CREATE SEQUENCE IF NOT EXISTS ' || V_TABLENAMEDEC || '_PKID_SEQ
@@ -107,10 +130,21 @@ BEGIN
         MAXVALUE 9223372036854775807
         CACHE 1';
         EXECUTE (V_STR_QUERY);
+        -- RAISE NOTICE '---> %', V_STR_QUERY;
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'ALTER TABLE ' || V_TABLENAMEDEC || ' ALTER COLUMN PKID SET DEFAULT nextval('' ' || V_TABLENAMEDEC || '_PKID_SEQ '') ';
         EXECUTE (V_STR_QUERY);
+        -- RAISE NOTICE '---> %', V_STR_QUERY;
+    ELSE
+        EXECUTE 'SELECT COUNT(*) FROM IFRS_DECISION_LOGS WHERE RUN_ID = UPPER(''' || P_RUNID || ''') AND DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AND STEP = ' || P_STEP_DECISION || ' ' INTO V_CHECKDECISION;
+
+        IF V_CHECKDECISION <> 0 AND P_STEP_DECISION <> P_STEP_MAX THEN
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLENAMEDEC || ' WHERE EXISTS (' || P_QUERY || ')';
+            EXECUTE (V_STR_QUERY);
+            -- RAISE NOTICE '---> %', V_STR_QUERY;
+        END IF;
     END IF;
     -------- ====== DECISION LOGS ======
 
@@ -118,6 +152,7 @@ BEGIN
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLENAMEDEC || ' ';
     V_STR_QUERY := V_STR_QUERY || P_QUERY;
     EXECUTE (V_STR_QUERY);
+    -- RAISE NOTICE '---> %', V_STR_QUERY;
 
     GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
     V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
@@ -128,7 +163,7 @@ BEGIN
     IF P_STEP_DECISION = P_STEP_MAX THEN
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLENAME || '';
+        V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLENAME || ' WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -142,13 +177,13 @@ BEGIN
     
     END IF;
 
-    ------ ====== BODY ======
+    -- ------ ====== BODY ======
 
-    -- -------- ====== RESULT ======
-    V_QUERYS = 'SELECT * FROM ' ||  V_TABLENAME || ' WHERE EXISTS (' || P_QUERY || ')';
-    RAISE NOTICE '---> %', V_QUERYS;
+    -------- ====== RESULT ======
+    V_QUERYS = P_QUERY;
+    -- RAISE NOTICE '---> %', V_QUERYS;
     CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, V_RETURNROWS2, P_RUNID);
-    -- -------- ====== RESULT ======
+    -------- ====== RESULT ======
 
 END;
 
