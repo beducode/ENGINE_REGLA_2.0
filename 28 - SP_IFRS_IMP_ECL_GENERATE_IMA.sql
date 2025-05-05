@@ -408,7 +408,7 @@ FROM
     END) BETWEEN D.RANGE_START AND D.RANGE_END OR C.OPTION_GROUPING  IN (''''IR'''',''''ER'''') AND  D.SUB_BUCKET_GROUP = CASE WHEN C.OPTION_GROUPING = ''''ER'''' THEN A.EXT_RATING_CODE WHEN C.OPTION_GROUPING = ''''IR'''' THEN A.RATING_CODE END)                                     
     LEFT JOIN ' || V_TABLEINSERT3 || ' E ON A.MASTERID = E.MASTERID
     LEFT JOIN IFRS_IMP_AVG_EIR F ON A.DOWNLOAD_DATE = F.DOWNLOAD_DATE AND A.EIR_SEGMENT = F.EIR_SEGMENT                                            
-    WHERE B.PKID = '' || COALESCE(CAST(A.SEGMENTATION_ID AS VARCHAR(10)),' || '''''''''''''' || ') || ''                                                      
+    WHERE B.PKID = '' || COALESCE(CAST(A.SEGMENTATION_ID AS INT), 1) || ''                                                      
         AND  A.DOWNLOAD_DATE = ''''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''''                                
         AND B.SEGMENT_TYPE = ''''PORTFOLIO_SEGMENT''''                                                           
         AND A.ACCOUNT_STATUS = ''''A''''                                           
