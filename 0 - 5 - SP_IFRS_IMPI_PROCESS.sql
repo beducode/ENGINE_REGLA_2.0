@@ -170,7 +170,7 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT3 || ' 
-        WHERE EFFECTIVE_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+        WHERE EFFECTIVE_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         AND IMPAIRED_FLAG = ''C'' AND OVERRIDE_FLAG = ''A'' AND DATA_SOURCE NOT IN (''LOAN_T24'', ''TRADE_T24'') ';
     EXECUTE (V_STR_QUERY);
 
@@ -526,7 +526,7 @@ BEGIN
                 ,DATA_SOURCE 
                 ,SOURCE_SYSTEM 
             FROM ' || V_TABLEINSERT2 || ' 
-            WHERE EFFECTIVE_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+            WHERE EFFECTIVE_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             AND MASTERID NOT IN (SELECT MASTERID FROM ' || V_TABLEINSERT4 || ') ';
         EXECUTE (V_STR_QUERY);
 
@@ -584,7 +584,7 @@ BEGIN
                 ,DATA_SOURCE 
                 ,SOURCE_SYSTEM 
             FROM ' || V_TABLEINSERT2 || ' 
-            WHERE EFFECTIVE_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+            WHERE EFFECTIVE_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             AND MASTERID NOT IN (SELECT MASTERID FROM ' || V_TABLEINSERT4 || ') ';
         EXECUTE (V_STR_QUERY);
 
@@ -691,7 +691,7 @@ BEGIN
             (
                 SELECT MASTERID
                 FROM ' || V_TABLEINSERT2 || ' 
-                WHERE EFFECTIVE_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+                WHERE EFFECTIVE_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             ) ';
         EXECUTE (V_STR_QUERY);
 
@@ -701,7 +701,7 @@ BEGIN
             (
                 SELECT MASTERID
                 FROM ' || V_TABLEINSERT2 || ' 
-                WHERE EFFECTIVE_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+                WHERE EFFECTIVE_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             ) ';
         EXECUTE (V_STR_QUERY);
     END IF;
@@ -749,17 +749,17 @@ BEGIN
             FROM
             (
                 SELECT * FROM ' || V_TABLEINSERT4 || ' 
-                WHERE EFFECTIVE_DATE <= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+                WHERE EFFECTIVE_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             ) A 
             JOIN TBLT_PAYMENTEXPECTED B 
             ON A.DCFID = B.DCFID 
-            WHERE F_EOMONTH(B.DOWNLOADDATE, 0, ''M'', ''NEXT'') = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+            WHERE F_EOMONTH(B.DOWNLOADDATE, 0, ''M'', ''NEXT'') = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             GROUP BY F_EOMONTH(B.DOWNLOADDATE, 0, ''M'', ''NEXT''), A.MASTERID, A.OUTSTANDING ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT5 || ' 
-            WHERE DOWNLOAD_DATE >= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE ';
+            WHERE DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -775,7 +775,7 @@ BEGIN
                 ,ECL_AMOUNT 
                 ,ECL_AMOUNT_BFL 
             FROM ' || V_TMPTABLE3 || ' 
-            WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE ';
+            WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -820,7 +820,7 @@ BEGIN
             FROM 
             (
                 SELECT * FROM ' || V_TABLEINSERT4 || ' 
-                WHERE EFFECTIVE_DATE <= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+                WHERE EFFECTIVE_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             ) A 
             JOIN 
             (SELECT DISTINCT DOWNLOADDATE, DCFID FROM TBLT_PAYMENTEXPECTED) B 
@@ -832,11 +832,11 @@ BEGIN
                     ,X.ECL_AMOUNT
                     ,X.ECL_AMOUNT_BFL
                 FROM ' || V_TMPTABLE4 || ' X 
-                JOIN (SELECT * FROM ' || V_TABLEINSERT4 || ' WHERE EFFECTIVE_DATE <= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE) Y 
+                JOIN (SELECT * FROM ' || V_TABLEINSERT4 || ' WHERE EFFECTIVE_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE) Y 
                 ON X.MASTERID = Y.MASTERID 
             ) C 
             ON A.MASTERID = C.MASTERID
-            WHERE B.DOWNLOADDATE < ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE ';
+            WHERE B.DOWNLOADDATE < ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
         EXECUTE (V_STR_QUERY);
 
         -- INDIVIDUAL BUT NOT HAVE DCF
@@ -854,7 +854,7 @@ BEGIN
                 ,OUTSTANDING AS ECL_AMOUNT_BFL
             FROM ' || V_TABLEINSERT4 || ' 
             WHERE DCFID IS NULL 
-            AND EFFECTIVE_DATE <= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE ';
+            AND EFFECTIVE_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -871,10 +871,10 @@ BEGIN
                     F_EOMONTH(A.EFFECTIVE_DATE, 0, ''M'', ''NEXT'') AS DOWNLOAD_DATE
                     ,A.MASTERID
                     ,SUM(B.UNWINDING_AMOUNT) AS UNWINDING_AMOUNT
-                FROM (SELECT * FROM ' || V_TABLEINSERT4 || ' WHERE EFFECTIVE_DATE <= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE) A 
+                FROM (SELECT * FROM ' || V_TABLEINSERT4 || ' WHERE EFFECTIVE_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE) A 
                 JOIN TBLT_PAYMENTEXPECTED B 
                 ON A.DCFID = B.DCFID 
-                WHERE F_EOMONTH(B.EFFECTIVE_DATE_FD, 0, ''M'', ''NEXT'') <= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+                WHERE F_EOMONTH(B.EFFECTIVE_DATE_FD, 0, ''M'', ''NEXT'') <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
                 GROUP BY F_EOMONTH(A.EFFECTIVE_DATE, 0, ''M'', ''NEXT''), A.MASTERID
             ) B 
             WHERE A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
@@ -898,13 +898,13 @@ BEGIN
                 ,IA_UNWINDING_AMOUNT = CASE WHEN COALESCE(A.IFRS9_CLASS, '''') = ''FVTPL'' THEN 0 ELSE CASE WHEN B.UNWINDING_AMOUNT > B.ECL_AMOUNT THEN B.ECL_AMOUNT ELSE B.UNWINDING_AMOUNT END END 
             FROM ' || V_TMPTABLE3 || ' B 
             WHERE A.MASTERID = B.MASTERID 
-            AND A.DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE ';
+            AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT3 || ' 
             WHERE CREATEDBY = ''IFRS_IMP_IA_MASTERE_HIST'' 
-            AND F_EOMONTH(DOWNLOAD_DATE, 0, ''M'', ''NEXT'') = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE ';
+            AND F_EOMONTH(DOWNLOAD_DATE, 0, ''M'', ''NEXT'') = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -1005,7 +1005,7 @@ BEGIN
                 ,SOURCE_SYSTEM
             FROM ' || V_TABLEINSERT4 || ' 
             WHERE DCFID IS NOT NULL 
-            AND F_EOMONTH(DOWNLOAD_DATE, 0, ''M'', ''NEXT'') <= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE ';
+            AND F_EOMONTH(DOWNLOAD_DATE, 0, ''M'', ''NEXT'') <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
         EXECUTE (V_STR_QUERY);
     END IF;
 
@@ -1017,17 +1017,17 @@ BEGIN
         (
             SELECT EFFECTIVE_DATE, MASTERID 
             FROM ' || V_TABLEINSERT4 || ' 
-            WHERE EFFECTIVE_DATE <= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+            WHERE EFFECTIVE_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             AND MASTERID NOT IN 
             (
                 SELECT MASTERID 
                 FROM IFRS_ECL_EXCLUSION 
-                WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+                WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             ) 
         ) B 
         ON A.DOWNLOAD_DATE >= F_EOMONTH(B.EFFECTIVE_DATE, 0, ''M'', ''NEXT'') 
         AND A.MASTERID = B.MASTERID 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         AND A.DATA_SOURCE NOT IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'') ';
     EXECUTE (V_STR_QUERY);
 
@@ -1039,17 +1039,17 @@ BEGIN
         (
             SELECT EFFECTIVE_DATE, MASTERID 
             FROM ' || V_TABLEINSERT4 || ' 
-            WHERE EFFECTIVE_DATE <= ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+            WHERE EFFECTIVE_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             AND MASTERID NOT IN 
             (
                 SELECT MASTERID 
                 FROM IFRS_ECL_EXCLUSION 
-                WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+                WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             ) 
         ) B 
         ON A.DOWNLOAD_DATE >= F_EOMONTH(B.EFFECTIVE_DATE, 0, ''M'', ''NEXT'') 
         AND A.MASTERID = B.MASTERID 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE ';
+        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
     
     -- RAISE NOTICE 'SP_IFRS_IMPI_PROCESS | AFFECTED RECORD : %', V_RETURNROWS2;
