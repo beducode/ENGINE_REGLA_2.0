@@ -61,19 +61,19 @@ BEGIN
 
     IF P_PRC = 'S' THEN 
         V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
-        V_TMPTABLE1 := '_IMA_' || P_RUNID || '';
-        V_TMPTABLE2 := '_IMA_CUSTOMER_' || P_RUNID || '';
-        V_TMPTABLE3 := '_IMA_CURR_IMP_' || P_RUNID || '';
-        V_TMPTABLE4 := '_IMA_CUST_DPD_' || P_RUNID || '';
-        V_TMPTABLE5 := '_MIR' || P_RUNID || '';
+        V_TMPTABLE1 := 'IMA_' || P_RUNID || '';
+        V_TMPTABLE2 := 'IMA_CUSTOMER_' || P_RUNID || '';
+        V_TMPTABLE3 := 'IMA_CURR_IMP_' || P_RUNID || '';
+        V_TMPTABLE4 := 'IMA_CUST_DPD_' || P_RUNID || '';
+        V_TMPTABLE5 := 'MIR' || P_RUNID || '';
         V_TABLEINSERT := 'IFRS_SCENARIO_SEGMENT_GENERATE_QUERY_' || P_RUNID || '';
     ELSE 
         V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
-        V_TMPTABLE1 := '_IMA';
-        V_TMPTABLE2 := '_IMA_CUSTOMER';
-        V_TMPTABLE3 := '_IMA_CURR_IMP';
-        V_TMPTABLE4 := '_IMA_CUST_DPD';
-        V_TMPTABLE5 := '_MIR';
+        V_TMPTABLE1 := 'IMA';
+        V_TMPTABLE2 := 'IMA_CUSTOMER';
+        V_TMPTABLE3 := 'IMA_CURR_IMP';
+        V_TMPTABLE4 := 'IMA_CUST_DPD';
+        V_TMPTABLE5 := 'MIR';
         V_TABLEINSERT := 'IFRS_SCENARIO_SEGMENT_GENERATE_QUERY';
     END IF;
     
@@ -118,7 +118,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE3 || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || V_TMPTABLE3 || ' AS 
         SELECT * 
         ,CASE WHEN DATA_SOURCE IN (''LOAN_T24'', ''TRADE_T24'', ''TRS'', ''LIMIT_T24'') THEN ''CORPORATE'' WHEN DATA_SOURCE = ''LOAN'' THEN ''RETAIL'' ELSE NULL END AS BUSINESS_UNIT 
         FROM ' || V_TABLENAME || ' 
@@ -131,7 +131,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE4 || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || V_TMPTABLE4 || ' AS 
         SELECT 
             CUSTOMER_NUMBER
             ,MAX(DAY_PAST_DUE) AS DAY_PAST_DUE_CIF 
@@ -187,7 +187,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE1 || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || V_TMPTABLE1 || ' AS 
         SELECT 
             A.DOWNLOAD_DATE 
             ,A.MASTERID 
@@ -207,7 +207,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE2 || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || V_TMPTABLE2 || ' AS 
         SELECT 
             DOWNLOAD_DATE 
             ,CUSTOMER_NUMBER 
@@ -224,26 +224,39 @@ BEGIN
             FROM ' || V_TMPTABLE1 || ' 
             GROUP BY DOWNLOAD_DATE, CUSTOMER_NUMBER, FACILITY_NUMBER, BUSINESS_UNIT 
         ) A 
-        GROUP BY DOWNLOAD_DATE, CUSTOMER_NUMBER, BUSINESS_UNIT 
-        ORDER BY CUSTOMER_NUMBER ';
+        GROUP BY DOWNLOAD_DATE, CUSTOMER_NUMBER, BUSINESS_UNIT ORDER BY CUSTOMER_NUMBER';
     EXECUTE (V_STR_QUERY);
     -- END UPDATE PLAFOND_CIF
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TMPTABLE3 || ' T
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TMPTABLE3 || ' A
         SET PLAFOND_CIF = (C.PLAFOND_CIF_IDR / B.RATE_AMOUNT) 
-        FROM ' || V_TMPTABLE3 || ' A 
-        JOIN ' || V_TMPTABLE2 || ' C
-        ON A.CUSTOMER_NUMBER = C.CUSTOMER_NUMBER 
+        FROM ' || V_TMPTABLE2 || ' AS C, IFRS_MASTER_EXCHANGE_RATE AS B
+        WHERE A.CUSTOMER_NUMBER = C.CUSTOMER_NUMBER 
         AND A.DOWNLOAD_DATE = C.DOWNLOAD_DATE 
         AND A.BUSINESS_UNIT = C.BUSINESS_UNIT 
-        LEFT JOIN IFRS_MASTER_EXCHANGE_RATE B 
-        ON A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
+        AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
         AND COALESCE(A.LIMIT_CURRENCY, ''IDR'') = B.CURRENCY 
-        WHERE T.CUSTOMER_NUMBER = A.CUSTOMER_NUMBER 
-        AND T.BUSINESS_UNIT = A.BUSINESS_UNIT 
         AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
+
+    ------ =========== FIXING MAPPING QUERY UPDATE ===========
+    ------ V_STR_QUERY := '';
+    ------ V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TMPTABLE3 || ' T
+    ------     SET PLAFOND_CIF = (C.PLAFOND_CIF_IDR / B.RATE_AMOUNT) 
+    ------     FROM ' || V_TMPTABLE3 || ' A 
+    ------     JOIN ' || V_TMPTABLE2 || ' C
+    ------     ON A.CUSTOMER_NUMBER = C.CUSTOMER_NUMBER 
+    ------     AND A.DOWNLOAD_DATE = C.DOWNLOAD_DATE 
+    ------     AND A.BUSINESS_UNIT = C.BUSINESS_UNIT 
+    ------     LEFT JOIN IFRS_MASTER_EXCHANGE_RATE B 
+    ------     ON A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
+    ------     AND COALESCE(A.LIMIT_CURRENCY, ''IDR'') = B.CURRENCY 
+    ------     WHERE T.CUSTOMER_NUMBER = A.CUSTOMER_NUMBER 
+    ------     AND T.BUSINESS_UNIT = A.BUSINESS_UNIT 
+    ------     AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    ------ EXECUTE (V_STR_QUERY);
+    ------ =========== FIXING MAPPING QUERY UPDATE ===========
 
     -- UPDATE BACK TO MASTER_ACCOUNT
     V_STR_QUERY := '';
@@ -283,14 +296,26 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' A
         SET INTEREST_RATE = CAST(B.MARKET_INT_RATE AS FLOAT) 
-        FROM ' || V_TABLENAME || ' A 
-        INNER JOIN ' || V_TMPTABLE5 || ' B 
-        ON A.PRODUCT_CODE = B.DEAL_TYPE 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+        FROM ' || V_TMPTABLE5 || ' B 
+        WHERE A.PRODUCT_CODE = B.DEAL_TYPE 
+        AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
-    -------- ====== BODY ======
+
+    ---------- ==== FIXING UPDATE METHOD ====
+    ---------- V_STR_QUERY := '';
+    ---------- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    ----------     SET INTEREST_RATE = CAST(B.MARKET_INT_RATE AS FLOAT) 
+    ----------     FROM ' || V_TABLENAME || ' A 
+    ----------     INNER JOIN ' || V_TMPTABLE5 || ' B 
+    ----------     ON A.PRODUCT_CODE = B.DEAL_TYPE 
+    ----------     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    ---------- EXECUTE (V_STR_QUERY);
+    ---------- ==== FIXING UPDATE METHOD ====
+
+    ---------- -------- ====== BODY ======
+
 
     -------- ====== LOG ======
     V_TABLEDEST = V_TABLENAME;
@@ -304,7 +329,7 @@ BEGIN
     -------- ====== RESULT ======
     V_QUERYS = 'SELECT * FROM ' || V_TABLENAME || '';
     CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
-    -------- ====== RESULT ======
+    ------ ====== RESULT ======
 
 END;
 
