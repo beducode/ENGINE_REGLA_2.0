@@ -67,30 +67,30 @@ BEGIN
 
     IF P_PRC = 'S' THEN 
         V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
-        V_TMPTABLE1 := '_MAX_DD_' || P_RUNID || '';
-        V_TMPTABLE2 := '_CURRENT_RATING_' || P_RUNID || '';
-        V_TMPTABLE3 := '_CUST_GRADE_' || P_RUNID || '';
-        V_TMPTABLE4 := '_MAX_DD_SB_' || P_RUNID || '';
-        V_TMPTABLE5 := '_CURRENT_RATING_SB_' || P_RUNID || '';
-        V_TMPTABLE6 := '_CURRENT_INITIAL_RATING_SB_' || P_RUNID || '';
-        V_TMPTABLE7 := '_MAX_PD_' || P_RUNID || '';
-        V_TMPTABLE8 := '_CURRENT_PD_' || P_RUNID || '';
-        V_TMPTABLE9 := '_PD_INIT_' || P_RUNID || '';
-        V_TMPTABLE10 := '_AC_MAX_' || P_RUNID || '';
+        V_TMPTABLE1 := 'MAX_DD_' || P_RUNID || '';
+        V_TMPTABLE2 := 'CURRENT_RATING_' || P_RUNID || '';
+        V_TMPTABLE3 := 'CUST_GRADE_' || P_RUNID || '';
+        V_TMPTABLE4 := 'MAX_DD_SB_' || P_RUNID || '';
+        V_TMPTABLE5 := 'CURRENT_RATING_SB_' || P_RUNID || '';
+        V_TMPTABLE6 := 'CURRENT_INITIAL_RATING_SB_' || P_RUNID || '';
+        V_TMPTABLE7 := 'MAX_PD_' || P_RUNID || '';
+        V_TMPTABLE8 := 'CURRENT_PD_' || P_RUNID || '';
+        V_TMPTABLE9 := 'PD_INIT_' || P_RUNID || '';
+        V_TMPTABLE10 := 'AC_MAX_' || P_RUNID || '';
         V_TABLEINSERT1 := 'IFRS_MASTER_INIT_CUST_GRADE_' || P_RUNID || '';
         V_TABLEINSERT2 := 'IFRS_INIT_PD_MASTERSCALE_CORP_' || P_RUNID || '';
     ELSE 
         V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
-        V_TMPTABLE1 := '_MAX_DD';
-        V_TMPTABLE2 := '_CURRENT_RATING';
-        V_TMPTABLE3 := '_CUST_GRADE';
-        V_TMPTABLE4 := '_MAX_DD_SB';
-        V_TMPTABLE5 := '_CURRENT_RATING_SB';
-        V_TMPTABLE6 := '_CURRENT_INITIAL_RATING_SB';
-        V_TMPTABLE7 := '_MAX_PD';
-        V_TMPTABLE8 := '_CURRENT_PD';
-        V_TMPTABLE9 := '_PD_INIT';
-        V_TMPTABLE10 := '_AC_MAX';
+        V_TMPTABLE1 := 'MAX_DD';
+        V_TMPTABLE2 := 'CURRENT_RATING';
+        V_TMPTABLE3 := 'CUST_GRADE';
+        V_TMPTABLE4 := 'MAX_DD_SB';
+        V_TMPTABLE5 := 'CURRENT_RATING_SB';
+        V_TMPTABLE6 := 'CURRENT_INITIAL_RATING_SB';
+        V_TMPTABLE7 := 'MAX_PD';
+        V_TMPTABLE8 := 'CURRENT_PD';
+        V_TMPTABLE9 := 'PD_INIT';
+        V_TMPTABLE10 := 'AC_MAX';
         V_TABLEINSERT1 := 'IFRS_MASTER_INIT_CUST_GRADE';
         V_TABLEINSERT2 := 'IFRS_INIT_PD_MASTERSCALE_CORP';
     END IF;
@@ -212,478 +212,480 @@ BEGIN
                 )
             )
         ) ';
-    EXECUTE (V_STR_QUERY);
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY = '';
-    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT1 || '
-        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
-    EXECUTE (V_STR_QUERY);
+    RAISE NOTICE 'QUERY : %', V_STR_QUERY;
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE3 || ' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY = '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT1 || '
+    --     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE3 || ' AS 
-        SELECT DISTINCT CUSTOMER_NUMBER FROM IFRS_MASTER_INIT_CUST_GRADE ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE3 || ' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (
-            DOWNLOAD_DATE 
-            ,CUSTOMER_NUMBER 
-            ,SANDI_BANK 
-            ,INITIAL_RATING_CODE 
-            ,CUSTOMER_NAME 
-            ,CREATEDBY 
-            ,CREATEDDATE
-        ) SELECT 
-            ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-            ,A.CUSTOMER_NUMBER 
-            ,MAX(A.SANDI_BANK) 
-            ,MAX(A.RATING_CODE) 
-            ,MAX(A.CUSTOMER_NAME) 
-            ,''SP_IFRS_IMP_INITIAL_UPDATE_T24'' AS CREATEDBY 
-            ,CURRENT_TIMESTAMP AS CREATEDDATE 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN ' || V_TMPTABLE3 || ' B 
-        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND A.RATING_CODE NOT IN (''N/A'', ''DO'', ''JDO'') 
-        AND A.DOWNLOAD_DATE >= ''2014-05-31''::DATE ';
-    V_STR_QUERY := V_STR_QUERY || ' 
-        AND (
-            A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'') 
-            OR (
-                (A.DATA_SOURCE = ''TRS'' AND A.PRODUCT_GROUP <> ''NS'') 
-                OR (
-                    A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
-                    AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
-                )
-            )
-        ) ';
-    V_STR_QUERY := V_STR_QUERY || ' GROUP BY A.CUSTOMER_NUMBER ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE3 || ' AS 
+    --     SELECT DISTINCT CUSTOMER_NUMBER FROM IFRS_MASTER_INIT_CUST_GRADE ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET INITIAL_RATING_CODE = CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' ELSE COALESCE(B.INITIAL_RATING_CODE, ''N/A'') END 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN ' || V_TABLEINSERT1 || ' B 
-        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
-    V_STR_QUERY := V_STR_QUERY || ' 
-        AND (
-            A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'') 
-            OR (
-                (A.DATA_SOURCE = ''TRS'' AND A.PRODUCT_GROUP <> ''NS'') 
-                OR (
-                    A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
-                    AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
-                )
-            )
-        ) ';
-    EXECUTE (V_STR_QUERY);
-    -- END UPDATE RATING CODE
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
+    --     (
+    --         DOWNLOAD_DATE 
+    --         ,CUSTOMER_NUMBER 
+    --         ,SANDI_BANK 
+    --         ,INITIAL_RATING_CODE 
+    --         ,CUSTOMER_NAME 
+    --         ,CREATEDBY 
+    --         ,CREATEDDATE
+    --     ) SELECT 
+    --         ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --         ,A.CUSTOMER_NUMBER 
+    --         ,MAX(A.SANDI_BANK) 
+    --         ,MAX(A.RATING_CODE) 
+    --         ,MAX(A.CUSTOMER_NAME) 
+    --         ,''SP_IFRS_IMP_INITIAL_UPDATE_T24'' AS CREATEDBY 
+    --         ,CURRENT_TIMESTAMP AS CREATEDDATE 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN ' || V_TMPTABLE3 || ' B 
+    --     ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND A.RATING_CODE NOT IN (''N/A'', ''DO'', ''JDO'') 
+    --     AND A.DOWNLOAD_DATE >= ''2014-05-31''::DATE ';
+    -- V_STR_QUERY := V_STR_QUERY || ' 
+    --     AND (
+    --         A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'') 
+    --         OR (
+    --             (A.DATA_SOURCE = ''TRS'' AND A.PRODUCT_GROUP <> ''NS'') 
+    --             OR (
+    --                 A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
+    --                 AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
+    --             )
+    --         )
+    --     ) ';
+    -- V_STR_QUERY := V_STR_QUERY || ' GROUP BY A.CUSTOMER_NUMBER ';
+    -- EXECUTE (V_STR_QUERY);
 
-    -- UPDATE RATING FOR NOSTRO
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE4 || ' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET INITIAL_RATING_CODE = CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' ELSE COALESCE(B.INITIAL_RATING_CODE, ''N/A'') END 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN ' || V_TABLEINSERT1 || ' B 
+    --     ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    -- V_STR_QUERY := V_STR_QUERY || ' 
+    --     AND (
+    --         A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'') 
+    --         OR (
+    --             (A.DATA_SOURCE = ''TRS'' AND A.PRODUCT_GROUP <> ''NS'') 
+    --             OR (
+    --                 A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
+    --                 AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
+    --             )
+    --         )
+    --     ) ';
+    -- EXECUTE (V_STR_QUERY);
+    -- -- END UPDATE RATING CODE
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE4 || ' AS 
-        SELECT SANDI_BANK, MAX(DOWNLOAD_DATE) AS DOWNLOAD_DATE 
-        FROM IFRS_CUSTOMER_GRADING_CORP 
-        WHERE DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        GROUP BY SANDI_BANK ORDER BY SANDI_BANK ';
-    EXECUTE (V_STR_QUERY);
+    -- -- UPDATE RATING FOR NOSTRO
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE4 || ' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE5 || ' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE4 || ' AS 
+    --     SELECT SANDI_BANK, MAX(DOWNLOAD_DATE) AS DOWNLOAD_DATE 
+    --     FROM IFRS_CUSTOMER_GRADING_CORP 
+    --     WHERE DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     GROUP BY SANDI_BANK ORDER BY SANDI_BANK ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE5 || ' AS 
-        SELECT 
-            A.SANDI_BANK 
-            ,MAX(A.OBLIGOR_GRADE) AS OBLIGOR_GRADE 
-            ,MAX(CASE WHEN WATCH_LIST_FLAG = 1 THEN 1 ELSE 0 END) AS WATCHLIST 
-        FROM IFRS_CUSTOMER_GRADING_CORP A 
-        JOIN ' || V_TMPTABLE4 || ' B 
-        ON A.SANDI_BANK = B.SANDI_BANK 
-        AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
-        GROUP BY A.SANDI_BANK ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE5 || ' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE6 || ' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE5 || ' AS 
+    --     SELECT 
+    --         A.SANDI_BANK 
+    --         ,MAX(A.OBLIGOR_GRADE) AS OBLIGOR_GRADE 
+    --         ,MAX(CASE WHEN WATCH_LIST_FLAG = 1 THEN 1 ELSE 0 END) AS WATCHLIST 
+    --     FROM IFRS_CUSTOMER_GRADING_CORP A 
+    --     JOIN ' || V_TMPTABLE4 || ' B 
+    --     ON A.SANDI_BANK = B.SANDI_BANK 
+    --     AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
+    --     GROUP BY A.SANDI_BANK ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE6 || ' AS 
-        SELECT MIN(INITIAL_RATING_CODE) AS INITIAL_RATING_CODE, SANDI_BANK 
-        FROM IFRS_MASTER_INIT_CUST_GRADE 
-        WHERE DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND INITIAL_RATING_CODE NOT IN (''N/A'') 
-        GROUP BY SANDI_BANK ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE6 || ' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET RATING_CODE = 
-            CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' 
-            ELSE 
-                CASE WHEN B.OBLIGOR_GRADE = ''NFI'' THEN ''G6'' 
-                    WHEN B.OBLIGOR_GRADE = ''0'' THEN ''N/A'' 
-                    ELSE B.OBLIGOR_GRADE 
-                END 
-            END 
-            ,WATCHLIST_FLAG = B.WATCHLIST 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN ' || V_TMPTABLE2 || ' B 
-        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND A.DATA_SOURCE = ''TRS'' 
-        AND A.PRODUCT_GROUP = ''NS'' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE6 || ' AS 
+    --     SELECT MIN(INITIAL_RATING_CODE) AS INITIAL_RATING_CODE, SANDI_BANK 
+    --     FROM IFRS_MASTER_INIT_CUST_GRADE 
+    --     WHERE DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND INITIAL_RATING_CODE NOT IN (''N/A'') 
+    --     GROUP BY SANDI_BANK ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET RATING_CODE = 
-            CASE WHEN B.SANDI_BANK IS NULL THEN ''N/A'' 
-            ELSE 
-                CASE WHEN B.OBLIGOR_GRADE = ''NFI'' THEN ''G6'' 
-                    WHEN B.OBLIGOR_GRADE = ''0'' THEN ''N/A'' 
-                    ELSE B.OBLIGOR_GRADE 
-                END 
-            END 
-            ,WATCHLIST_FLAG = B.WATCHLIST 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN ' || V_TMPTABLE5 || ' B 
-        ON A.SANDI_BANK = B.SANDI_BANK 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND A.DATA_SOURCE = ''TRS'' 
-        AND A.RATING_CODE = ''N/A'' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET RATING_CODE = 
+    --         CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' 
+    --         ELSE 
+    --             CASE WHEN B.OBLIGOR_GRADE = ''NFI'' THEN ''G6'' 
+    --                 WHEN B.OBLIGOR_GRADE = ''0'' THEN ''N/A'' 
+    --                 ELSE B.OBLIGOR_GRADE 
+    --             END 
+    --         END 
+    --         ,WATCHLIST_FLAG = B.WATCHLIST 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN ' || V_TMPTABLE2 || ' B 
+    --     ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND A.DATA_SOURCE = ''TRS'' 
+    --     AND A.PRODUCT_GROUP = ''NS'' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET INITIAL_RATING_CODE = 
-            CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' 
-            ELSE COALESCE(B.INITIAL_RATING_CODE, ''N/A'') END 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN IFRS_MASTER_INIT_CUST_GRADE B 
-        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND A.PRODUCT_GROUP = ''NS'' 
-        AND A.DATA_SOURCE = ''TRS'' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET RATING_CODE = 
+    --         CASE WHEN B.SANDI_BANK IS NULL THEN ''N/A'' 
+    --         ELSE 
+    --             CASE WHEN B.OBLIGOR_GRADE = ''NFI'' THEN ''G6'' 
+    --                 WHEN B.OBLIGOR_GRADE = ''0'' THEN ''N/A'' 
+    --                 ELSE B.OBLIGOR_GRADE 
+    --             END 
+    --         END 
+    --         ,WATCHLIST_FLAG = B.WATCHLIST 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN ' || V_TMPTABLE5 || ' B 
+    --     ON A.SANDI_BANK = B.SANDI_BANK 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND A.DATA_SOURCE = ''TRS'' 
+    --     AND A.RATING_CODE = ''N/A'' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET INITIAL_RATING_CODE = 
-            CASE WHEN B.SANDI_BANK IS NULL THEN ''N/A'' 
-            ELSE COALESCE(B.INITIAL_RATING_CODE, ''N/A'') END 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN ' || V_TMPTABLE6 || ' B 
-        ON A.SANDI_BANK = B.SANDI_BANK 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND A.DATA_SOURCE = ''TRS'' 
-        AND A.INITIAL_RATING_CODE IN (''N/A'') ';
-    EXECUTE (V_STR_QUERY);
-    -- END UPDATE RATING FOR NOSTRO
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET INITIAL_RATING_CODE = 
+    --         CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' 
+    --         ELSE COALESCE(B.INITIAL_RATING_CODE, ''N/A'') END 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN IFRS_MASTER_INIT_CUST_GRADE B 
+    --     ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND A.PRODUCT_GROUP = ''NS'' 
+    --     AND A.DATA_SOURCE = ''TRS'' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    -- UPDATE RATING FOR COUNTER GUARANTEE
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET RATING_CODE = 
-            CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' 
-            ELSE 
-                CASE WHEN B.OBLIGOR_GRADE = ''NFI'' THEN ''G6'' 
-                    WHEN B.OBLIGOR_GRADE = ''0'' THEN ''N/A'' 
-                    ELSE B.OBLIGOR_GRADE 
-                END 
-            END 
-            ,WATCHLIST_FLAG = B.WATCHLIST 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN ' || V_TMPTABLE2 || ' B 
-        ON LEFT(A.FACILITY_NUMBER, 6) = B.CUSTOMER_NUMBER 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND A.PRODUCT_GROUP = ''BG'' 
-        AND A.DATA_SOURCE = ''TRADE_T24'' 
-        AND A.COUNTER_GUARANTEE_FLAG = ''Y'' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET INITIAL_RATING_CODE = 
+    --         CASE WHEN B.SANDI_BANK IS NULL THEN ''N/A'' 
+    --         ELSE COALESCE(B.INITIAL_RATING_CODE, ''N/A'') END 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN ' || V_TMPTABLE6 || ' B 
+    --     ON A.SANDI_BANK = B.SANDI_BANK 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND A.DATA_SOURCE = ''TRS'' 
+    --     AND A.INITIAL_RATING_CODE IN (''N/A'') ';
+    -- EXECUTE (V_STR_QUERY);
+    -- -- END UPDATE RATING FOR NOSTRO
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET INITIAL_RATING_CODE = 
-            CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' 
-            ELSE COALESCE(B.INITIAL_RATING_CODE, ''N/A'') END 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN IFRS_MASTER_INIT_CUST_GRADE B 
-        ON LEFT(A.FACILITY_NUMBER, 6) = B.CUSTOMER_NUMBER 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND A.PRODUCT_GROUP = ''BG'' 
-        AND A.DATA_SOURCE = ''TRADE_T24'' 
-        AND A.COUNTER_GUARANTEE_FLAG = ''Y'' ';
-    EXECUTE (V_STR_QUERY);
-    -- END UPDATE RATING FOR COUNTER GUARANTEE
+    -- -- UPDATE RATING FOR COUNTER GUARANTEE
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET RATING_CODE = 
+    --         CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' 
+    --         ELSE 
+    --             CASE WHEN B.OBLIGOR_GRADE = ''NFI'' THEN ''G6'' 
+    --                 WHEN B.OBLIGOR_GRADE = ''0'' THEN ''N/A'' 
+    --                 ELSE B.OBLIGOR_GRADE 
+    --             END 
+    --         END 
+    --         ,WATCHLIST_FLAG = B.WATCHLIST 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN ' || V_TMPTABLE2 || ' B 
+    --     ON LEFT(A.FACILITY_NUMBER, 6) = B.CUSTOMER_NUMBER 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND A.PRODUCT_GROUP = ''BG'' 
+    --     AND A.DATA_SOURCE = ''TRADE_T24'' 
+    --     AND A.COUNTER_GUARANTEE_FLAG = ''Y'' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    -- UPDATE RATING FOR TREASURY 
-    -- RATING DOWNGRADE
-    V_STR_QUERY = '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET RATING_DOWNGRADE = 
-            CASE WHEN COALESCE(RATING_CODE, ''N/A'') IN (''N/A'', ''DO'', ''JDO'') THEN NULL 
-            WHEN COALESCE(INITIAL_RATING_CODE, ''N/A'') = ''N/A'' THEN NULL 
-            ELSE (SUBSTRING(RATING_CODE FROM 2 FOR 1))::INT - (SUBSTRING(INITIAL_RATING_CODE FROM 2 FOR 1))::INT END 
-        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND (
-            DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'', ''TRS'') 
-            OR (
-                PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''') 
-                AND ' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
-            )
-        ) ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET INITIAL_RATING_CODE = 
+    --         CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN ''N/A'' 
+    --         ELSE COALESCE(B.INITIAL_RATING_CODE, ''N/A'') END 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN IFRS_MASTER_INIT_CUST_GRADE B 
+    --     ON LEFT(A.FACILITY_NUMBER, 6) = B.CUSTOMER_NUMBER 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND A.PRODUCT_GROUP = ''BG'' 
+    --     AND A.DATA_SOURCE = ''TRADE_T24'' 
+    --     AND A.COUNTER_GUARANTEE_FLAG = ''Y'' ';
+    -- EXECUTE (V_STR_QUERY);
+    -- -- END UPDATE RATING FOR COUNTER GUARANTEE
+
+    -- -- UPDATE RATING FOR TREASURY 
+    -- -- RATING DOWNGRADE
+    -- V_STR_QUERY = '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET RATING_DOWNGRADE = 
+    --         CASE WHEN COALESCE(RATING_CODE, ''N/A'') IN (''N/A'', ''DO'', ''JDO'') THEN NULL 
+    --         WHEN COALESCE(INITIAL_RATING_CODE, ''N/A'') = ''N/A'' THEN NULL 
+    --         ELSE (SUBSTRING(RATING_CODE FROM 2 FOR 1))::INT - (SUBSTRING(INITIAL_RATING_CODE FROM 2 FOR 1))::INT END 
+    --     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND (
+    --         DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'', ''TRS'') 
+    --         OR (
+    --             PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''') 
+    --             AND ' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
+    --         )
+    --     ) ';
+    -- EXECUTE (V_STR_QUERY);
     -- END RATING DOWNGRADE 
 
-    -- UPDATE PD_MASTER_SCALE
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE7 || ' ';
-    EXECUTE (V_STR_QUERY);
+    -- -- UPDATE PD_MASTER_SCALE
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE7 || ' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE7 || ' AS 
-        SELECT OBLIGOR_GRADE, MAX(DOWNLOAD_DATE) AS DOWNLOAD_DATE 
-        FROM IFRS_PD_MASTERSCALE_CORP 
-        WHERE DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        GROUP BY OBLIGOR_GRADE 
-        ORDER BY OBLIGOR_GRADE ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE7 || ' AS 
+    --     SELECT OBLIGOR_GRADE, MAX(DOWNLOAD_DATE) AS DOWNLOAD_DATE 
+    --     FROM IFRS_PD_MASTERSCALE_CORP 
+    --     WHERE DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     GROUP BY OBLIGOR_GRADE 
+    --     ORDER BY OBLIGOR_GRADE ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE8 || ' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE8 || ' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE8 || ' AS 
-        SELECT A.OBLIGOR_GRADE, MAX(A.PD) AS PD 
-        FROM IFRS_PD_MASTERSCALE_CORP A 
-        INNER JOIN ' || V_TMPTABLE7 || ' B 
-        ON A.OBLIGOR_GRADE = B.OBLIGOR_GRADE AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
-        GROUP BY A.OBLIGOR_GRADE ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE8 || ' AS 
+    --     SELECT A.OBLIGOR_GRADE, MAX(A.PD) AS PD 
+    --     FROM IFRS_PD_MASTERSCALE_CORP A 
+    --     INNER JOIN ' || V_TMPTABLE7 || ' B 
+    --     ON A.OBLIGOR_GRADE = B.OBLIGOR_GRADE AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
+    --     GROUP BY A.OBLIGOR_GRADE ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET PD_CURRENT_RATE = COALESCE(B.PD, NULL) 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN ' || V_TMPTABLE8 || ' B 
-        ON A.RATING_CODE = B.OBLIGOR_GRADE 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET PD_CURRENT_RATE = COALESCE(B.PD, NULL) 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN ' || V_TMPTABLE8 || ' B 
+    --     ON A.RATING_CODE = B.OBLIGOR_GRADE 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT2 || ' 
-        WHERE DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT2 || ' 
+    --     WHERE DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE9 || ' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE9 || ' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE9 || ' AS 
-        SELECT CUSTOMER_NUMBER 
-        FROM IFRS_INIT_PD_MASTERSCALE_CORP 
-        GROUP BY CUSTOMER_NUMBER ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE9 || ' AS 
+    --     SELECT CUSTOMER_NUMBER 
+    --     FROM IFRS_INIT_PD_MASTERSCALE_CORP 
+    --     GROUP BY CUSTOMER_NUMBER ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
-        (
-            DOWNLOAD_DATE 
-            ,CUSTOMER_NUMBER 
-            ,RATING_CODE 
-            ,PD 
-            ,CREATEDBY 
-            ,CREATEDDATE 
-        ) SELECT 
-            ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE 
-            ,A.CUSTOMER_NUMBER 
-            ,MAX(A.RATING_CODE) 
-            ,MAX(PD_CURRENT_RATE) 
-            ,''SP_IFRS_IMP_INITIAL_UPDATE_T24'' AS CREATEDBY 
-            ,CURRENT_TIMESTAMP AS CREATEDDATE 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN ' || V_TMPTABLE9 || ' B 
-        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND (
-            A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'', ''TRS'') 
-            OR (
-                A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
-                AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
-            )
-        ) 
-        AND B.CUSTOMER_NUMBER IS NULL 
-        GROUP BY A.CUSTOMER_NUMBER ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+    --     (
+    --         DOWNLOAD_DATE 
+    --         ,CUSTOMER_NUMBER 
+    --         ,RATING_CODE 
+    --         ,PD 
+    --         ,CREATEDBY 
+    --         ,CREATEDDATE 
+    --     ) SELECT 
+    --         ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE 
+    --         ,A.CUSTOMER_NUMBER 
+    --         ,MAX(A.RATING_CODE) 
+    --         ,MAX(PD_CURRENT_RATE) 
+    --         ,''SP_IFRS_IMP_INITIAL_UPDATE_T24'' AS CREATEDBY 
+    --         ,CURRENT_TIMESTAMP AS CREATEDDATE 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN ' || V_TMPTABLE9 || ' B 
+    --     ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND (
+    --         A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'', ''TRS'') 
+    --         OR (
+    --             A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
+    --             AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
+    --         )
+    --     ) 
+    --     AND B.CUSTOMER_NUMBER IS NULL 
+    --     GROUP BY A.CUSTOMER_NUMBER ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET PD_INITIAL_RATE = 
-            CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN NULL 
-            ELSE COALESCE(B.PD, NULL) END 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN ' || V_TABLEINSERT2 || ' B 
-        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND (
-            A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'', ''TRS'') 
-            OR (
-                A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
-                AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
-            )
-        ) ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET PD_INITIAL_RATE = 
+    --         CASE WHEN B.CUSTOMER_NUMBER IS NULL THEN NULL 
+    --         ELSE COALESCE(B.PD, NULL) END 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN ' || V_TABLEINSERT2 || ' B 
+    --     ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND (
+    --         A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'', ''TRS'') 
+    --         OR (
+    --             A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
+    --             AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
+    --         )
+    --     ) ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' A 
-        SET PD_CHANGE = 
-            CASE WHEN COALESCE(PD_INITIAL_RATE, 0) = 0 THEN 0 
-            ELSE (COALESCE(PD_CURRENT_RATE, 0) - COALESCE(PD_INITIAL_RATE, 0)) / PD_INITIAL_RATE END 
-            ,REMAINING_TENOR = (LOAN_DUE_DATE::DATE - DOWNLOAD_DATE::DATE) / 30 + 1 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND (
-            A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'', ''TRS'') 
-            OR (
-                A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
-                AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
-            )
-        ) ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' A 
+    --     SET PD_CHANGE = 
+    --         CASE WHEN COALESCE(PD_INITIAL_RATE, 0) = 0 THEN 0 
+    --         ELSE (COALESCE(PD_CURRENT_RATE, 0) - COALESCE(PD_INITIAL_RATE, 0)) / PD_INITIAL_RATE END 
+    --         ,REMAINING_TENOR = (LOAN_DUE_DATE::DATE - DOWNLOAD_DATE::DATE) / 30 + 1 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND (
+    --         A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'', ''TRS'') 
+    --         OR (
+    --             A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
+    --             AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
+    --         )
+    --     ) ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE10 || ' ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TMPTABLE10 || ' ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE10 || ' AS 
-        SELECT FACILITY_NUMBER, MAX(DOWNLOAD_DATE) AS MAX_DATE 
-        FROM IFRS_ASSET_CLASSIFICATION_CORP 
-        WHERE DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        GROUP BY FACILITY_NUMBER ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE10 || ' AS 
+    --     SELECT FACILITY_NUMBER, MAX(DOWNLOAD_DATE) AS MAX_DATE 
+    --     FROM IFRS_ASSET_CLASSIFICATION_CORP 
+    --     WHERE DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     GROUP BY FACILITY_NUMBER ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' IMA
-        SET SPPI_RESULT = AC.SPPI_RESULT, BM_RESULT = AC.BM_RESULT 
-        FROM (
-            SELECT A.FACILITY_NUMBER, A.SPPI_RESULT, A.BM_RESULT 
-            FROM IFRS_ASSET_CLASSIFICATION_CORP A 
-            JOIN ' || V_TMPTABLE10 || ' B 
-            ON A.DOWNLOAD_DATE = B.MAX_DATE 
-            AND A.FACILITY_NUMBER = B.FACILITY_NUMBER 
-            GROUP BY A.FACILITY_NUMBER, A.SPPI_RESULT, A.BM_RESULT
-        ) AC 
-        WHERE IMA.FACILITY_NUMBER = AC.FACILITY_NUMBER 
-        AND IMA.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND (
-            IMA.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'') 
-            OR (
-                IMA.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
-                AND IMA.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
-            )
-        ) ';
-    EXECUTE (V_STR_QUERY);
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' IMA
+    --     SET SPPI_RESULT = AC.SPPI_RESULT, BM_RESULT = AC.BM_RESULT 
+    --     FROM (
+    --         SELECT A.FACILITY_NUMBER, A.SPPI_RESULT, A.BM_RESULT 
+    --         FROM IFRS_ASSET_CLASSIFICATION_CORP A 
+    --         JOIN ' || V_TMPTABLE10 || ' B 
+    --         ON A.DOWNLOAD_DATE = B.MAX_DATE 
+    --         AND A.FACILITY_NUMBER = B.FACILITY_NUMBER 
+    --         GROUP BY A.FACILITY_NUMBER, A.SPPI_RESULT, A.BM_RESULT
+    --     ) AC 
+    --     WHERE IMA.FACILITY_NUMBER = AC.FACILITY_NUMBER 
+    --     AND IMA.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND (
+    --         IMA.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'') 
+    --         OR (
+    --             IMA.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
+    --             AND IMA.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
+    --         )
+    --     ) ';
+    -- EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET IFRS9_CLASS = COALESCE(B.ASSET_CLASS, A.IFRS9_CLASS) 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN (
-            SELECT DISTINCT
-                SPPI_RSLT 
-                ,BM_RSLT 
-                ,REPLACE(ASSET_CLASS, ''AMORT'', ''AMORTIZED COST'') AS ASSET_CLASS 
-            FROM IFRS_AC_MAIN_MAPPING 
-            WHERE FV_OPTION = 0
-        ) B 
-        ON A.SPPI_RESULT = B.SPPI_RSLT 
-        AND A.BM_RESULT = B.BM_RSLT 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND (
-            A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'') 
-            OR (
-                A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
-                AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
-            )
-        ) ';
-    EXECUTE (V_STR_QUERY);
-    -- END UPDATE RATING FOR TREASURY
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET IFRS9_CLASS = COALESCE(B.ASSET_CLASS, A.IFRS9_CLASS) 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN (
+    --         SELECT DISTINCT
+    --             SPPI_RSLT 
+    --             ,BM_RSLT 
+    --             ,REPLACE(ASSET_CLASS, ''AMORT'', ''AMORTIZED COST'') AS ASSET_CLASS 
+    --         FROM IFRS_AC_MAIN_MAPPING 
+    --         WHERE FV_OPTION = 0
+    --     ) B 
+    --     ON A.SPPI_RESULT = B.SPPI_RSLT 
+    --     AND A.BM_RESULT = B.BM_RSLT 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND (
+    --         A.DATA_SOURCE IN (''LOAN_T24'', ''LIMIT_T24'', ''TRADE_T24'') 
+    --         OR (
+    --             A.PRODUCT_TYPE IN (''' || REPLACE(V_CSPRD_VALUE, ',', ''',''') || ''')
+    --             AND A.' || V_CSR_COLUMN || ' IN (''' || REPLACE(V_CSR_VALUE, ',', ''',''') || ''')
+    --         )
+    --     ) ';
+    -- EXECUTE (V_STR_QUERY);
+    -- -- END UPDATE RATING FOR TREASURY
 
-    -- UPDATE EXTERNAL RATING TREASURY
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET 
-            EXT_RATING_CODE = COALESCE(A.EXT_RATING_CODE,
-                COALESCE(B.EXTERNAL_RATING_CODE, 
-                    COALESCE(C.EXTERNAL_RATING_CODE, ''10'')
-                )
-            ) 
-            ,EXT_RATING_AGENCY = COALESCE(A.EXT_RATING_AGENCY,
-                COALESCE(B.EXTERNAL_RATING_AGENCY, 
-                    COALESCE(C.EXTERNAL_RATING_AGENCY, ''00'')
-                )
-            )
-            ,EXT_INIT_RATING_CODE = COALESCE(A.EXT_INIT_RATING_CODE,
-                COALESCE(B.INITIAL_RATING_CODE, 
-                    COALESCE(C.EXTERNAL_RATING_INITIAL, ''10'')
-                )
-            ) 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN IFRS_MASTER_EXTERNAL_RATING B 
-        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
-        AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
-        LEFT JOIN IFRS_JUDGEMENT_RATING_TREASURY C 
-        ON A.CUSTOMER_NUMBER = C.MASTERID 
-        AND A.DOWNLOAD_DATE = C.DOWNLOAD_DATE 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND A.DATA_SOURCE = ''TRS'' ';
-    EXECUTE (V_STR_QUERY);
-    -- END UPDATE EXTERNAL RATING TREASURY
+    -- -- UPDATE EXTERNAL RATING TREASURY
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET 
+    --         EXT_RATING_CODE = COALESCE(A.EXT_RATING_CODE,
+    --             COALESCE(B.EXTERNAL_RATING_CODE, 
+    --                 COALESCE(C.EXTERNAL_RATING_CODE, ''10'')
+    --             )
+    --         ) 
+    --         ,EXT_RATING_AGENCY = COALESCE(A.EXT_RATING_AGENCY,
+    --             COALESCE(B.EXTERNAL_RATING_AGENCY, 
+    --                 COALESCE(C.EXTERNAL_RATING_AGENCY, ''00'')
+    --             )
+    --         )
+    --         ,EXT_INIT_RATING_CODE = COALESCE(A.EXT_INIT_RATING_CODE,
+    --             COALESCE(B.INITIAL_RATING_CODE, 
+    --                 COALESCE(C.EXTERNAL_RATING_INITIAL, ''10'')
+    --             )
+    --         ) 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN IFRS_MASTER_EXTERNAL_RATING B 
+    --     ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER 
+    --     AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
+    --     LEFT JOIN IFRS_JUDGEMENT_RATING_TREASURY C 
+    --     ON A.CUSTOMER_NUMBER = C.MASTERID 
+    --     AND A.DOWNLOAD_DATE = C.DOWNLOAD_DATE 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND A.DATA_SOURCE = ''TRS'' ';
+    -- EXECUTE (V_STR_QUERY);
+    -- -- END UPDATE EXTERNAL RATING TREASURY
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-        SET EXT_RATING_DOWNGRADE = 
-            CASE WHEN COALESCE(A.EXT_RATING_CODE, ''N/A'') = ''N/A'' THEN 0 
-            WHEN COALESCE(A.EXT_INIT_RATING_CODE, ''N/A'') = ''N/A'' THEN 0 
-            ELSE COALESCE((CURR.MAPPED_RATING_CODE)::INT - (INITIAL.MAPPED_RATING_CODE)::INT, 0) END 
-        FROM ' || V_TABLENAME || ' A 
-        LEFT JOIN IFRS_MAPPING_EXTERNAL_RATING INITIAL ON A.EXT_INIT_RATING_CODE = INITIAL.RATING_CODE 
-        LEFT JOIN IFRS_MAPPING_EXTERNAL_RATING CURR ON A.EXT_RATING_CODE = CURR.RATING_CODE 
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND A.DATA_SOURCE = ''TRS'' ';
-    EXECUTE (V_STR_QUERY);
-    -------- ====== BODY ======
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
+    --     SET EXT_RATING_DOWNGRADE = 
+    --         CASE WHEN COALESCE(A.EXT_RATING_CODE, ''N/A'') = ''N/A'' THEN 0 
+    --         WHEN COALESCE(A.EXT_INIT_RATING_CODE, ''N/A'') = ''N/A'' THEN 0 
+    --         ELSE COALESCE((CURR.MAPPED_RATING_CODE)::INT - (INITIAL.MAPPED_RATING_CODE)::INT, 0) END 
+    --     FROM ' || V_TABLENAME || ' A 
+    --     LEFT JOIN IFRS_MAPPING_EXTERNAL_RATING INITIAL ON A.EXT_INIT_RATING_CODE = INITIAL.RATING_CODE 
+    --     LEFT JOIN IFRS_MAPPING_EXTERNAL_RATING CURR ON A.EXT_RATING_CODE = CURR.RATING_CODE 
+    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+    --     AND A.DATA_SOURCE = ''TRS'' ';
+    -- EXECUTE (V_STR_QUERY);
+    -- -------- ====== BODY ======
 
-    -------- ====== LOG ======
-    V_TABLEDEST = V_TABLENAME;
-    V_COLUMNDEST = '-';
-    V_SPNAME = 'SP_IFRS_IMP_INITIAL_UPDATE_T24';
-    V_OPERATION = 'UPDATE';
+    -- -------- ====== LOG ======
+    -- V_TABLEDEST = V_TABLENAME;
+    -- V_COLUMNDEST = '-';
+    -- V_SPNAME = 'SP_IFRS_IMP_INITIAL_UPDATE_T24';
+    -- V_OPERATION = 'UPDATE';
     
-    CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
-    -------- ====== LOG ======
+    -- CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
+    -- -------- ====== LOG ======
 
-    -------- ====== RESULT ======
-    V_QUERYS = 'SELECT * FROM ' || V_TABLENAME || '';
-    CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
-    -------- ====== RESULT ======
+    -- -------- ====== RESULT ======
+    -- V_QUERYS = 'SELECT * FROM ' || V_TABLENAME || '';
+    -- CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
+    -- -------- ====== RESULT ======
 
 END;
 
