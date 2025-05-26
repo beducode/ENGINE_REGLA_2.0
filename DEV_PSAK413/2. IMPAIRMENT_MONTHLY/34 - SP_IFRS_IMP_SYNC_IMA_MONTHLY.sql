@@ -112,7 +112,7 @@ BEGIN
       D.MASTERID AS MASTERIDD,
       D.DOWNLOAD_DATE AS DOWNLOAD_DATED,
       B.LIFETIME, 
-      B.ECL_MODEL_ID, 
+      B.EIL_MODEL_ID, 
       B.EAD_MODEL_ID, 
       B.CCF_RULES_ID,
       B.CCF_EFF_DATE,
@@ -131,8 +131,8 @@ BEGIN
       B.DEFAULT_RULE_ID,
       B.STAGE,
       B.COLL_AMOUNT,
-      C.ECL_AMOUNT,
-      C.ECL_AMOUNT_BFL,
+      C.EIL_AMOUNT,
+      C.EIL_AMOUNT_BFL,
       D.EXCLUSION_PERCENTAGE
     FROM ' || V_TABLEINSERT2 || ' A 
     JOIN ' || V_TABLEINSERT1 || ' B ON A.DOWNLOAD_DATE = B.DOWNLOAD_DATE AND A.MASTERID = B.MASTERID
@@ -145,7 +145,7 @@ BEGIN
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' X
     SET LIFETIME = Y.LIFETIME,
-    ECL_MODEL_ID = Y.ECL_MODEL_ID,
+    EIL_MODEL_ID = Y.EIL_MODEL_ID,
     EAD_RULE_ID = Y.EAD_MODEL_ID,
     CCF_RULE_ID = Y.CCF_RULES_ID,
     CCF_EFF_DATE = Y.CCF_EFF_DATE,
@@ -164,18 +164,18 @@ BEGIN
     DEFAULT_RULE_ID = Y.DEFAULT_RULE_ID,
     STAGE = Y.STAGE,
     COLL_AMOUNT = Y.COLL_AMOUNT,
-    ECL_AMOUNT = CASE
+    EIL_AMOUNT = CASE
       WHEN Y.MASTERID IS NOT NULL THEN Y.EAD_BALANCE * (Y.EXCLUSION_PERCENTAGE::FLOAT / 100)
       ELSE CASE
-        WHEN COALESCE(X.IMPAIRED_FLAG, ''C'') = ''C'' THEN COALESCE(Y.ECL_AMOUNT, 0)
-        ELSE X.ECL_AMOUNT
+        WHEN COALESCE(X.IMPAIRED_FLAG, ''C'') = ''C'' THEN COALESCE(Y.EIL_AMOUNT, 0)
+        ELSE X.EIL_AMOUNT
       END
     END,
-    ECL_AMOUNT_BFL = CASE
+    EIL_AMOUNT_BFL = CASE
       WHEN Y.MASTERID IS NOT NULL THEN Y.EAD_BALANCE * (Y.EXCLUSION_PERCENTAGE::FLOAT / 100)
       ELSE CASE
-        WHEN COALESCE(X.IMPAIRED_FLAG, ''C'') = ''C'' THEN COALESCE(Y.ECL_AMOUNT_BFL, 0)
-        ELSE X.ECL_AMOUNT_BFL
+        WHEN COALESCE(X.IMPAIRED_FLAG, ''C'') = ''C'' THEN COALESCE(Y.EIL_AMOUNT_BFL, 0)
+        ELSE X.EIL_AMOUNT_BFL
       END
     END,
     IA_UNWINDING_AMOUNT = CASE
@@ -190,7 +190,7 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' A
-    SET ECL_AMOUNT = 0, ECL_AMOUNT_BFL = 0
+    SET EIL_AMOUNT = 0, EIL_AMOUNT_BFL = 0
     FROM IFRS_CREDITLINE_JENIUS B
     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
     AND A.FACILITY_NUMBER = B.CREDIT_LINE_REF
@@ -201,7 +201,7 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' A
-    SET BEGINNING_BALANCE = CASE WHEN B.ECL_AMOUNT < 0 THEN 0 ELSE B.ECL_AMOUNT END
+    SET BEGINNING_BALANCE = CASE WHEN B.EIL_AMOUNT < 0 THEN 0 ELSE B.EIL_AMOUNT END
     FROM ' || V_TABLEINSERT3 || ' B
     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
     AND B.DOWNLOAD_DATE = ''' || CAST(V_PREVMONTH AS VARCHAR(10)) || '''::DATE
@@ -211,23 +211,23 @@ BEGIN
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || '
     SET WRITEBACK_AMOUNT = CASE 
-    WHEN COALESCE(BEGINNING_BALANCE, 0) > COALESCE(ECL_AMOUNT, 0) THEN ABS(COALESCE(ECL_AMOUNT, 0) - COALESCE(BEGINNING_BALANCE, 0))
+    WHEN COALESCE(BEGINNING_BALANCE, 0) > COALESCE(EIL_AMOUNT, 0) THEN ABS(COALESCE(EIL_AMOUNT, 0) - COALESCE(BEGINNING_BALANCE, 0))
         ELSE 0
     END,
     CHARGE_AMOUNT = CASE 
-    WHEN COALESCE(BEGINNING_BALANCE, 0) < COALESCE(ECL_AMOUNT, 0) THEN ABS(COALESCE(ECL_AMOUNT, 0) - COALESCE(BEGINNING_BALANCE, 0))
+    WHEN COALESCE(BEGINNING_BALANCE, 0) < COALESCE(EIL_AMOUNT, 0) THEN ABS(COALESCE(EIL_AMOUNT, 0) - COALESCE(BEGINNING_BALANCE, 0))
         ELSE 0
     END,
     ENDING_BALANCE = CASE 
-    WHEN COALESCE(ECL_AMOUNT, 0) < 0 THEN 0
-        ELSE COALESCE(ECL_AMOUNT, 0)
+    WHEN COALESCE(EIL_AMOUNT, 0) < 0 THEN 0
+        ELSE COALESCE(EIL_AMOUNT, 0)
     END
     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' A
-    SET ECL_AMOUNT = 0
+    SET EIL_AMOUNT = 0
     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
     AND A.DATA_SOURCE = ''LIMIT''
     AND A.SEGMENT_FLAG = ''CROSS_SEGMENT_LIMIT''';
@@ -255,7 +255,7 @@ BEGIN
       ,ACCOUNT_NUMBER            
       ,PREVIOUS_ACCOUNT_NUMBER            
       ,ACCOUNT_STATUS            
-      ,INTEREST_RATE            
+      ,MARGIN_RATE            
       ,MARKET_RATE            
       ,PRODUCT_GROUP            
       ,PRODUCT_TYPE            
@@ -275,7 +275,7 @@ BEGIN
       ,OUTSTANDING_WO            
       ,PLAFOND            
       ,PLAFOND_CASH            
-      ,INTEREST_ACCRUED            
+      ,MARGIN_ACCRUED            
       ,INSTALLMENT_AMOUNT            
       ,UNUSED_AMOUNT            
       ,DOWN_PAYMENT_AMOUNT            
@@ -293,8 +293,8 @@ BEGIN
       ,REMAINING_TENOR            
       ,PAYMENT_CODE            
       ,PAYMENT_TERM            
-      ,INTEREST_CALCULATION_CODE            
-      ,INTEREST_PAYMENT_TERM            
+      ,MARGIN_CALCULATION_CODE            
+      ,MARGIN_PAYMENT_TERM            
       ,RESTRUCTURE_DATE            
       ,RESTRUCTURE_FLAG            
       ,POCI_FLAG            
@@ -346,9 +346,9 @@ BEGIN
       ,PD_SEGMENT            
       ,BUCKET_GROUP            
       ,BUCKET_ID            
-      ,ECL_12_AMOUNT            
-      ,ECL_LIFETIME_AMOUNT            
-      ,ECL_AMOUNT            
+      ,EIL_12_AMOUNT            
+      ,EIL_LIFETIME_AMOUNT            
+      ,EIL_AMOUNT            
       ,CA_UNWINDING_AMOUNT            
       ,IA_UNWINDING_AMOUNT            
       ,IA_UNWINDING_SUM_AMOUNT            
@@ -383,9 +383,9 @@ BEGIN
       ,CCF            
       ,CCF_RULE_ID            
       ,CCF_EFF_DATE            
-      ,ECL_AMOUNT_BFL            
+      ,EIL_AMOUNT_BFL            
       ,AVG_EIR            
-      ,ECL_MODEL_ID            
+      ,EIL_MODEL_ID            
       ,SEGMENTATION_ID            
       ,PD_ME_MODEL_ID            
       ,DEFAULT_RULE_ID            
@@ -405,7 +405,7 @@ BEGIN
       ,EXT_RATING_AGENCY          
       ,EXT_RATING_CODE          
       ,EXT_INIT_RATING_CODE          
-      ,INTEREST_TYPE          
+      ,MARGIN_TYPE          
       ,SOVEREIGN_FLAG          
       ,ISIN_CODE          
       ,INV_TYPE          
@@ -433,7 +433,7 @@ BEGIN
       ,ACCOUNT_NUMBER            
       ,PREVIOUS_ACCOUNT_NUMBER            
       ,ACCOUNT_STATUS            
-      ,INTEREST_RATE            
+      ,MARGIN_RATE            
       ,MARKET_RATE            
       ,PRODUCT_GROUP            
       ,PRODUCT_TYPE            
@@ -453,7 +453,7 @@ BEGIN
       ,OUTSTANDING_WO            
       ,PLAFOND            
       ,PLAFOND_CASH            
-      ,INTEREST_ACCRUED        
+      ,MARGIN_ACCRUED        
       ,INSTALLMENT_AMOUNT            
       ,UNUSED_AMOUNT            
       ,DOWN_PAYMENT_AMOUNT            
@@ -471,8 +471,8 @@ BEGIN
       ,REMAINING_TENOR            
       ,PAYMENT_CODE            
       ,PAYMENT_TERM            
-      ,INTEREST_CALCULATION_CODE            
-      ,INTEREST_PAYMENT_TERM            
+      ,MARGIN_CALCULATION_CODE            
+      ,MARGIN_PAYMENT_TERM            
       ,RESTRUCTURE_DATE            
       ,RESTRUCTURE_FLAG            
       ,POCI_FLAG            
@@ -524,9 +524,9 @@ BEGIN
       ,PD_SEGMENT            
       ,BUCKET_GROUP            
       ,BUCKET_ID            
-      ,ECL_12_AMOUNT            
-      ,ECL_LIFETIME_AMOUNT            
-      ,ECL_AMOUNT            
+      ,EIL_12_AMOUNT            
+      ,EIL_LIFETIME_AMOUNT            
+      ,EIL_AMOUNT            
       ,CA_UNWINDING_AMOUNT            
       ,IA_UNWINDING_AMOUNT            
       ,IA_UNWINDING_SUM_AMOUNT            
@@ -561,9 +561,9 @@ BEGIN
       ,CAST(COALESCE(CCF,''0'') AS NUMERIC(36,2)) AS CCF
       ,CAST(COALESCE(CCF_RULE_ID,''0'') AS INTEGER) AS CCF_RULE_ID		            
       ,CCF_EFF_DATE::DATE           
-      ,ECL_AMOUNT_BFL            
+      ,EIL_AMOUNT_BFL            
       ,AVG_EIR            
-      ,ECL_MODEL_ID            
+      ,EIL_MODEL_ID            
       ,SEGMENTATION_ID            
       ,PD_ME_MODEL_ID            
       ,DEFAULT_RULE_ID            
@@ -583,7 +583,7 @@ BEGIN
       ,EXT_RATING_AGENCY          
       ,EXT_RATING_CODE          
       ,EXT_INIT_RATING_CODE          
-      ,INTEREST_TYPE          
+      ,MARGIN_TYPE          
       ,SOVEREIGN_FLAG          
       ,ISIN_CODE          
       ,INV_TYPE          
@@ -620,7 +620,7 @@ BEGIN
       ,ACCOUNT_NUMBER            
       ,PREVIOUS_ACCOUNT_NUMBER            
       ,ACCOUNT_STATUS            
-      ,INTEREST_RATE            
+      ,MARGIN_RATE            
       ,MARKET_RATE            
       ,PRODUCT_GROUP            
       ,PRODUCT_TYPE            
@@ -640,7 +640,7 @@ BEGIN
       ,OUTSTANDING_WO            
       ,PLAFOND            
       ,PLAFOND_CASH            
-      ,INTEREST_ACCRUED            
+      ,MARGIN_ACCRUED            
       ,INSTALLMENT_AMOUNT            
       ,UNUSED_AMOUNT            
       ,DOWN_PAYMENT_AMOUNT            
@@ -658,8 +658,8 @@ BEGIN
       ,REMAINING_TENOR            
       ,PAYMENT_CODE            
       ,PAYMENT_TERM            
-      ,INTEREST_CALCULATION_CODE            
-      ,INTEREST_PAYMENT_TERM            
+      ,MARGIN_CALCULATION_CODE            
+      ,MARGIN_PAYMENT_TERM            
       ,RESTRUCTURE_DATE            
       ,RESTRUCTURE_FLAG            
       ,POCI_FLAG            
@@ -711,9 +711,9 @@ BEGIN
       ,PD_SEGMENT            
       ,BUCKET_GROUP            
       ,BUCKET_ID            
-      ,ECL_12_AMOUNT            
-      ,ECL_LIFETIME_AMOUNT            
-      ,ECL_AMOUNT            
+      ,EIL_12_AMOUNT            
+      ,EIL_LIFETIME_AMOUNT            
+      ,EIL_AMOUNT            
       ,CA_UNWINDING_AMOUNT            
       ,IA_UNWINDING_AMOUNT            
       ,IA_UNWINDING_SUM_AMOUNT            
@@ -748,9 +748,9 @@ BEGIN
       ,CCF            
       ,CCF_RULE_ID            
       ,CCF_EFF_DATE            
-      ,ECL_AMOUNT_BFL            
+      ,EIL_AMOUNT_BFL            
       ,AVG_EIR            
-      ,ECL_MODEL_ID            
+      ,EIL_MODEL_ID            
       ,SEGMENTATION_ID            
       ,PD_ME_MODEL_ID            
       ,DEFAULT_RULE_ID            
@@ -770,7 +770,7 @@ BEGIN
       ,EXT_RATING_AGENCY          
       ,EXT_RATING_CODE          
       ,EXT_INIT_RATING_CODE          
-      ,INTEREST_TYPE          
+      ,MARGIN_TYPE          
       ,SOVEREIGN_FLAG          
       ,ISIN_CODE          
       ,INV_TYPE          
@@ -798,7 +798,7 @@ BEGIN
       ,ACCOUNT_NUMBER            
       ,PREVIOUS_ACCOUNT_NUMBER            
       ,ACCOUNT_STATUS            
-      ,INTEREST_RATE            
+      ,MARGIN_RATE            
       ,MARKET_RATE            
       ,PRODUCT_GROUP            
       ,PRODUCT_TYPE            
@@ -818,7 +818,7 @@ BEGIN
       ,OUTSTANDING_WO            
       ,PLAFOND            
       ,PLAFOND_CASH            
-      ,INTEREST_ACCRUED            
+      ,MARGIN_ACCRUED            
       ,INSTALLMENT_AMOUNT            
       ,UNUSED_AMOUNT            
       ,DOWN_PAYMENT_AMOUNT            
@@ -836,8 +836,8 @@ BEGIN
       ,REMAINING_TENOR            
       ,PAYMENT_CODE            
       ,PAYMENT_TERM            
-      ,INTEREST_CALCULATION_CODE            
-      ,INTEREST_PAYMENT_TERM            
+      ,MARGIN_CALCULATION_CODE            
+      ,MARGIN_PAYMENT_TERM            
       ,RESTRUCTURE_DATE            
       ,RESTRUCTURE_FLAG            
       ,POCI_FLAG            
@@ -889,9 +889,9 @@ BEGIN
       ,PD_SEGMENT            
       ,BUCKET_GROUP            
       ,BUCKET_ID            
-      ,ECL_12_AMOUNT            
-      ,ECL_LIFETIME_AMOUNT            
-      ,ECL_AMOUNT            
+      ,EIL_12_AMOUNT            
+      ,EIL_LIFETIME_AMOUNT            
+      ,EIL_AMOUNT            
       ,CA_UNWINDING_AMOUNT            
       ,IA_UNWINDING_AMOUNT            
       ,IA_UNWINDING_SUM_AMOUNT            
@@ -926,9 +926,9 @@ BEGIN
       ,CAST(COALESCE(CCF,''0'') AS NUMERIC(36,2)) AS CCF            
       ,CAST(COALESCE(CCF_RULE_ID,''0'') AS INTEGER) AS CCF_RULE_ID            
       ,CCF_EFF_DATE::DATE            
-      ,ECL_AMOUNT_BFL            
+      ,EIL_AMOUNT_BFL            
       ,AVG_EIR            
-      ,ECL_MODEL_ID            
+      ,EIL_MODEL_ID            
       ,SEGMENTATION_ID            
       ,PD_ME_MODEL_ID            
       ,DEFAULT_RULE_ID            
@@ -948,7 +948,7 @@ BEGIN
       ,EXT_RATING_AGENCY          
       ,EXT_RATING_CODE          
       ,EXT_INIT_RATING_CODE          
-      ,INTEREST_TYPE          
+      ,MARGIN_TYPE          
       ,SOVEREIGN_FLAG          
       ,ISIN_CODE          
       ,INV_TYPE          

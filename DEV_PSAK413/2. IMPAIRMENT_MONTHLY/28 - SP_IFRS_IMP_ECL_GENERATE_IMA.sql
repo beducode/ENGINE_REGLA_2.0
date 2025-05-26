@@ -124,7 +124,7 @@ BEGIN
     V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE TMP_IFRS_ECL_MODEL_' || P_RUNID || ' AS
     SELECT
     DISTINCT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' AS DOWNLOAD_DATE,
-    A.PKID AS ECL_MODEL_ID,
+    A.PKID AS EIL_MODEL_ID,
     B.EAD_MODEL_ID,
     A.ECL_MODEL_NAME,
     I.SUB_SEGMENT AS SUB_SEGMENT_EAD,
@@ -166,17 +166,17 @@ BEGIN
 FROM
     IFRS_ECL_MODEL_HEADER A
     JOIN IFRS_ECL_MODEL_DETAIL_EAD B
-    ON A.PKID = B.ECL_MODEL_ID
+    ON A.PKID = B.EIL_MODEL_ID
     JOIN ' || V_TABLEEADCONFIG || ' C
     ON B.EAD_MODEL_ID = C.PKID
     JOIN IFRS_ECL_MODEL_DETAIL_LGD D
-    ON A.PKID = D.ECL_MODEL_ID
+    ON A.PKID = D.EIL_MODEL_ID
     AND B.SEGMENTATION_ID = D.SEGMENTATION_ID
     JOIN IFRS_ECL_MODEL_DETAIL_PD E
-    ON A.PKID = E.ECL_MODEL_ID
+    ON A.PKID = E.EIL_MODEL_ID
     AND B.SEGMENTATION_ID = E.SEGMENTATION_ID
     JOIN IFRS_ECL_MODEL_DETAIL_PF F
-    ON A.PKID = F.ECL_MODEL_ID
+    ON A.PKID = F.EIL_MODEL_ID
     AND B.SEGMENTATION_ID = F.SEGMENTATION_ID
     LEFT JOIN ' || V_TABLELGDCONFIG || ' G
     ON D.LGD_MODEL_ID = G.PKID
@@ -222,7 +222,7 @@ FROM
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE TMP_IFRS_ECL_MODEL_' || P_RUNID || ' SET EAD_BALANCE = REPLACE(EAD_BALANCE,''INTEREST_ACCRUED'',''A.INTEREST_ACCRUED'')';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE TMP_IFRS_ECL_MODEL_' || P_RUNID || ' SET EAD_BALANCE = REPLACE(EAD_BALANCE,''MARGIN_ACCRUED'',''A.MARGIN_ACCRUED'')';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -287,7 +287,7 @@ FROM
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE TMP_QRY AS
-    SELECT ROW_NUMBER() OVER (ORDER BY A.ECL_MODEL_ID) AS RN, 
+    SELECT ROW_NUMBER() OVER (ORDER BY A.EIL_MODEL_ID) AS RN, 
     ' || '''
     SELECT                                        
     A.DOWNLOAD_DATE,                                                          
@@ -311,21 +311,21 @@ FROM
     '' || COALESCE('''''''' || A.SUB_SEGMENT_PD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_PD,
     '' || COALESCE('''''''' || A.SUB_SEGMENT_LGD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_LGD,
     '' || COALESCE('''''''' || A.SUB_SEGMENT_EAD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_EAD,
-    COALESCE(E.ECL_AMOUNT,0) AS PREV_ECL_AMOUNT,
+    COALESCE(E.EIL_AMOUNT,0) AS PREV_ECL_AMOUNT,
     '' || COALESCE('''''''' || A.BUCKET_GROUP || '''''''',' || '''''''''''''' || ') || '' AS BUCKET_GROUP,
     D.BUCKET_ID,                                                      
     A.REVOLVING_FLAG,                                                          
-    CASE WHEN COALESCE(A.EIR, 0) <> 0 THEN A.EIR WHEN COALESCE(A.INTEREST_RATE, 0) <> 0 THEN A.INTEREST_RATE ELSE F.AVG_EIR * 100.00 END AS EIR ,                                                      
+    CASE WHEN COALESCE(A.EIR, 0) <> 0 THEN A.EIR WHEN COALESCE(A.MARGIN_RATE, 0) <> 0 THEN A.MARGIN_RATE ELSE F.AVG_EIR * 100.00 END AS EIR ,                                                      
     A.OUTSTANDING,                                                          
     COALESCE(A.UNAMORT_COST_AMT,0) AS UNAMORT_COST_AMT,                                                          
     COALESCE(A.UNAMORT_FEE_AMT,0) AS UNAMORT_FEE_AMT,           
-    COALESCE(CASE WHEN A.INTEREST_ACCRUED < 0 THEN 0 ELSE A.INTEREST_ACCRUED END, 0) AS INTEREST_ACCRUED,                                            
+    COALESCE(CASE WHEN A.MARGIN_ACCRUED < 0 THEN 0 ELSE A.MARGIN_ACCRUED END, 0) AS MARGIN_ACCRUED,                                            
     COALESCE(A.UNUSED_AMOUNT,0) AS UNUSED_AMOUNT,                                                          
     COALESCE(A.FAIR_VALUE_AMOUNT,0) AS FAIR_VALUE_AMOUNT,
     CASE WHEN A.PRODUCT_TYPE_1 <> ''''PRK'''' AND A.DATA_SOURCE NOT IN  (''''LIMIT'''',''''LIMIT_T24'''') THEN
     COALESCE(CASE WHEN A.BI_COLLECTABILITY >= 3 THEN '' || CASE
-    WHEN A.EAD_BALANCE LIKE ''%A.INTEREST_ACCRUED%'' THEN
-        REPLACE(REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0''), ''A.INTEREST_ACCRUED'', ''0'')
+    WHEN A.EAD_BALANCE LIKE ''%A.MARGIN_ACCRUED%'' THEN
+        REPLACE(REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0''), ''A.MARGIN_ACCRUED'', ''0'')
     ELSE
         REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0'')
     END || '' ELSE '' || REPLACE(
@@ -335,25 +335,25 @@ FROM
         ELSE
             REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0'')
     END,
-    ''A.INTEREST_ACCRUED'',
-    ''CASE WHEN A.INTEREST_ACCRUED < 0 THEN   0 ELSE A.INTEREST_ACCRUED END'') || '' END, 0)                                       
+    ''A.MARGIN_ACCRUED'',
+    ''CASE WHEN A.MARGIN_ACCRUED < 0 THEN   0 ELSE A.MARGIN_ACCRUED END'') || '' END, 0)                                       
     ELSE                                                      
     COALESCE(CASE WHEN A.BI_COLLECTABILITY >= 3 THEN '' || CASE
-    WHEN A.EAD_BALANCE LIKE ''%A.INTEREST_ACCRUED%'' THEN
-        REPLACE(REPLACE(A.EAD_BALANCE, ''A.INTEREST_ACCRUED'', ''0''), ''A.UNUSED_AMOUNT'', ''0'')
+    WHEN A.EAD_BALANCE LIKE ''%A.MARGIN_ACCRUED%'' THEN
+        REPLACE(REPLACE(A.EAD_BALANCE, ''A.MARGIN_ACCRUED'', ''0''), ''A.UNUSED_AMOUNT'', ''0'')
     ELSE
         REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0'')
     END || '' WHEN A.DPD_FINAL > 30 THEN '' || REPLACE(REPLACE(A.EAD_BALANCE,
     ''A.UNUSED_AMOUNT'',
     ''0''),
-    ''A.INTEREST_ACCRUED'',
-    ''CASE WHEN A.INTEREST_ACCRUED < 0 THEN 0 ELSE A.INTEREST_ACCRUED END'') ||
+    ''A.MARGIN_ACCRUED'',
+    ''CASE WHEN A.MARGIN_ACCRUED < 0 THEN 0 ELSE A.MARGIN_ACCRUED END'') ||
     '' ELSE '' || REPLACE(A.EAD_BALANCE,
-    ''A.INTEREST_ACCRUED'',
-    ''CASE WHEN A.INTEREST_ACCRUED < 0 THEN 0 ELSE A.INTEREST_ACCRUED END'') || '' END, 0)                                                          
+    ''A.MARGIN_ACCRUED'',
+    ''CASE WHEN A.MARGIN_ACCRUED < 0 THEN 0 ELSE A.MARGIN_ACCRUED END'') || '' END, 0)                                                          
     END AS EAD_BALANCE,
     COALESCE(A.PLAFOND,0) PLAFOND, 
-    '' || COALESCE(CAST(A.ECL_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS ECL_MODEL_ID, 
+    '' || COALESCE(CAST(A.EIL_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS EIL_MODEL_ID, 
     '' || COALESCE(CAST(A.EAD_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS EAD_MODEL_ID, 
     '' || COALESCE(CAST(A.CCF_FLAG AS VARCHAR(10)),' || '''''''1''''''' || ') || '' AS CCF_FLAG, 
     '' || COALESCE(CAST(A.CCF_RULES_ID AS VARCHAR(10)),''NULL'') || '' AS CCF_RULE_ID, 
@@ -454,12 +454,12 @@ FROM
         ,OUTSTANDING        
         ,UNAMORT_COST_AMT        
         ,UNAMORT_FEE_AMT        
-        ,INTEREST_ACCRUED        
+        ,MARGIN_ACCRUED        
         ,UNUSED_AMOUNT        
         ,FAIR_VALUE_AMOUNT        
         ,EAD_BALANCE        
         ,PLAFOND        
-        ,ECL_MODEL_ID        
+        ,EIL_MODEL_ID        
         ,EAD_MODEL_ID        
         ,CCF_FLAG        
         ,CCF_RULES_ID        
@@ -558,7 +558,7 @@ FROM
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ECL_MODEL_CONFIG_HIST (          
     DOWNLOAD_DATE          
-    ,ECL_MODEL_ID           
+    ,EIL_MODEL_ID           
     ,ECL_MODEL_NAME          
     ,SEGMENTATION_ID          
     ,SEGMENTATION_NAME          
@@ -589,7 +589,7 @@ FROM
     ,GROUP_SEGMENT          
     )   
     SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' AS DOWNLOAD_DATE,
-    ECL_MODEL_ID,
+    EIL_MODEL_ID,
     ECL_MODEL_NAME,
     SEGMENTATION_ID,
     SEGMENTATION_NAME,

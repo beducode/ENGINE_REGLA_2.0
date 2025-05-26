@@ -165,7 +165,7 @@ BEGIN
     LGD_SEGMENT,                
     EAD_SEGMENT,                
     PREV_ECL_AMOUNT,                
-    ECL_MODEL_ID,                
+    EIL_MODEL_ID,                
     EAD_MODEL_ID,                
     CCF_RULES_ID,                 
     LGD_MODEL_ID,                 
@@ -177,7 +177,7 @@ BEGIN
     OUTSTANDING,                
     UNAMORT_COST_AMT,                
     UNAMORT_FEE_AMT,                
-    INTEREST_ACCRUED,                
+    MARGIN_ACCRUED,                
     UNUSED_AMOUNT,                
     FAIR_VALUE_AMOUNT,                
     EAD_BALANCE,                
@@ -207,7 +207,7 @@ BEGIN
     A.LGD_SEGMENT,              
     A.EAD_SEGMENT,              
     A.PREV_ECL_AMOUNT,              
-    A.ECL_MODEL_ID,              
+    A.EIL_MODEL_ID,              
     A.EAD_MODEL_ID,              
     A.CCF_RULES_ID,               
     A.LGD_MODEL_ID,              
@@ -219,7 +219,7 @@ BEGIN
     A.OUTSTANDING,              
     A.UNAMORT_COST_AMT,              
     A.UNAMORT_FEE_AMT,              
-    A.INTEREST_ACCRUED,              
+    A.MARGIN_ACCRUED,              
     A.UNUSED_AMOUNT,              
     A.FAIR_VALUE_AMOUNT,              
     A.EAD_BALANCE,              
@@ -231,7 +231,7 @@ BEGIN
     A.SEGMENT_FLAG               
     FROM ' || V_TABLEINSERT1 || '  A              
     JOIN IFRS_ECL_MODEL_DETAIL_EAD B              
-    ON A.CCF_RULES_ID = B.CCF_MODEL_ID AND A.ECL_MODEL_ID = B.ECL_MODEL_ID AND A.SEGMENTATION_ID = B.SEGMENTATION_ID              
+    ON A.CCF_RULES_ID = B.CCF_MODEL_ID AND A.EIL_MODEL_ID = B.EIL_MODEL_ID AND A.SEGMENTATION_ID = B.SEGMENTATION_ID              
     LEFT JOIN IFRS_EAD_CCF_HEADER C ON (CASE B.CCF_EFF_DATE_OPTION WHEN ''SELECT_DATE'' THEN B.CCF_EFF_DATE WHEN ''LAST_MONTH'' THEN A.DOWNLOAD_DATE - 1 END = C.DOWNLOAD_DATE) AND A.CCF_RULES_ID = C.CCF_RULE_ID                
     LEFT JOIN ' || V_TABLECCFCONFIG || ' D ON C.CCF_RULE_ID = D.PKID               
     WHERE (              

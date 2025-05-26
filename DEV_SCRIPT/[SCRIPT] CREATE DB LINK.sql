@@ -4,7 +4,7 @@ CREATE EXTENSION dblink;
 ---- STEP #2
 CREATE SERVER workflow_db_access
 FOREIGN DATA WRAPPER dblink_fdw
-	OPTIONS (host 'postgre-dev.regla.cloud', dbname 'NTT_IMPAIRMENT', port '5432');
+	OPTIONS (host 'postgre.dev.regla.cloud', dbname 'NTT_IMPAIRMENT', port '5432');
 
 ---- STEP #3
 GRANT USAGE ON FOREIGN SERVER workflow_db_access TO reglaalloy01;
@@ -25,11 +25,11 @@ SELECT * FROM dblink('workflow_db_access', 'SELECT pkid, segment_code, ccf_metho
 	AS IFRS_CCF_RULES_CONFIG(PKID BIGINT, SEGMENT_CODE VARCHAR(50), CCF_METHOD VARCHAR(500)); 
 
 
-#2
+-- #2
 
 CREATE SERVER workflow_ifrs_db_access
 FOREIGN DATA WRAPPER dblink_fdw
-	OPTIONS (host 'postgre-dev.regla.cloud', dbname 'NTT_IFRS9', port '5432');
+	OPTIONS (host 'postgre.dev.regla.cloud', dbname 'NTT_IFRS9', port '5432');
 
 GRANT USAGE ON FOREIGN SERVER workflow_ifrs_db_access TO reglaalloy01;
 

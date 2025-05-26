@@ -94,7 +94,7 @@ BEGIN
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM IFRS_PD_RULES_CONFIG WHERE 0=1';
+        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM IFRS_PD_RULES_CONFIG';
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
 
@@ -102,7 +102,7 @@ BEGIN
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT2 || ' AS SELECT * FROM IFRS_CCF_RULES_CONFIG WHERE 0=1';
+        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT2 || ' AS SELECT * FROM IFRS_CCF_RULES_CONFIG';
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
 
@@ -110,7 +110,7 @@ BEGIN
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT3 || ' AS SELECT * FROM IFRS_EAD_RULES_CONFIG WHERE 0=1';
+        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT3 || ' AS SELECT * FROM IFRS_EAD_RULES_CONFIG';
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
 
@@ -118,7 +118,7 @@ BEGIN
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_LGD_RULES_CONFIG WHERE 0=1';
+        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_LGD_RULES_CONFIG';
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
 
@@ -127,12 +127,12 @@ BEGIN
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT5 || ' AS SELECT * FROM IFRS_MASTER_PRODUCT_PARAM WHERE 0=1';
+        V_STR_QUERY := 'CREATE TABLE ' || V_TABLEINSERT5 || ' AS SELECT * FROM IFRS_MASTER_PRODUCT_PARAM';
         V_STR_QUERY := V_STR_QUERY || '';
         EXECUTE (V_STR_QUERY);
         -------- ====== PRE SIMULATION TABLE ======
 
-        -------- ====== BODY ======
+        ------ ====== BODY ======
         -------- ====== PD ======
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' (
@@ -245,8 +245,9 @@ BEGIN
         -------- ====== MASTER PRODUCT PARAM ======
 
         RAISE NOTICE 'SP_IFRS_INITIAL_UPDATE | AFFECTED RECORD : %', V_RETURNROWS2;
+
     ELSE
-        -------- ====== PD ======
+        ------ ====== PD ======
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT1 || '';
         EXECUTE (V_STR_QUERY);

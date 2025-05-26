@@ -154,7 +154,7 @@ BEGIN
     FROM ' || V_TABLEINSERT1 || ' A
     JOIN ' || V_TABLEEADCONFIG || ' B
     ON A.EAD_MODEL_ID = B.PKID
-    WHERE B.EAD_BALANCE LIKE ''%INTEREST_ACCRUED%''';
+    WHERE B.EAD_BALANCE LIKE ''%MARGIN_ACCRUED%''';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -166,7 +166,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE TMP_IFRS_ECL_MODEL_' || P_RUNID || ' SET EAD_BALANCE = REPLACE(EAD_BALANCE,''INTEREST_ACCRUED'',''A.INTEREST_ACCRUED'')';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE TMP_IFRS_ECL_MODEL_' || P_RUNID || ' SET EAD_BALANCE = REPLACE(EAD_BALANCE,''MARGIN_ACCRUED'',''A.MARGIN_ACCRUED'')';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -278,7 +278,7 @@ BEGIN
         LGD_SEGMENT,
         EAD_SEGMENT,
         PREV_ECL_AMOUNT,
-        ECL_MODEL_ID,
+        EIL_MODEL_ID,
         EAD_MODEL_ID,
         CCF_RULES_ID,
         LGD_MODEL_ID,
@@ -290,7 +290,7 @@ BEGIN
         OUTSTANDING,
         UNAMORT_COST_AMT,
         UNAMORT_FEE_AMT,
-        INTEREST_ACCRUED,
+        MARGIN_ACCRUED,
         UNUSED_AMOUNT,
         FAIR_VALUE_AMOUNT,
         EAD_BALANCE,
@@ -321,7 +321,7 @@ BEGIN
         A.LGD_SEGMENT,
         A.EAD_SEGMENT,
         A.PREV_ECL_AMOUNT,
-        A.ECL_MODEL_ID,
+        A.EIL_MODEL_ID,
         A.EAD_MODEL_ID,
         A.CCF_RULES_ID,
         A.LGD_MODEL_ID,
@@ -333,7 +333,7 @@ BEGIN
         CASE WHEN COALESCE(A.OUTSTANDING, 0) - COALESCE(B.PRINCIPAL, 0) < 0 THEN 0 ELSE COALESCE(A.OUTSTANDING, 0) - COALESCE(B.PRINCIPAL, 0) END AS OUTSTANDING,
         A.UNAMORT_COST_AMT,
         A.UNAMORT_FEE_AMT,
-        A.INTEREST_ACCRUED,
+        A.MARGIN_ACCRUED,
         A.UNUSED_AMOUNT,
         A.FAIR_VALUE_AMOUNT,
         A.EAD_BALANCE,
@@ -345,7 +345,7 @@ BEGIN
             FROM
                 TMP_IFRS_ECL_MODEL_' || P_RUNID || ') 
             THEN
-                COALESCE(A.INTEREST_ACCRUED, 0) --- CASE WHEN B.SEQ - 1 >= 1 THEN A.INTEREST_ACCRUED ELSE 0 END
+                COALESCE(A.MARGIN_ACCRUED, 0) --- CASE WHEN B.SEQ - 1 >= 1 THEN A.MARGIN_ACCRUED ELSE 0 END
             ELSE 0
             END - COALESCE(B.PRINCIPAL, 0)) AS DECIMAL(32,6)) AS EAD,
         A.BI_COLLECTABILITY,
@@ -383,7 +383,7 @@ BEGIN
         LGD_SEGMENT,
         EAD_SEGMENT,
         PREV_ECL_AMOUNT,
-        ECL_MODEL_ID,
+        EIL_MODEL_ID,
         EAD_MODEL_ID,
         CCF_RULES_ID,
         LGD_MODEL_ID,
@@ -395,7 +395,7 @@ BEGIN
         OUTSTANDING,
         UNAMORT_COST_AMT,
         UNAMORT_FEE_AMT,
-        INTEREST_ACCRUED,
+        MARGIN_ACCRUED,
         UNUSED_AMOUNT,
         FAIR_VALUE_AMOUNT,
         EAD_BALANCE,
@@ -481,7 +481,7 @@ BEGIN
     LGD_SEGMENT,                         
     EAD_SEGMENT,                         
     PREV_ECL_AMOUNT,                       
-    ECL_MODEL_ID,                   
+    EIL_MODEL_ID,                   
     EAD_MODEL_ID,                     
     CCF_RULES_ID,                         
     LGD_MODEL_ID,                         
@@ -493,7 +493,7 @@ BEGIN
     OUTSTANDING,                       
     UNAMORT_COST_AMT,                       
     UNAMORT_FEE_AMT,                       
-    INTEREST_ACCRUED,                        
+    MARGIN_ACCRUED,                        
     UNUSED_AMOUNT,                       
     FAIR_VALUE_AMOUNT,                       
     EAD_BALANCE,                       
@@ -522,7 +522,7 @@ BEGIN
     LGD_SEGMENT,
     EAD_SEGMENT,
     PREV_ECL_AMOUNT,
-    ECL_MODEL_ID,
+    EIL_MODEL_ID,
     EAD_MODEL_ID,
     CCF_RULES_ID,
     LGD_MODEL_ID,
@@ -534,7 +534,7 @@ BEGIN
     OUTSTANDING,
     UNAMORT_COST_AMT,
     UNAMORT_FEE_AMT,
-    INTEREST_ACCRUED,
+    MARGIN_ACCRUED,
     UNUSED_AMOUNT,
     FAIR_VALUE_AMOUNT,
     EAD_BALANCE,
@@ -609,7 +609,7 @@ BEGIN
                 LGD_SEGMENT,
                 EAD_SEGMENT,
                 PREV_ECL_AMOUNT,
-                ECL_MODEL_ID,
+                EIL_MODEL_ID,
                 EAD_MODEL_ID,
                 CCF_RULES_ID,
                 LGD_MODEL_ID,
@@ -621,7 +621,7 @@ BEGIN
                 OUTSTANDING,
                 UNAMORT_COST_AMT,
                 UNAMORT_FEE_AMT,
-                INTEREST_ACCRUED,
+                MARGIN_ACCRUED,
                 UNUSED_AMOUNT,
                 FAIR_VALUE_AMOUNT,
                 EAD_BALANCE,
@@ -651,7 +651,7 @@ BEGIN
                     LGD_SEGMENT,
                     EAD_SEGMENT,
                     PREV_ECL_AMOUNT,
-                    ECL_MODEL_ID,
+                    EIL_MODEL_ID,
                     EAD_MODEL_ID,
                     CCF_RULES_ID,
                     LGD_MODEL_ID,
@@ -663,7 +663,7 @@ BEGIN
                     OUTSTANDING,
                     UNAMORT_COST_AMT,
                     UNAMORT_FEE_AMT,
-                    INTEREST_ACCRUED,
+                    MARGIN_ACCRUED,
                     UNUSED_AMOUNT,
                     FAIR_VALUE_AMOUNT,
                     EAD_BALANCE,
@@ -709,7 +709,7 @@ BEGIN
             LGD_SEGMENT,
             EAD_SEGMENT,
             PREV_ECL_AMOUNT,
-            ECL_MODEL_ID,
+            EIL_MODEL_ID,
             EAD_MODEL_ID,
             CCF_RULES_ID,
             LGD_MODEL_ID,
@@ -721,7 +721,7 @@ BEGIN
             OUTSTANDING,
             UNAMORT_COST_AMT,
             UNAMORT_FEE_AMT,
-            INTEREST_ACCRUED,
+            MARGIN_ACCRUED,
             UNUSED_AMOUNT,
             FAIR_VALUE_AMOUNT,
             EAD_BALANCE,
@@ -751,7 +751,7 @@ BEGIN
             LGD_SEGMENT,
             EAD_SEGMENT,
             PREV_ECL_AMOUNT,
-            ECL_MODEL_ID,
+            EIL_MODEL_ID,
             EAD_MODEL_ID,
             CCF_RULES_ID,
             LGD_MODEL_ID,
@@ -763,7 +763,7 @@ BEGIN
             OUTSTANDING,
             UNAMORT_COST_AMT,
             UNAMORT_FEE_AMT,
-            INTEREST_ACCRUED,
+            MARGIN_ACCRUED,
             UNUSED_AMOUNT,
             FAIR_VALUE_AMOUNT,
             EAD_BALANCE,

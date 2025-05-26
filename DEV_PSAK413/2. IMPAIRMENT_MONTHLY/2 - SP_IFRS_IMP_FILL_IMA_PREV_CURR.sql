@@ -143,7 +143,7 @@ BEGIN
     ,ACCOUNT_NUMBER                                
     ,PREVIOUS_ACCOUNT_NUMBER                                
     ,ACCOUNT_STATUS                                
-    ,INTEREST_RATE                                
+    ,MARGIN_RATE                                
     ,MARKET_RATE                                
     ,PRODUCT_GROUP                                
     ,PRODUCT_TYPE                                
@@ -163,7 +163,7 @@ BEGIN
     ,OUTSTANDING_WO                                
     ,PLAFOND                                
     ,PLAFOND_CASH                                
-    ,INTEREST_ACCRUED                                
+    ,MARGIN_ACCRUED                                
     ,INSTALLMENT_AMOUNT                                
     ,UNUSED_AMOUNT                                
     ,DOWN_PAYMENT_AMOUNT                                
@@ -181,8 +181,8 @@ BEGIN
     ,REMAINING_TENOR                                
     ,PAYMENT_CODE                                
     ,PAYMENT_TERM                                
-    ,INTEREST_CALCULATION_CODE                                
-    ,INTEREST_PAYMENT_TERM                                
+    ,MARGIN_CALCULATION_CODE                                
+    ,MARGIN_PAYMENT_TERM                                
     ,RESTRUCTURE_DATE                                
     ,RESTRUCTURE_FLAG                                
     ,POCI_FLAG                                
@@ -234,9 +234,9 @@ BEGIN
     ,PD_SEGMENT                                
     ,BUCKET_GROUP                                
     ,BUCKET_ID                                
-    ,ECL_12_AMOUNT                                
-    ,ECL_LIFETIME_AMOUNT                                
-    ,ECL_AMOUNT                                
+    ,EIL_12_AMOUNT                                
+    ,EIL_LIFETIME_AMOUNT                                
+    ,EIL_AMOUNT                                
     ,CA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_SUM_AMOUNT                                
@@ -271,9 +271,9 @@ BEGIN
     ,CCF                                
     ,CCF_RULE_ID                                
     ,CCF_EFF_DATE                              
-    ,ECL_AMOUNT_BFL                                
+    ,EIL_AMOUNT_BFL                                
     ,AVG_EIR                                
-    ,ECL_MODEL_ID                                
+    ,EIL_MODEL_ID                                
     ,SEGMENTATION_ID                                
     ,PD_ME_MODEL_ID                                
     ,DEFAULT_RULE_ID                    
@@ -293,7 +293,7 @@ BEGIN
     ,EXT_RATING_AGENCY            
     ,EXT_RATING_CODE            
     ,EXT_INIT_RATING_CODE            
-    ,INTEREST_TYPE            
+    ,MARGIN_TYPE            
     ,SOVEREIGN_FLAG            
     ,ISIN_CODE            
     ,INV_TYPE            
@@ -321,7 +321,7 @@ BEGIN
     ,ACCOUNT_NUMBER                                
     ,PREVIOUS_ACCOUNT_NUMBER                                
     ,ACCOUNT_STATUS                                
-    ,INTEREST_RATE                                
+    ,MARGIN_RATE                                
     ,MARKET_RATE                                
     ,PRODUCT_GROUP                                
     ,PRODUCT_TYPE                                
@@ -341,7 +341,7 @@ BEGIN
     ,OUTSTANDING_WO                                
     ,PLAFOND                                
     ,PLAFOND_CASH                                
-    ,COALESCE(INTEREST_ACCRUED, 0) AS INTEREST_ACCRUED            
+    ,COALESCE(MARGIN_ACCRUED, 0) AS MARGIN_ACCRUED            
     ,INSTALLMENT_AMOUNT                                
     ,COALESCE(UNUSED_AMOUNT, 0) AS UNUSED_AMOUNT            
     ,DOWN_PAYMENT_AMOUNT                                
@@ -359,8 +359,8 @@ BEGIN
     ,REMAINING_TENOR                                
     ,PAYMENT_CODE                                
     ,PAYMENT_TERM                                
-    ,INTEREST_CALCULATION_CODE                                
-    ,INTEREST_PAYMENT_TERM                                
+    ,MARGIN_CALCULATION_CODE                                
+    ,MARGIN_PAYMENT_TERM                                
     ,RESTRUCTURE_DATE                                
     ,RESTRUCTURE_FLAG                     
     ,POCI_FLAG                                
@@ -412,9 +412,9 @@ BEGIN
     ,NULL AS PD_SEGMENT                                
     ,BUCKET_GROUP                                
     ,BUCKET_ID                                
-    ,ECL_12_AMOUNT                                
-    ,ECL_LIFETIME_AMOUNT                                
-    ,CASE WHEN IMPAIRED_FLAG = ''I'' THEN ECL_AMOUNT ELSE 0 END AS ECL_AMOUNT                                
+    ,EIL_12_AMOUNT                                
+    ,EIL_LIFETIME_AMOUNT                                
+    ,CASE WHEN IMPAIRED_FLAG = ''I'' THEN EIL_AMOUNT ELSE 0 END AS EIL_AMOUNT                                
     ,CA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_SUM_AMOUNT                                
@@ -449,9 +449,9 @@ BEGIN
     ,NULL AS CCF                                
     ,NULL AS CCF_RULE_ID      
     ,NULL AS CCF_EFF_DATE                                
-    ,CASE WHEN IMPAIRED_FLAG = ''I'' THEN ECL_AMOUNT_BFL ELSE 0 END ECL_AMOUNT_BFL                                
+    ,CASE WHEN IMPAIRED_FLAG = ''I'' THEN EIL_AMOUNT_BFL ELSE 0 END EIL_AMOUNT_BFL                                
     ,AVG_EIR                                
-    ,ECL_MODEL_ID                                
+    ,EIL_MODEL_ID                                
     ,SEGMENTATION_ID                                
     ,PD_ME_MODEL_ID                                
     ,DEFAULT_RULE_ID                                
@@ -471,7 +471,7 @@ BEGIN
     ,EXT_RATING_AGENCY            
     ,EXT_RATING_CODE            
     ,EXT_INIT_RATING_CODE            
-    ,INTEREST_TYPE            
+    ,MARGIN_TYPE            
     ,SOVEREIGN_FLAG            
     ,ISIN_CODE            
     ,INV_TYPE            
@@ -546,7 +546,7 @@ BEGIN
     ,ACCOUNT_NUMBER                                
     ,PREVIOUS_ACCOUNT_NUMBER                                
     ,ACCOUNT_STATUS                                
-    ,INTEREST_RATE                                
+    ,MARGIN_RATE                                
     ,MARKET_RATE                    
     ,PRODUCT_GROUP                                
     ,PRODUCT_TYPE                                
@@ -566,7 +566,7 @@ BEGIN
     ,OUTSTANDING_WO                                
     ,PLAFOND                                
     ,PLAFOND_CASH                                
-    ,INTEREST_ACCRUED                                
+    ,MARGIN_ACCRUED                                
     ,INSTALLMENT_AMOUNT                                
     ,UNUSED_AMOUNT                                
     ,DOWN_PAYMENT_AMOUNT                                
@@ -584,8 +584,8 @@ BEGIN
     ,REMAINING_TENOR                                
     ,PAYMENT_CODE                                
     ,PAYMENT_TERM                   
-    ,INTEREST_CALCULATION_CODE                                
-    ,INTEREST_PAYMENT_TERM                                
+    ,MARGIN_CALCULATION_CODE                                
+    ,MARGIN_PAYMENT_TERM                                
     ,RESTRUCTURE_DATE                                
     ,RESTRUCTURE_FLAG                                
     ,POCI_FLAG                                
@@ -637,9 +637,9 @@ BEGIN
     ,PD_SEGMENT                                
     ,BUCKET_GROUP                                
     ,BUCKET_ID                                
-    ,ECL_12_AMOUNT                                
-    ,ECL_LIFETIME_AMOUNT                                
-    ,ECL_AMOUNT                                
+    ,EIL_12_AMOUNT                                
+    ,EIL_LIFETIME_AMOUNT                                
+    ,EIL_AMOUNT                                
     ,CA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_SUM_AMOUNT                                
@@ -674,9 +674,9 @@ BEGIN
     ,CCF                                
     ,CCF_RULE_ID                                
     ,CCF_EFF_DATE                                
-    ,ECL_AMOUNT_BFL                                
+    ,EIL_AMOUNT_BFL                                
     ,AVG_EIR                         
-    ,ECL_MODEL_ID                                
+    ,EIL_MODEL_ID                                
     ,SEGMENTATION_ID                                
     ,PD_ME_MODEL_ID                                
     ,DEFAULT_RULE_ID                                
@@ -696,7 +696,7 @@ BEGIN
     ,EXT_RATING_AGENCY            
     ,EXT_RATING_CODE            
     ,EXT_INIT_RATING_CODE            
-    ,INTEREST_TYPE            
+    ,MARGIN_TYPE            
     ,SOVEREIGN_FLAG      
     ,ISIN_CODE            
     ,INV_TYPE            
@@ -724,7 +724,7 @@ BEGIN
     ,ACCOUNT_NUMBER                                
     ,PREVIOUS_ACCOUNT_NUMBER                                
     ,ACCOUNT_STATUS                                
-    ,INTEREST_RATE                                
+    ,MARGIN_RATE                                
     ,MARKET_RATE                                
     ,PRODUCT_GROUP                      
     ,PRODUCT_TYPE                                
@@ -744,7 +744,7 @@ BEGIN
     ,OUTSTANDING_WO                                
     ,PLAFOND                                
     ,PLAFOND_CASH                                
-    ,COALESCE(INTEREST_ACCRUED, 0) AS INTEREST_ACCRUED            
+    ,COALESCE(MARGIN_ACCRUED, 0) AS MARGIN_ACCRUED            
     ,INSTALLMENT_AMOUNT                                
     ,COALESCE(UNUSED_AMOUNT, 0) AS UNUSED_AMOUNT            
     ,DOWN_PAYMENT_AMOUNT                                
@@ -762,8 +762,8 @@ BEGIN
     ,REMAINING_TENOR                                
     ,PAYMENT_CODE                                
     ,PAYMENT_TERM                                
-    ,INTEREST_CALCULATION_CODE                                
-    ,INTEREST_PAYMENT_TERM                           
+    ,MARGIN_CALCULATION_CODE                                
+    ,MARGIN_PAYMENT_TERM                           
     ,RESTRUCTURE_DATE                                
     ,RESTRUCTURE_FLAG            
     ,POCI_FLAG                                
@@ -815,9 +815,9 @@ BEGIN
     ,NULL AS PD_SEGMENT                        
     ,BUCKET_GROUP                                
     ,BUCKET_ID                                
-    ,ECL_12_AMOUNT                                
-    ,ECL_LIFETIME_AMOUNT                                
-    ,ECL_AMOUNT                                
+    ,EIL_12_AMOUNT                                
+    ,EIL_LIFETIME_AMOUNT                                
+    ,EIL_AMOUNT                                
     ,CA_UNWINDING_AMOUNT             
     ,IA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_SUM_AMOUNT                                
@@ -852,9 +852,9 @@ BEGIN
     ,NULL AS CCF                                
     ,NULL AS CCF_RULE_ID                                
     ,NULL AS CCF_EFF_DATE                                
-    ,ECL_AMOUNT_BFL                                
+    ,EIL_AMOUNT_BFL                                
     ,AVG_EIR                                
-    ,ECL_MODEL_ID                                
+    ,EIL_MODEL_ID                                
     ,SEGMENTATION_ID                                
     ,PD_ME_MODEL_ID                                
     ,DEFAULT_RULE_ID                                
@@ -874,7 +874,7 @@ BEGIN
     ,EXT_RATING_AGENCY            
     ,EXT_RATING_CODE            
     ,EXT_INIT_RATING_CODE            
-    ,INTEREST_TYPE            
+    ,MARGIN_TYPE            
     ,SOVEREIGN_FLAG            
     ,ISIN_CODE            
     ,INV_TYPE            
@@ -915,7 +915,7 @@ BEGIN
     ,ACCOUNT_NUMBER                                
     ,PREVIOUS_ACCOUNT_NUMBER                   
     ,ACCOUNT_STATUS                                
-    ,INTEREST_RATE                                
+    ,MARGIN_RATE                                
     ,MARKET_RATE                                
     ,PRODUCT_GROUP                                
     ,PRODUCT_TYPE                                
@@ -935,7 +935,7 @@ BEGIN
     ,OUTSTANDING_WO                                
     ,PLAFOND                               
     ,PLAFOND_CASH                                
-    ,INTEREST_ACCRUED                                
+    ,MARGIN_ACCRUED                                
     ,INSTALLMENT_AMOUNT                                
     ,UNUSED_AMOUNT                                
     ,DOWN_PAYMENT_AMOUNT                                
@@ -953,8 +953,8 @@ BEGIN
     ,REMAINING_TENOR                                
     ,PAYMENT_CODE                                
     ,PAYMENT_TERM                                
-    ,INTEREST_CALCULATION_CODE                                
-    ,INTEREST_PAYMENT_TERM                                
+    ,MARGIN_CALCULATION_CODE                                
+    ,MARGIN_PAYMENT_TERM                                
     ,RESTRUCTURE_DATE                                
     ,RESTRUCTURE_FLAG                                
     ,POCI_FLAG                                
@@ -1006,9 +1006,9 @@ BEGIN
     ,PD_SEGMENT                                
     ,BUCKET_GROUP                                
     ,BUCKET_ID                                
-    ,ECL_12_AMOUNT                                
-    ,ECL_LIFETIME_AMOUNT                                
-    ,ECL_AMOUNT                                
+    ,EIL_12_AMOUNT                                
+    ,EIL_LIFETIME_AMOUNT                                
+    ,EIL_AMOUNT                                
     ,CA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_SUM_AMOUNT                                
@@ -1043,9 +1043,9 @@ BEGIN
     ,CCF                                
     ,CCF_RULE_ID                                
     ,CCF_EFF_DATE                                
-    ,ECL_AMOUNT_BFL                                
+    ,EIL_AMOUNT_BFL                                
     ,AVG_EIR                                
-    ,ECL_MODEL_ID                                
+    ,EIL_MODEL_ID                                
     ,SEGMENTATION_ID                                
     ,PD_ME_MODEL_ID                                
     ,DEFAULT_RULE_ID                                
@@ -1065,7 +1065,7 @@ BEGIN
     ,EXT_RATING_AGENCY            
     ,EXT_RATING_CODE            
     ,EXT_INIT_RATING_CODE            
-    ,INTEREST_TYPE            
+    ,MARGIN_TYPE            
     ,SOVEREIGN_FLAG            
     ,ISIN_CODE            
     ,INV_TYPE            
@@ -1093,7 +1093,7 @@ BEGIN
     ,ACCOUNT_NUMBER                                
     ,PREVIOUS_ACCOUNT_NUMBER                                
     ,ACCOUNT_STATUS                                
-    ,INTEREST_RATE                                
+    ,MARGIN_RATE                                
     ,MARKET_RATE                                
     ,PRODUCT_GROUP                                
     ,PRODUCT_TYPE                                
@@ -1113,7 +1113,7 @@ BEGIN
     ,OUTSTANDING_WO                                
     ,PLAFOND                                
     ,PLAFOND_CASH                                
-    ,COALESCE(INTEREST_ACCRUED, 0) AS INTEREST_ACCRUED            
+    ,COALESCE(MARGIN_ACCRUED, 0) AS MARGIN_ACCRUED            
     ,INSTALLMENT_AMOUNT                                
     ,COALESCE(UNUSED_AMOUNT, 0) AS UNUSED_AMOUNT            
     ,DOWN_PAYMENT_AMOUNT                                
@@ -1131,8 +1131,8 @@ BEGIN
     ,REMAINING_TENOR                 
     ,PAYMENT_CODE                                
     ,PAYMENT_TERM                             
-    ,INTEREST_CALCULATION_CODE                                
-    ,INTEREST_PAYMENT_TERM                                
+    ,MARGIN_CALCULATION_CODE                                
+    ,MARGIN_PAYMENT_TERM                                
     ,RESTRUCTURE_DATE                                
     ,RESTRUCTURE_FLAG                                
     ,POCI_FLAG                                
@@ -1184,9 +1184,9 @@ BEGIN
     ,PD_SEGMENT                         
     ,BUCKET_GROUP                                
     ,BUCKET_ID                                
-    ,ECL_12_AMOUNT                                
-    ,ECL_LIFETIME_AMOUNT                                
-    ,ECL_AMOUNT                                
+    ,EIL_12_AMOUNT                                
+    ,EIL_LIFETIME_AMOUNT                                
+    ,EIL_AMOUNT                                
     ,CA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_AMOUNT                                
     ,IA_UNWINDING_SUM_AMOUNT                                
@@ -1221,9 +1221,9 @@ BEGIN
     ,CCF                                
     ,CCF_RULE_ID                                
     ,CCF_EFF_DATE                                
-    ,ECL_AMOUNT_BFL                                
+    ,EIL_AMOUNT_BFL                                
     ,AVG_EIR                                
-    ,ECL_MODEL_ID                                
+    ,EIL_MODEL_ID                                
     ,SEGMENTATION_ID                                
     ,PD_ME_MODEL_ID                                
     ,DEFAULT_RULE_ID                                
@@ -1243,7 +1243,7 @@ BEGIN
     ,EXT_RATING_AGENCY            
     ,EXT_RATING_CODE            
     ,EXT_INIT_RATING_CODE            
-    ,INTEREST_TYPE            
+    ,MARGIN_TYPE            
     ,SOVEREIGN_FLAG            
     ,ISIN_CODE            
     ,INV_TYPE            
