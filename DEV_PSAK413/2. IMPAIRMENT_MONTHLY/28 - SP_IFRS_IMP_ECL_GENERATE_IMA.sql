@@ -126,7 +126,7 @@ BEGIN
     DISTINCT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' AS DOWNLOAD_DATE,
     A.PKID AS EIL_MODEL_ID,
     B.EAD_MODEL_ID,
-    A.ECL_MODEL_NAME,
+    A.EIL_MODEL_NAME,
     I.SUB_SEGMENT AS SUB_SEGMENT_EAD,
     B.SEGMENTATION_ID,
     N.SUB_SEGMENT AS SEGMENTATION_NAME,
@@ -311,7 +311,7 @@ FROM
     '' || COALESCE('''''''' || A.SUB_SEGMENT_PD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_PD,
     '' || COALESCE('''''''' || A.SUB_SEGMENT_LGD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_LGD,
     '' || COALESCE('''''''' || A.SUB_SEGMENT_EAD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_EAD,
-    COALESCE(E.EIL_AMOUNT,0) AS PREV_ECL_AMOUNT,
+    COALESCE(E.EIL_AMOUNT,0) AS PREV_EIL_AMOUNT,
     '' || COALESCE('''''''' || A.BUCKET_GROUP || '''''''',' || '''''''''''''' || ') || '' AS BUCKET_GROUP,
     D.BUCKET_ID,                                                      
     A.REVOLVING_FLAG,                                                          
@@ -446,7 +446,7 @@ FROM
         ,PD_SEGMENT        
         ,LGD_SEGMENT        
         ,EAD_SEGMENT        
-        ,PREV_ECL_AMOUNT        
+        ,PREV_EIL_AMOUNT        
         ,BUCKET_GROUP        
         ,BUCKET_ID        
         ,REVOLVING_FLAG        
@@ -559,7 +559,7 @@ FROM
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ECL_MODEL_CONFIG_HIST (          
     DOWNLOAD_DATE          
     ,EIL_MODEL_ID           
-    ,ECL_MODEL_NAME          
+    ,EIL_MODEL_NAME          
     ,SEGMENTATION_ID          
     ,SEGMENTATION_NAME          
     ,EAD_MODEL_ID          
@@ -590,7 +590,7 @@ FROM
     )   
     SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' AS DOWNLOAD_DATE,
     EIL_MODEL_ID,
-    ECL_MODEL_NAME,
+    EIL_MODEL_NAME,
     SEGMENTATION_ID,
     SEGMENTATION_NAME,
     EAD_MODEL_ID,

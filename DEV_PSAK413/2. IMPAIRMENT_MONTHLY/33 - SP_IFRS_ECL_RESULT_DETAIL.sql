@@ -346,7 +346,7 @@ BEGIN
       PD_SEGMENT,        
       LGD_SEGMENT,        
       EAD_SEGMENT,        
-      PREV_ECL_AMOUNT,        
+      PREV_EIL_AMOUNT,        
       BUCKET_GROUP,        
       BUCKET_ID,        
       EIL_MODEL_ID,        
@@ -371,8 +371,8 @@ BEGIN
       PD_BFL,        
       LGD,        
       DISC_EAD,        
-      ECL,        
-      ECL_BFL,        
+      EIL,       
+      EIL_BFL,        
       PD,        
       COLL_AMOUNT         
     )  
@@ -394,7 +394,7 @@ BEGIN
       A.PD_SEGMENT,      
       A.LGD_SEGMENT,      
       A.EAD_SEGMENT,      
-      A.PREV_ECL_AMOUNT,      
+      A.PREV_EIL_AMOUNT,      
       A.BUCKET_GROUP,      
       A.BUCKET_ID,      
       A.EIL_MODEL_ID,      
@@ -421,9 +421,9 @@ BEGIN
       CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
       FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END AS DISC_EAD,      
       (CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
-      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * COALESCE(E.PD_FL,C.PD) * COALESCE(D.LGD,1) AS ECL,       
+      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * COALESCE(E.PD_FL,C.PD) * COALESCE(D.LGD,1) AS EIL,       
       (CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
-      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * C.PD * COALESCE(D.LGD,1) AS ECL_BFL,      
+      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * C.PD * COALESCE(D.LGD,1) AS EIL_BFL,      
       E.PD_FL AS PD ,      
       A.COLL_AMOUNT      
       FROM ' || V_TABLEINSERT5 || ' A     
@@ -458,7 +458,7 @@ BEGIN
     PD_SEGMENT,      
     LGD_SEGMENT,      
     EAD_SEGMENT,      
-    PREV_ECL_AMOUNT,      
+    PREV_EIL_AMOUNT,      
     BUCKET_GROUP,      
     BUCKET_ID,      
     EIL_MODEL_ID,      
@@ -483,8 +483,8 @@ BEGIN
     PD_BFL,      
     LGD,      
     DISC_EAD,      
-    ECL,      
-    ECL_BFL,       
+    EIL,      
+    EIL_BFL,       
     PD,      
     COLL_AMOUNT      
     )      
@@ -506,7 +506,7 @@ BEGIN
     A.PD_SEGMENT,      
     A.LGD_SEGMENT,      
     A.EAD_SEGMENT,      
-    A.PREV_ECL_AMOUNT,      
+    A.PREV_EIL_AMOUNT,      
     A.BUCKET_GROUP,      
     A.BUCKET_ID,      
     A.EIL_MODEL_ID,      
@@ -531,8 +531,8 @@ BEGIN
     C.PD AS PD_BFL,      
     D.LGD,      
     FUTIL_PV(COALESCE(A.EIR, 0)/100, A.SEQ, A.EAD) AS DISC_EAD,      
-    FUTIL_PV(COALESCE(A.EIR, 0)/100, A.SEQ, A.EAD) * COALESCE(E.PD_FL,C.PD) * COALESCE(D.LGD,1) AS ECL,      
-    FUTIL_PV(COALESCE(A.EIR, 0)/100, A.SEQ, A.EAD) * C.PD * COALESCE(D.LGD,1) AS ECL_BFL,      
+    FUTIL_PV(COALESCE(A.EIR, 0)/100, A.SEQ, A.EAD) * COALESCE(E.PD_FL,C.PD) * COALESCE(D.LGD,1) AS EIL,      
+    FUTIL_PV(COALESCE(A.EIR, 0)/100, A.SEQ, A.EAD) * C.PD * COALESCE(D.LGD,1) AS EIL_BFL,      
     E.PD_FL,      
     A.COLL_AMOUNT     
     FROM ' || V_TABLEINSERT6 || ' A      
@@ -572,7 +572,7 @@ BEGIN
       PD_SEGMENT,      
       LGD_SEGMENT,      
       EAD_SEGMENT,      
-      PREV_ECL_AMOUNT,      
+      PREV_EIL_AMOUNT,      
       BUCKET_GROUP,      
       BUCKET_ID,      
       EIL_MODEL_ID,      
@@ -597,8 +597,8 @@ BEGIN
       PD_BFL,      
       LGD,      
       DISC_EAD,      
-      ECL,      
-      ECL_BFL,       
+      EIL,      
+      EIL_BFL,       
       PD,      
       COLL_AMOUNT      
     )      
@@ -620,7 +620,7 @@ BEGIN
       A.PD_SEGMENT,      
       A.LGD_SEGMENT,      
       A.EAD_SEGMENT,      
-      A.PREV_ECL_AMOUNT,      
+      A.PREV_EIL_AMOUNT,      
       A.BUCKET_GROUP,      
       A.BUCKET_ID,      
       A.EIL_MODEL_ID,      
@@ -647,9 +647,9 @@ BEGIN
       CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
       FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END AS DISC_EAD,      
       (CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
-      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * COALESCE(E.PD_FL,C.PD) * COALESCE(D.LGD,1) AS ECL,       
+      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * COALESCE(E.PD_FL,C.PD) * COALESCE(D.LGD,1) AS EIL,       
       (CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
-      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * C.PD * COALESCE(D.LGD,1) AS ECL_BFL,      
+      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * C.PD * COALESCE(D.LGD,1) AS EIL_BFL,      
       E.PD_FL ,      
       A.COLL_AMOUNT  
     FROM ' || V_TABLEINSERT7 || ' A      
@@ -679,8 +679,8 @@ BEGIN
       SELECT       
       DOWNLOAD_DATE,       
       MASTERID,       
-      SUM(ECL) AS EIL_AMOUNT,       
-      SUM(ECL_BFL) AS EIL_AMOUNT_BFL      
+      SUM(EIL) AS EIL_AMOUNT,       
+      SUM(EIL_BFL) AS EIL_AMOUNT_BFL      
       FROM ' || V_TABLEINSERT3 || '      
       WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE      
       GROUP BY DOWNLOAD_DATE, MASTERID';
