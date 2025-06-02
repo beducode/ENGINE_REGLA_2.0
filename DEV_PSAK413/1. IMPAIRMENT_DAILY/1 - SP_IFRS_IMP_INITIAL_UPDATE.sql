@@ -300,7 +300,7 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' A
-        SET INTEREST_RATE = CAST(B.MARKET_INT_RATE AS FLOAT) 
+        SET MARGIN_RATE = CAST(B.MARKET_INT_RATE AS FLOAT) 
         FROM ' || V_TMPTABLE5 || ' B 
         WHERE A.PRODUCT_CODE = B.DEAL_TYPE 
         AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
@@ -309,7 +309,7 @@ BEGIN
     ---------- ==== FIXING UPDATE METHOD ====
     ---------- V_STR_QUERY := '';
     ---------- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' 
-    ----------     SET INTEREST_RATE = CAST(B.MARKET_INT_RATE AS FLOAT) 
+    ----------     SET MARGIN_RATE = CAST(B.MARKET_INT_RATE AS FLOAT) 
     ----------     FROM ' || V_TABLENAME || ' A 
     ----------     INNER JOIN ' || V_TMPTABLE5 || ' B 
     ----------     ON A.PRODUCT_CODE = B.DEAL_TYPE 
