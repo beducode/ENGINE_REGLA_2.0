@@ -190,7 +190,7 @@ BEGIN
         ,ACCOUNT_NUMBER                                
         ,PREVIOUS_ACCOUNT_NUMBER                                
         ,ACCOUNT_STATUS                                
-        ,MARGIN_RATE                                
+        ,INTEREST_RATE                                
         ,MARKET_RATE                                
         ,PRODUCT_GROUP                                
         ,PRODUCT_TYPE                                
@@ -210,7 +210,7 @@ BEGIN
         ,OUTSTANDING_WO                                
         ,PLAFOND                                
         ,PLAFOND_CASH                                
-        ,COALESCE(MARGIN_ACCRUED, 0) AS MARGIN_ACCRUED            
+        ,COALESCE(INTEREST_ACCRUED, 0) AS INTEREST_ACCRUED            
         ,INSTALLMENT_AMOUNT                                
         ,COALESCE(UNUSED_AMOUNT, 0) AS UNUSED_AMOUNT            
         ,DOWN_PAYMENT_AMOUNT                                
@@ -228,8 +228,8 @@ BEGIN
         ,REMAINING_TENOR                                
         ,PAYMENT_CODE                                
         ,PAYMENT_TERM                                
-        ,MARGIN_CALCULATION_CODE                                
-        ,MARGIN_PAYMENT_TERM                                
+        ,INTEREST_CALCULATION_CODE                                
+        ,INTEREST_PAYMENT_TERM                                
         ,RESTRUCTURE_DATE                                
         ,RESTRUCTURE_FLAG                     
         ,POCI_FLAG                                
@@ -340,7 +340,7 @@ BEGIN
         ,EXT_RATING_AGENCY            
         ,EXT_RATING_CODE            
         ,EXT_INIT_RATING_CODE            
-        ,MARGIN_TYPE            
+        ,INTEREST_TYPE            
         ,SOVEREIGN_FLAG            
         ,ISIN_CODE            
         ,INV_TYPE            
@@ -389,7 +389,7 @@ BEGIN
         ,ACCOUNT_NUMBER                                
         ,PREVIOUS_ACCOUNT_NUMBER                                
         ,ACCOUNT_STATUS                                
-        ,MARGIN_RATE                                
+        ,INTEREST_RATE                                
         ,MARKET_RATE                                
         ,PRODUCT_GROUP                      
         ,PRODUCT_TYPE                                
@@ -409,7 +409,7 @@ BEGIN
         ,OUTSTANDING_WO                                
         ,PLAFOND                                
         ,PLAFOND_CASH                                
-        ,COALESCE(MARGIN_ACCRUED, 0) AS MARGIN_ACCRUED            
+        ,COALESCE(INTEREST_ACCRUED, 0) AS INTEREST_ACCRUED            
         ,INSTALLMENT_AMOUNT                                
         ,COALESCE(UNUSED_AMOUNT, 0) AS UNUSED_AMOUNT            
         ,DOWN_PAYMENT_AMOUNT                                
@@ -427,8 +427,8 @@ BEGIN
         ,REMAINING_TENOR                                
         ,PAYMENT_CODE                                
         ,PAYMENT_TERM                                
-        ,MARGIN_CALCULATION_CODE                                
-        ,MARGIN_PAYMENT_TERM                           
+        ,INTEREST_CALCULATION_CODE                                
+        ,INTEREST_PAYMENT_TERM                           
         ,RESTRUCTURE_DATE                                
         ,RESTRUCTURE_FLAG            
         ,POCI_FLAG                                
@@ -539,7 +539,7 @@ BEGIN
         ,EXT_RATING_AGENCY            
         ,EXT_RATING_CODE            
         ,EXT_INIT_RATING_CODE            
-        ,MARGIN_TYPE            
+        ,INTEREST_TYPE            
         ,SOVEREIGN_FLAG            
         ,ISIN_CODE            
         ,INV_TYPE            

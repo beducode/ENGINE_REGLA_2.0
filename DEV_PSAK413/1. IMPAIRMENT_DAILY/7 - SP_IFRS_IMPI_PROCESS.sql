@@ -631,7 +631,7 @@ BEGIN
                 ,BEING_EDITED 
                 ,OVERRIDE_FLAG 
                 ,NPV_AMOUNT 
-                ,ECL_AMOUNT 
+                ,EIL_AMOUNT 
                 ,UNWINDING_AMOUNT 
                 ,CREATEDBY 
                 ,CREATEDDATE 
@@ -678,7 +678,7 @@ BEGIN
                 ,BEING_EDITED 
                 ,''A'' AS OVERRIDE_FLAG 
                 ,NPV_AMOUNT 
-                ,ECL_AMOUNT 
+                ,EIL_AMOUNT 
                 ,UNWINDING_AMOUNT 
                 ,CREATEDBY 
                 ,CREATEDDATE 
@@ -744,8 +744,8 @@ BEGIN
             SELECT 
                 F_EOMONTH(B.DOWNLOADDATE, 0, ''M'', ''NEXT'') AS DOWNLOAD_DATE
                 ,A.MASTERID 
-                ,CASE WHEN (A.OUTSTANDING - SUM(B.NPV)) < 0 THEN 0 ELSE (A.OUTSTANDING - SUM(B.NPV)) END AS ECL_AMOUNT 
-                ,CASE WHEN (A.OUTSTANDING - SUM(B.NPV)) < 0 THEN 0 ELSE (A.OUTSTANDING - SUM(B.NPV)) END AS ECL_AMOUNT_BFL 
+                ,CASE WHEN (A.OUTSTANDING - SUM(B.NPV)) < 0 THEN 0 ELSE (A.OUTSTANDING - SUM(B.NPV)) END AS EIL_AMOUNT 
+                ,CASE WHEN (A.OUTSTANDING - SUM(B.NPV)) < 0 THEN 0 ELSE (A.OUTSTANDING - SUM(B.NPV)) END AS EIL_AMOUNT_BFL 
             FROM
             (
                 SELECT * FROM ' || V_TABLEINSERT4 || ' 
@@ -767,13 +767,13 @@ BEGIN
             (
                 DOWNLOAD_DATE 
                 ,MASTERID 
-                ,ECL_AMOUNT 
-                ,ECL_AMOUNT_BFL 
+                ,EIL_AMOUNT 
+                ,EIL_AMOUNT_BFL 
             ) SELECT
                 DOWNLOAD_DATE 
                 ,MASTERID 
-                ,ECL_AMOUNT 
-                ,ECL_AMOUNT_BFL 
+                ,EIL_AMOUNT 
+                ,EIL_AMOUNT_BFL 
             FROM ' || V_TMPTABLE3 || ' 
             WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
         EXECUTE (V_STR_QUERY);
@@ -797,8 +797,8 @@ BEGIN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TMPTABLE4 || ' A 
             SET
-                ECL_AMOUNT = B.ECL_AMOUNT 
-                ,ECL_AMOUNT_BFL = B.ECL_AMOUNT_BFL 
+                EIL_AMOUNT = B.EIL_AMOUNT 
+                ,EIL_AMOUNT_BFL = B.EIL_AMOUNT_BFL 
             FROM IFRS_ECL_INDIVIDUAL B 
             WHERE A.DOWNLOAD_DATE = B.DOWNLOAD_DATE
             AND A.MASTERID = B.MASTERID ';
@@ -810,13 +810,13 @@ BEGIN
             (
                 DOWNLOAD_DATE
                 ,MASTERID
-                ,ECL_AMOUNT
-                ,ECL_AMOUNT_BFL
+                ,EIL_AMOUNT
+                ,EIL_AMOUNT_BFL
             ) SELECT 
                 F_EOMONTH(B.DOWNLOADDATE, 0, ''M'', ''NEXT'') AS DOWNLOAD_DATE 
                 ,A.MASTERID 
-                ,CASE WHEN C.ECL_AMOUNT > A.OUTSTANDING THEN A.OUTSTANDING ELSE C.ECL_AMOUNT END AS ECL_AMOUNT
-                ,CASE WHEN C.ECL_AMOUNT_BFL > A.OUTSTANDING THEN A.OUTSTANDING ELSE C.ECL_AMOUNT_BFL END AS ECL_AMOUNT_BFL
+                ,CASE WHEN C.EIL_AMOUNT > A.OUTSTANDING THEN A.OUTSTANDING ELSE C.EIL_AMOUNT END AS EIL_AMOUNT
+                ,CASE WHEN C.EIL_AMOUNT_BFL > A.OUTSTANDING THEN A.OUTSTANDING ELSE C.EIL_AMOUNT_BFL END AS EIL_AMOUNT_BFL
             FROM 
             (
                 SELECT * FROM ' || V_TABLEINSERT4 || ' 
@@ -829,8 +829,8 @@ BEGIN
             (
                 SELECT
                     X.MASTERID
-                    ,X.ECL_AMOUNT
-                    ,X.ECL_AMOUNT_BFL
+                    ,X.EIL_AMOUNT
+                    ,X.EIL_AMOUNT_BFL
                 FROM ' || V_TMPTABLE4 || ' X 
                 JOIN (SELECT * FROM ' || V_TABLEINSERT4 || ' WHERE EFFECTIVE_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE) Y 
                 ON X.MASTERID = Y.MASTERID 
@@ -845,13 +845,13 @@ BEGIN
             (
                 DOWNLOAD_DATE
                 ,MASTERID
-                ,ECL_AMOUNT
-                ,ECL_AMOUNT_BFL
+                ,EIL_AMOUNT
+                ,EIL_AMOUNT_BFL
             ) SELECT 
                 F_EOMONTH(EFFECTIVE_DATE, 0, ''M'', ''NEXT'') AS DOWNLOAD_DATE 
                 ,MASTERID 
-                ,OUTSTANDING AS ECL_AMOUNT
-                ,OUTSTANDING AS ECL_AMOUNT_BFL
+                ,OUTSTANDING AS EIL_AMOUNT
+                ,OUTSTANDING AS EIL_AMOUNT_BFL
             FROM ' || V_TABLEINSERT4 || ' 
             WHERE DCFID IS NULL 
             AND EFFECTIVE_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
@@ -884,8 +884,8 @@ BEGIN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT4 || ' A 
             SET
-                ECL_AMOUNT = B.ECL_AMOUNT 
-                ,UNWINDING_AMOUNT = CASE WHEN COALESCE(B.UNWINDING_AMOUNT, 0) > B.ECL_AMOUNT THEN B.ECL_AMOUNT ELSE COALESCE(B.UNWINDING_AMOUNT, 0) END 
+                EIL_AMOUNT = B.EIL_AMOUNT 
+                ,UNWINDING_AMOUNT = CASE WHEN COALESCE(B.UNWINDING_AMOUNT, 0) > B.EIL_AMOUNT THEN B.EIL_AMOUNT ELSE COALESCE(B.UNWINDING_AMOUNT, 0) END 
             FROM ' || V_TMPTABLE3 || ' B 
             WHERE A.MASTERID = B.MASTERID ';
         EXECUTE (V_STR_QUERY);
@@ -893,9 +893,9 @@ BEGIN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' A 
             SET
-                ECL_AMOUNT = CASE WHEN COALESCE(A.IFRS9_CLASS, '''') = ''FVTPL'' THEN 0 ELSE B.ECL_AMOUNT END 
-                ,ECL_AMOUNT_BFL = CASE WHEN COALESCE(A.IFRS9_CLASS, '''') = ''FVTPL'' THEN 0 ELSE B.ECL_AMOUNT_BFL END 
-                ,IA_UNWINDING_AMOUNT = CASE WHEN COALESCE(A.IFRS9_CLASS, '''') = ''FVTPL'' THEN 0 ELSE CASE WHEN B.UNWINDING_AMOUNT > B.ECL_AMOUNT THEN B.ECL_AMOUNT ELSE B.UNWINDING_AMOUNT END END 
+                EIL_AMOUNT = CASE WHEN COALESCE(A.IFRS9_CLASS, '''') = ''FVTPL'' THEN 0 ELSE B.EIL_AMOUNT END 
+                ,EIL_AMOUNT_BFL = CASE WHEN COALESCE(A.IFRS9_CLASS, '''') = ''FVTPL'' THEN 0 ELSE B.EIL_AMOUNT_BFL END 
+                ,IA_UNWINDING_AMOUNT = CASE WHEN COALESCE(A.IFRS9_CLASS, '''') = ''FVTPL'' THEN 0 ELSE CASE WHEN B.UNWINDING_AMOUNT > B.EIL_AMOUNT THEN B.EIL_AMOUNT ELSE B.UNWINDING_AMOUNT END END 
             FROM ' || V_TMPTABLE3 || ' B 
             WHERE A.MASTERID = B.MASTERID 
             AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
@@ -949,7 +949,7 @@ BEGIN
                 ,BEING_EDITED 
                 ,OVERRIDE_FLAG 
                 ,NPV_AMOUNT 
-                ,ECL_AMOUNT 
+                ,EIL_AMOUNT 
                 ,UNWINDING_AMOUNT 
                 ,CREATEDBY 
                 ,CREATEDDATE 
@@ -996,7 +996,7 @@ BEGIN
                 ,BEING_EDITED 
                 ,OVERRIDE_FLAG 
                 ,NPV_AMOUNT 
-                ,ECL_AMOUNT 
+                ,EIL_AMOUNT 
                 ,UNWINDING_AMOUNT 
                 ,''SP_IFRS_IMPI_PROCESS'' AS CREATEDBY 
                 ,CURRENT_TIMESTAMP::DATE AS CREATEDDATE 
