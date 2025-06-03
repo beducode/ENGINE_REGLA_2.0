@@ -180,7 +180,7 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || ' 
-        CREATE TEMPORARY TABLE ' || V_TMPTABLE1 || ' AS 
+        CREATE  TABLE ' || V_TMPTABLE1 || ' AS 
         SELECT
             DOWNLOAD_DATE
             ,MASTERID
@@ -200,7 +200,7 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || ' 
-        CREATE TEMPORARY TABLE ' || V_TMPTABLE2 || ' AS 
+        CREATE  TABLE ' || V_TMPTABLE2 || ' AS 
         SELECT
             DOWNLOAD_DATE
             ,CUSTOMER_NUMBER
@@ -740,7 +740,7 @@ BEGIN
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || ' 
-            CREATE TEMPORARY TABLE ' || V_TMPTABLE3 || ' AS 
+            CREATE  TABLE ' || V_TMPTABLE3 || ' AS 
             SELECT 
                 F_EOMONTH(B.DOWNLOADDATE, 0, ''M'', ''NEXT'') AS DOWNLOAD_DATE
                 ,A.MASTERID 
@@ -783,7 +783,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE4 || ' AS 
+        V_STR_QUERY := V_STR_QUERY || 'CREATE  TABLE ' || V_TMPTABLE4 || ' AS 
             SELECT * FROM ' || V_TMPTABLE3 || ' WHERE 1=2 ';
         EXECUTE (V_STR_QUERY);
 

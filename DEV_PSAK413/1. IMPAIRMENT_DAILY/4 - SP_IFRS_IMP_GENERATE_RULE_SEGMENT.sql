@@ -88,6 +88,10 @@ BEGIN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT || ' AS SELECT * FROM IFRS_SCENARIO_SEGMENT_GENERATE_QUERY WHERE 0=1';
         EXECUTE (V_STR_QUERY);
+    ELSE
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT || ' ';
+        EXECUTE (V_STR_QUERY);
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
     
@@ -103,7 +107,7 @@ BEGIN
         V_CONDITION := NULL;
 
         FOR V_SEGMENT_RULE IN
-            EXECUTE 'SELECT
+            EXECUTE 'SELECT DISTINCT
                 TRIM(''A."'' || COALESCE(COLUMN_NAME, '''') || ''"'') AS COLUMN_NAME
                 ,TRIM(DATA_TYPE) AS DATA_TYPE
                 ,TRIM(OPERATOR) AS OPERATOR
