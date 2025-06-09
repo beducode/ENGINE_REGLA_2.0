@@ -117,7 +117,7 @@ BEGIN
 			V_STR_QUERY := '';
 			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_RUNNING_LOGS WHERE RUN_ID LIKE ANY(''' || UPPER(V_COND) || ''')';
 			EXECUTE (V_STR_QUERY);
-			RAISE NOTICE '---> %', V_STR_QUERY;
+			-- RAISE NOTICE '---> %', V_STR_QUERY;
 		    -------- ====== CLEAN DB ======
 			    FOR V_CODITION2 IN
 			        EXECUTE 'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES A
@@ -129,12 +129,12 @@ BEGIN
 					V_STR_QUERY := '';
 					V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_CODITION2 || '';
 					EXECUTE (V_STR_QUERY);
-					RAISE NOTICE '---> %', V_STR_QUERY;
+					-- RAISE NOTICE '---> %', V_STR_QUERY;
 
                     V_STR_QUERY := '';
 					V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_LOGS_PROCESS WHERE TABLE_DEST = ''' || UPPER(V_CODITION2) || '''';
 					EXECUTE (V_STR_QUERY);
-					RAISE NOTICE '---> %', V_STR_QUERY;
+					-- RAISE NOTICE '---> %', V_STR_QUERY;
 				END LOOP;
 			    -------- ====== CLEAN DB ======
         END LOOP;
