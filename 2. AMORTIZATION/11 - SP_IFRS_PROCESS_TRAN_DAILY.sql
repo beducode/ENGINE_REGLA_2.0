@@ -14,10 +14,10 @@ DECLARE
     V_STR_QUERY TEXT;
 
     ---- TABLE LIST       
-    V_TABLENAME VARCHAR(100);
     V_TABLEINSERT1 VARCHAR(100);
     V_TABLEINSERT2 VARCHAR(100);
     V_TABLEINSERT3 VARCHAR(100);
+    V_TABLEINSERT4 VARCHAR(100);
     
     ---- CONDITION
     V_RETURNROWS INT;
@@ -49,15 +49,15 @@ BEGIN
     END IF;
 
     IF P_PRC = 'S' THEN 
-        V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
-        V_TABLEINSERT1 := 'IFRS_IMA_AMORT_PREV_' || P_RUNID || '';
-        V_TABLEINSERT2 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
-        V_TABLEINSERT3 := 'IFRS_ACCT_CLOSED_' || P_RUNID || '';
+        V_TABLEINSERT1 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
+        V_TABLEINSERT2 := 'IFRS_ACCT_AMORT_RESTRU_' || P_RUNID || '';
+        V_TABLEINSERT3 := 'IFRS_ACCT_COST_FEE_' || P_RUNID || '';
+        V_TABLEINSERT4 := 'IFRS_PRODUCT_PARAM_' || P_RUNID || '';
     ELSE 
-        V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
-        V_TABLEINSERT1 := 'IFRS_IMA_AMORT_PREV';
-        V_TABLEINSERT2 := 'IFRS_IMA_AMORT_CURR';
-        V_TABLEINSERT3 := 'IFRS_ACCT_CLOSED';
+        V_TABLEINSERT1 := 'IFRS_IMA_AMORT_CURR';
+        V_TABLEINSERT2 := 'IFRS_ACCT_AMORT_RESTRU';
+        V_TABLEINSERT3 := 'IFRS_ACCT_COST_FEE';
+        V_TABLEINSERT4 := 'IFRS_PRODUCT_PARAM';
     END IF;
     
     IF P_DOWNLOAD_DATE IS NULL 
@@ -81,7 +81,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT3 || ' AS SELECT * FROM IFRS_ACCT_CLOSED WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT3 || ' AS SELECT * FROM IFRS_ACCT_COST_FEE WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
@@ -90,13 +90,13 @@ BEGIN
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_PROCESS_TRAN_DAILY', '');
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || 'IFRS_ACCT_COST_FEE' || ' WHERE DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DAATE ';
+    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT3 || ' WHERE DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
 
     ---- INSERT FOR RESTRUCTURE ACCOUNT AS TRANSACTION
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'IFRS_ACCT_COST_FEE' || ' 
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT3 || ' 
         (
             DOWNLOAD_DATE 
             ,MASTERID 
@@ -139,19 +139,19 @@ BEGIN
             ,''RESTRU'' AS SRCPROCESS 
             ,B.PRORATE_UNAMORT_FEE 
             ,CURRENT_TIMESTAMP AS CREATEDDATE 
-            ,''' || V_SP_NAME || ''' AS CREATEDBY 
+            ,''SP_IFRS_TRAN_DAILY'' AS CREATEDBY 
             ,''RESTRU - '' || B.PREV_MASTERID AS TRX_REFF_NUMBER 
-            ,''' || 'IFRS_ACCT_AMORT_RESTRU' || ''' AS SOURCE_TABLE 
+            ,''' || V_TABLEINSERT2 || ''' AS SOURCE_TABLE 
             ,NULL AS TRX_LEVEL 
-        FROM ' || 'IFRS_IMA_AMORT_CURR' || ' A 
-        JOIN ' || 'IFRS_ACCT_AMORT_RESTRU' || ' B 
+        FROM ' || V_TABLEINSERT1 || ' A 
+        JOIN ' || V_TABLEINSERT2 || ' B 
         ON A.MASTERID = B.MASTERID 
         AND B.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
 
         UNION ALL 
 
         SELECT 
-            A,DOWNLOAD_DATE 
+            A.DOWNLOAD_DATE 
             ,A.MASTERID 
             ,A.BRANCH_CODE 
             ,A.CUSTOMER_NUMBER 
@@ -169,20 +169,25 @@ BEGIN
             ,''RESTRU'' AS SRCPROCESS 
             ,B.PRORATE_UNAMORT_COST 
             ,CURRENT_TIMESTAMP AS CREATEDDATE 
-            ,''' || V_SP_NAME || ''' AS CREATEDBY 
+            ,''SP_IFRS_TRAN_DAILY'' AS CREATEDBY 
             ,''RESTRU - '' || B.PREV_MASTERID AS TRX_REFF_NUMBER 
-            ,''' || 'IFRS_ACCT_AMORT_RESTRU' || ''' AS SOURCE_TABLE 
+            ,''' || V_TABLEINSERT2 || ''' AS SOURCE_TABLE 
             ,NULL AS TRX_LEVEL 
-        FROM ' || 'IFRS_IMA_AMORT_CURR' || ' A 
-        JOIN ' || 'IFRS_ACCT_AMORT_RESTRU' || ' B 
+        FROM ' || V_TABLEINSERT1 || ' A 
+        JOIN ' || V_TABLEINSERT2 || ' B 
         ON A.MASTERID = B.MASTERID 
         AND B.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
 
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+
     ---- END RESTRUCTURE ACCOUNT 
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'IFRS_ACCT_COST_FEE' || ' 
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT3 || ' 
         (
             DOWNLOAD_DATE 
             ,MASTERID 
@@ -214,8 +219,8 @@ BEGIN
             ,A.FACILITY_NUMBER 
             ,A.ACCOUNT_NUMBER 
             ,A.DATA_SOURCE 
-            ,A.PRODUCT_TYPE 
-            ,A.PRODUCT_CODE 
+            ,A.PRD_TYPE 
+            ,A.PRD_CODE 
             ,A.TRX_CODE 
             ,A.CCY 
             ,LEFT(COALESCE(B.IFRS_TXN_CLASS, ''F''), 1) AS FLAG_CF 
@@ -225,15 +230,222 @@ BEGIN
             ,''TRAN_DAILY'' AS SRCPROCESS 
             ,A.ORG_CCY_AMT 
             ,CURRENT_TIMESTAMP AS CREATEDDATE 
-            ,''' || V_SP_NAME || ''' AS CREATEDBY 
-            ,TRX_REFFERENCE_NUMBER 
+            ,''SP_IFRS_TRAN_DAILY'' AS CREATEDBY 
+            ,TRX_REFERENCE_NUMBER 
             ,SOURCE_TABLE 
-            ,NULL AS TRX_LEVEL
-            '
+            ,TRX_LEVEL 
+        FROM ' || 'IFRS_TRANSACTION_DAILY' || ' A 
+        JOIN (
+            SELECT DISTINCT 
+                DATA_SOURCE 
+                ,PRD_TYPE 
+                ,PRD_CODE 
+                ,TRX_CODE 
+                ,CCY 
+                ,IFRS_TXN_CLASS 
+            FROM ' || 'IFRS_TRANSACTION_PARAM' || ' 
+            WHERE IFRS_TXN_CLASS IN (''FEE'', ''COST'') 
+            AND AMORTIZATION_FLAG = ''Y'' 
+        ) B 
+        ON ( 
+            B.DATA_SOURCE = A.DATA_SOURCE 
+            OR COALESCE(B.DATA_SOURCE, ''ALL'') = ''ALL'' 
+        ) AND ( 
+            B.PRD_TYPE = A.PRD_TYPE 
+            OR COALESCE(B.PRD_TYPE, ''ALL'') = ''ALL'' 
+        ) AND (
+            B.PRD_CODE = A.PRD_CODE 
+            OR COALESCE(B.PRD_CODE, ''ALL'') = ''ALL'' 
+        ) AND B.TRX_CODE = A.TRX_CODE 
+        AND ( 
+            B.CCY = A.CCY 
+            OR B.CCY = ''ALL'' 
+        ) 
+        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    EXECUTE (V_STR_QUERY);
 
     GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
     V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
     V_RETURNROWS := 0;
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT3 || ' 
+        ( 
+            DOWNLOAD_DATE 
+            ,MASTERID 
+            ,BRCODE 
+            ,CIFNO 
+            ,FACNO 
+            ,ACCTNO 
+            ,DATASOURCE 
+            ,PRD_TYPE 
+            ,PRD_CODE 
+            ,TRX_CODE 
+            ,CCY 
+            ,FLAG_CF 
+            ,FLAG_REVERSE 
+            ,METHOD 
+            ,STATUS 
+            ,SRCPROCESS 
+            ,AMOUNT 
+            ,CREATEDDATE 
+            ,CREATEDBY 
+            ,TRX_REFF_NUMBER 
+            ,SOURCE_TABLE 
+            ,TRX_LEVEL 
+        ) SELECT 
+            ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+            ,MASTERID 
+            ,BRCODE 
+            ,CIFNO 
+            ,FACNO 
+            ,ACCTNO 
+            ,DATASOURCE 
+            ,PRD_TYPE 
+            ,PRD_CODE 
+            ,TRX_CODE 
+            ,CCY 
+            ,FLAG_CF 
+            ,CASE 
+                WHEN FLAG_AL IN (''A'', ''O'') 
+                THEN CASE 
+                    WHEN FLAG_CF = ''F'' 
+                    THEN CASE 
+                        WHEN FLAG_REVERSE = ''N'' 
+                        THEN ''C'' 
+                        ELSE ''D'' 
+                    END 
+                    ELSE CASE 
+                        WHEN FLAG_REVERSE = ''N'' 
+                        THEN ''D'' 
+                        ELSE ''C'' 
+                    END 
+                END 
+                ELSE CASE 
+                    WHEN FLAG_CF = ''F'' 
+                    THEN CASE 
+                        WHEN FLAG_REVERSE = ''N'' 
+                        THEN ''C'' 
+                        ELSE ''D'' 
+                    END 
+                    ELSE CASE 
+                        WHEN FLAG_REVERSE = ''N'' 
+                        THEN ''D'' 
+                        ELSE ''C'' 
+                    END 
+                END 
+            END AS FLAG_REVERSE 
+            ,METHOD 
+            ,''ACT'' 
+            ,SRCPROCESS 
+            ,AMOUNT 
+            ,CREATEDDATE 
+            ,CREATEDBY 
+            ,TRX_REFF_NUMBER 
+            ,SOURCE_TABLE 
+            ,TRX_LEVEL 
+        FROM ' || V_TABLEINSERT3 || ' 
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+        AND STATUS = ''NPRCD'' ';
+    EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_PROCESS_TRAN_DAILY', 'INSERTED');
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT3 || ' A
+        SET 
+            CIFNO = B.CUSTOMER_NUMBER 
+            ,PRD_CODE = B.PRODUCT_CODE 
+            ,PRD_TYPE = B.PRODUCT_TYPE 
+            ,DATASOURCE = B.DATA_SOURCE 
+            ,BRCODE = B.BRANCH_CODE 
+            ,FACNO = B.FACILITY_NUMBER 
+        FROM ' || V_TABLEINSERT1 || ' B 
+        WHERE B.MASTERID = A.MASTERID 
+        AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    EXECUTE (V_STR_QUERY);
+
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_PROCESS_TRAN_DAILY', 'UPD FROM IMA');
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_PROCESS_TRAN_DAILY', 'UPD FROM TRAN PARAM');
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT3 || ' A 
+        SET FLAG_AL = B.FLAG_AL 
+        FROM ' || V_TABLEINSERT4 || ' B 
+        WHERE ( 
+            B.DATA_SOURCE = A.DATASOURCE 
+            OR COALESCE(B.DATA_SOURCE, ''ALL'') = ''ALL'' 
+        ) AND ( 
+            B.PRD_TYPE = A.PRD_TYPE 
+            OR COALESCE(B.PRD_TYPE, ''ALL'') = ''ALL'' 
+        ) AND ( 
+            B.PRD_CODE = A.PRD_CODE 
+            OR COALESCE(B.PRD_CODE, ''ALL'') = ''ALL'' 
+        ) AND ( 
+            B.CCY = A.CCY 
+            OR COALESCE(B.CCY, ''ALL'') = ''ALL''
+        ) 
+        AND A.SRCPROCESS = ''TRAN_DAILY'' 
+        AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    EXECUTE (V_STR_QUERY);
+
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_PROCESS_TRAN_DAILY', 'UPD FROM PROD PARAM');
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT3 || ' A 
+        SET 
+        AMOUNT = CASE 
+            WHEN FLAG_AL IN (''A'', ''O'') 
+            THEN CASE 
+                WHEN FLAG_CF = ''F'' 
+                THEN -1 * AMOUNT 
+                ELSE AMOUNT 
+            END 
+            ELSE CASE 
+                WHEN FLAG_CF = ''C'' 
+                THEN -1 * AMOUNT 
+                ELSE AMOUNT 
+            END 
+        END 
+        ,FLAG_REVERSE = CASE 
+            WHEN FLAG_AL IN (''A'', ''O'') 
+            THEN CASE 
+                WHEN FLAG_CF = ''F'' 
+                THEN CASE 
+                    WHEN FLAG_REVERSE = ''C'' 
+                    THEN ''N'' 
+                    ELSE ''Y'' 
+                END 
+                ELSE CASE 
+                    WHEN FLAG_REVERSE = ''D'' 
+                    THEN ''N'' 
+                    ELSE ''Y'' 
+                END 
+            END 
+            ELSE CASE 
+                WHEN FLAG_CF = ''F'' 
+                THEN CASE 
+                    WHEN FLAG_REVERSE = ''C'' 
+                    THEN ''N'' 
+                    ELSE ''Y'' 
+                END 
+                ELSE CASE 
+                    WHEN FLAG_REVERSE = ''D'' 
+                    THEN ''N'' 
+                    ELSE ''Y'' 
+                END 
+            END 
+        END 
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+        AND STATUS = ''ACT'' 
+        AND SRCPROCESS = ''TRAN_DAILY'' ';
+    EXECUTE (V_STR_QUERY);
+
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_PROCESS_TRAN_DAILY', 'UPD AMT REV');
 
     ---- END
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_PROCESS_TRAN_DAILY', '');
