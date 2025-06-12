@@ -223,6 +223,7 @@ BEGIN
 
     -- RAISE NOTICE '---> %', V_STR_QUERY;
 
+<<<<<<< HEAD
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_FL_MONTHLY_ECL_' || P_RUNID || '';
     EXECUTE (V_STR_QUERY);
@@ -254,6 +255,39 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     -- RAISE NOTICE '---> %', V_STR_QUERY;
+=======
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_FL_MONTHLY_ECL_' || P_RUNID || '';
+    -- EXECUTE (V_STR_QUERY);
+
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_IFRS_ECL_PD_FL_MONTHLY_ECL_' || P_RUNID || '  AS 
+    -- SELECT      
+    --   A.DOWNLOAD_DATE,      
+    --   A.PD_RULE_ID,      
+    --   A.ME_MODEL_ID AS PD_ME_MODEL_ID,      
+    --   A.BUCKET_GROUP,      
+    --   A.BUCKET_ID,      
+    --   A.FL_SEQ,       
+    --   A.FL_YEAR,      
+    --   A.FL_MONTH,       
+    --   A.PD_FINAL AS PD_FL,      
+    --   A.SEGMENTATION_ID        
+    -- FROM ' || V_TABLEINSERT8 || ' A       
+    -- WHERE      
+    -- A.PD_FINAL >= 0 AND A.DOWNLOAD_DATE= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE      
+    -- AND EXISTS      
+    -- (      
+    --   SELECT 1     
+    --   FROM TMP_IFRS_ECL_MODEL_ECL_' || P_RUNID || ' X      
+    --   WHERE X.PD_MODEL_ID = A.PD_RULE_ID      
+    --   AND X.PD_DATE = A.PD_EFFECTIVE_DATE      
+    --   AND X.SEGMENTATION_ID = A.SEGMENTATION_ID     
+    -- )';
+    -- EXECUTE (V_STR_QUERY);
+
+    -- -- RAISE NOTICE '---> %', V_STR_QUERY;
+>>>>>>> fc2cfc688bf234b0405464220f2b2da8762dd223
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_YEARLY_' || P_RUNID || '';
