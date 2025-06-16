@@ -63,7 +63,7 @@ BEGIN
         V_TABLEINSERT1 := 'TMP_IFRS_ECL_IMA_' || P_RUNID || '';
         V_TABLEINSERT2 := 'IFRS_IMA_IMP_CURR_' || P_RUNID || '';
         V_TABLEINSERT3 := 'IFRS_IMA_IMP_PREV_' || P_RUNID || '';
-        V_TABLEINSERT4 := 'IFRS_LGD_TERM_STRUCTURE_' || P_RUNID || '';
+        V_TABLEINSERT4 := 'IFRS_LGD_TERM_STRUCTURE';
         V_TABLELGDCONFIG := 'IFRS_LGD_RULES_CONFIG_' || P_RUNID || '';
     ELSE 
         V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
@@ -92,18 +92,6 @@ BEGIN
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
-    -------- ====== PRE SIMULATION TABLE ======
-    IF P_PRC = 'S' THEN
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT4 || ' ';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_LGD_TERM_STRUCTURE WHERE 0=1';
-        EXECUTE (V_STR_QUERY);
-    END IF;
-    -------- ====== PRE SIMULATION TABLE ======
-    
     -------- ====== BODY ======
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS HEADER_' || P_RUNID || '';
@@ -142,6 +130,8 @@ BEGIN
     ,A.LGD_RULE_NAME        
     ,A.DEFAULT_RULE_ID';
     EXECUTE (V_STR_QUERY);
+
+    -- RAISE NOTICE '---> %', V_STR_QUERY;
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE HEADER_' || P_RUNID || ' A         

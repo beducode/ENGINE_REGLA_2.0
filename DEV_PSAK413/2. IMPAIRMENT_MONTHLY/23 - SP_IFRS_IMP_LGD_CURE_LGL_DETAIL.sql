@@ -63,7 +63,7 @@ BEGIN
         V_TABLEINSERT1 := 'TMP_IFRS_ECL_IMA_' || P_RUNID || '';
         V_TABLEINSERT2 := 'IFRS_IMA_IMP_CURR_' || P_RUNID || '';
         V_TABLEINSERT3 := 'IFRS_IMA_IMP_PREV_' || P_RUNID || '';
-        V_TABLEINSERT4 := 'IFRS_LGD_CURE_LGL_DETAIL_' || P_RUNID || '';
+        V_TABLEINSERT4 := 'IFRS_LGD_CURE_LGL_DETAIL';
         V_TABLELGDCONFIG := 'IFRS_LGD_RULES_CONFIG_' || P_RUNID || '';
         V_TABLEINSERT5 := 'IFRS_LGD_SCENARIO_DATA_' || P_RUNID || '';
     ELSE 
@@ -94,17 +94,6 @@ BEGIN
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
-    -------- ====== PRE SIMULATION TABLE ======
-    IF P_PRC = 'S' THEN
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT4 || ' ';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_LGD_CURE_LGL_DETAIL WHERE 0=1';
-        EXECUTE (V_STR_QUERY);
-    END IF;
-    -------- ====== PRE SIMULATION TABLE ======
     
     -------- ====== BODY ======
     V_STR_QUERY := '';
@@ -168,8 +157,6 @@ BEGIN
     ,X.CALC_AMOUNT        
     ,X.LGD_UNIQUE_ID';
     EXECUTE (V_STR_QUERY);
-    
-    -- RAISE NOTICE '---> %', V_STR_QUERY;
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS PREVIOUS_' || P_RUNID || '';
@@ -185,6 +172,8 @@ BEGIN
     AND B.ACTIVE_FLAG = 1     
     AND B.IS_DELETE = 0';
     EXECUTE (V_STR_QUERY);
+
+    -- RAISE NOTICE '---> %', V_STR_QUERY;
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP INDEX IF EXISTS NCI_PREVIOUS_' || P_RUNID || ' ';
@@ -426,6 +415,8 @@ BEGIN
     ,PREV.LAST_CURE_DATE           
     ,COALESCE(PREV.WO_FLAG, 0)';
     EXECUTE (V_STR_QUERY);
+
+    -- RAISE NOTICE '---> %', V_STR_QUERY;
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP INDEX IF EXISTS NCI_CURE_LGL_' || P_RUNID || ' ';

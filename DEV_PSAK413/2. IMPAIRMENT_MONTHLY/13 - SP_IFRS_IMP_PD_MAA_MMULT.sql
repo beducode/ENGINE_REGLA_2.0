@@ -120,7 +120,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     FOR V_PD_RULE_ID IN
-        EXECUTE 'SELECT DISTINCT PKID FROM ' || V_TABLEPDCONFIG || ' WHERE PD_METHOD = ''MAA'' AND ACTIVE_FLAG = 1 AND IS_DELETE  = 0'
+        EXECUTE 'SELECT DISTINCT PKID FROM ' || V_TABLEPDCONFIG || ' WHERE PD_METHOD = ''MAA'' AND ACTIVE_FLAG = 1 AND IS_DELETE  = 0 AND PKID = 6'
     LOOP
 
         V_STR_QUERY := '';
@@ -131,92 +131,97 @@ BEGIN
         V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE BASE_MAA_MMULT_' || P_RUNID || ' AS 
         SELECT * FROM ' || V_TABLEINSERT3 || ' WHERE TO_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AND BUCKET_TO <> 0 AND PD_RULE_ID = ' || V_PD_RULE_ID || ' ';
         EXECUTE (V_STR_QUERY);
+        
 
         EXECUTE 'SELECT (EXPECTED_LIFE/INCREMENT_PERIOD) FROM ' || V_TABLEPDCONFIG || ' 
         WHERE PD_METHOD = ''MAA'' AND ACTIVE_FLAG = 1 AND IS_DELETE = 0 AND PKID = ' || V_PD_RULE_ID || '' INTO V_MAX_SEQ;
 
-    IF V_MIN_SEQ = 1 THEN
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT4 || ' (DOWNLOAD_DATE
-        ,TO_DATE
-        ,PD_RULE_ID
-        ,PD_RULE_NAME
-        ,FL_SEQ
-        ,BUCKET_FROM
-        ,BUCKET_TO
-        ,MMULT
-        ,CREATEDBY
-        ,CREATEDDATE)
-        SELECT DOWNLOAD_DATE
-        ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS TO_DATE
-        ,PD_RULE_ID
-        ,PD_RULE_NAME
-        ,1 AS FL_SEQ
-        ,BUCKET_FROM
-        ,BUCKET_TO
-        , AVERAGE_RATE AS MMULT
-        ,''SP_IFRS_IMP_PD_MAA_AVERAGE'' AS CREATEDBY
-        ,CURRENT_DATE AS CREATEDDATE
-        FROM BASE_MAA_MMULT_' || P_RUNID || '  WHERE PD_RULE_ID = ' || V_PD_RULE_ID || ' AND BUCKET_FROM = 0 AND BUCKET_TO = 1';
-        EXECUTE (V_STR_QUERY);
+        IF V_MIN_SEQ = 1 THEN
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT4 || ' (DOWNLOAD_DATE
+            ,TO_DATE
+            ,PD_RULE_ID
+            ,PD_RULE_NAME
+            ,FL_SEQ
+            ,BUCKET_FROM
+            ,BUCKET_TO
+            ,MMULT
+            ,CREATEDBY
+            ,CREATEDDATE)
+            SELECT DOWNLOAD_DATE
+            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS TO_DATE
+            ,PD_RULE_ID
+            ,PD_RULE_NAME
+            ,1 AS FL_SEQ
+            ,BUCKET_FROM
+            ,BUCKET_TO
+            , AVERAGE_RATE AS MMULT
+            ,''SP_IFRS_IMP_PD_MAA_AVERAGE'' AS CREATEDBY
+            ,CURRENT_DATE AS CREATEDDATE
+            FROM BASE_MAA_MMULT_' || P_RUNID || '  WHERE PD_RULE_ID = ' || V_PD_RULE_ID || ' ';
+            EXECUTE (V_STR_QUERY);
 
-        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
-        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
-        V_RETURNROWS := 0;
-    END IF;
+            -- RAISE NOTICE '---> %', V_STR_QUERY;
+
+            GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+            V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+            V_RETURNROWS := 0;
+        END IF;
 
         V_MIN_SEQ := 2;
 
         WHILE V_MIN_SEQ <= V_MAX_SEQ LOOP
 
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS CURR_MAA_MMULT_' || P_RUNID || ' ';
-        EXECUTE (V_STR_QUERY);
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS CURR_MAA_MMULT_' || P_RUNID || ' ';
+            EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE CURR_MAA_MMULT_' || P_RUNID || ' AS 
-        SELECT * FROM ' || V_TABLEINSERT4 || ' WHERE TO_DATE  = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AND FL_SEQ = ' || V_MIN_SEQ-1 ||  ' AND PD_RULE_ID = ' || V_PD_RULE_ID || ' ';
-        EXECUTE (V_STR_QUERY);
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE CURR_MAA_MMULT_' || P_RUNID || ' AS 
+            SELECT * FROM ' || V_TABLEINSERT4 || ' WHERE TO_DATE  = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AND FL_SEQ = ' || V_MIN_SEQ-1 ||  ' AND PD_RULE_ID = ' || V_PD_RULE_ID || ' ';
+            EXECUTE (V_STR_QUERY);
 
 
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT4 || ' (DOWNLOAD_DATE
-        ,TO_DATE
-        ,PD_RULE_ID
-        ,PD_RULE_NAME
-        ,FL_SEQ
-        ,BUCKET_FROM
-        ,BUCKET_TO
-        ,MMULT
-        ,CREATEDBY
-        ,CREATEDDATE)
-        SELECT A.DOWNLOAD_DATE
-        ,A.TO_DATE
-        ,A.PD_RULE_ID
-        ,A.PD_RULE_NAME
-        ,' || V_MIN_SEQ || ' AS FL_SEQ
-        ,B.BUCKET_FROM AS BUCKET_FROM
-        ,A.BUCKET_TO
-        ,SUM(A.AVERAGE_RATE*B.MMULT) AS MMULT
-        ,''SP_IFRS_IMP_PD_MAA_AVERAGE''  AS CREATEDBY
-        ,CURRENT_DATE AS CREATEDDATE
-        FROM BASE_MAA_MMULT_' || P_RUNID || ' A 
-        INNER JOIN CURR_MAA_MMULT_' || P_RUNID || ' B ON A.PD_RULE_ID = B.PD_RULE_ID AND A.BUCKET_FROM = B.BUCKET_TO
-        WHERE A.PD_RULE_ID = ' || V_PD_RULE_ID || '
-        GROUP BY 
-        A.DOWNLOAD_DATE
-        ,A.TO_DATE
-        ,A.PD_RULE_ID
-        ,A.PD_RULE_NAME
-        ,B.BUCKET_FROM 
-        ,A.BUCKET_TO';
-        EXECUTE (V_STR_QUERY);
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT4 || ' (DOWNLOAD_DATE
+            ,TO_DATE
+            ,PD_RULE_ID
+            ,PD_RULE_NAME
+            ,FL_SEQ
+            ,BUCKET_FROM
+            ,BUCKET_TO
+            ,MMULT
+            ,CREATEDBY
+            ,CREATEDDATE)
+            SELECT A.DOWNLOAD_DATE
+            ,A.TO_DATE
+            ,A.PD_RULE_ID
+            ,A.PD_RULE_NAME
+            ,' || V_MIN_SEQ || ' AS FL_SEQ
+            ,B.BUCKET_FROM AS BUCKET_FROM
+            ,A.BUCKET_TO
+            ,SUM(A.AVERAGE_RATE*B.MMULT) AS MMULT
+            ,''SP_IFRS_IMP_PD_MAA_AVERAGE''  AS CREATEDBY
+            ,CURRENT_DATE AS CREATEDDATE
+            FROM BASE_MAA_MMULT_' || P_RUNID || ' A 
+            INNER JOIN CURR_MAA_MMULT_' || P_RUNID || ' B ON A.PD_RULE_ID = B.PD_RULE_ID AND A.BUCKET_FROM = B.BUCKET_TO
+            WHERE A.PD_RULE_ID = ' || V_PD_RULE_ID || '
+            GROUP BY 
+            A.DOWNLOAD_DATE
+            ,A.TO_DATE
+            ,A.PD_RULE_ID
+            ,A.PD_RULE_NAME
+            ,B.BUCKET_FROM 
+            ,A.BUCKET_TO';
+            EXECUTE (V_STR_QUERY);
 
-        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
-        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
-        V_RETURNROWS := 0;
+            -- RAISE NOTICE '---> %', V_STR_QUERY;
 
-        V_MIN_SEQ := V_MIN_SEQ + 1;
+            GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+            V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+            V_RETURNROWS := 0;
+
+            V_MIN_SEQ := V_MIN_SEQ + 1;
         END LOOP;
 
     END LOOP; 
