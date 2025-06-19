@@ -191,8 +191,7 @@ BEGIN
     AND ((' || P_MODEL_ID || ' = 0 AND A.ACTIVE_STATUS = ''1'') OR (A.PKID = ' || P_MODEL_ID || '))';
     EXECUTE (V_STR_QUERY);
 
-
-    -----#2
+    -- -----#2
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_MONTHLY_ECL_' || P_RUNID || '';
@@ -222,6 +221,8 @@ BEGIN
         AND X.PD_DATE = A.DOWNLOAD_DATE
       )';
     EXECUTE (V_STR_QUERY);
+
+    -- RAISE NOTICE '---> %', V_STR_QUERY;
 
     -------------- CREATE FOR PD FORWARD LOOKING MONTHLY ----------------------------    
     -----#3
@@ -254,6 +255,7 @@ BEGIN
       AND X.SEGMENTATION_ID = A.SEGMENTATION_ID     
     )';
     EXECUTE (V_STR_QUERY);
+
     -------------- END CREATE FOR PD FOWRWARD LOOKING MONTHLY ---------------------------- 
 
 
