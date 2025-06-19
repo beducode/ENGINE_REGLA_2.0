@@ -193,7 +193,6 @@ BEGIN
 
 
     -----#2
-
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_MONTHLY_ECL_' || P_RUNID || '';
     EXECUTE (V_STR_QUERY);
@@ -221,235 +220,235 @@ BEGIN
         WHERE X.PD_MODEL_ID = A.PD_RULE_ID      
         AND X.PD_DATE = A.DOWNLOAD_DATE
       )';
-    EXECUTE (V_STR_QUERY);
-
-    -------------- CREATE FOR PD FORWARD LOOKING MONTHLY ----------------------------    
-    -----#3
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_FL_MONTHLY_ECL_' || P_RUNID || '';
-    EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_IFRS_ECL_PD_FL_MONTHLY_ECL_' || P_RUNID || '  AS 
-    SELECT      
-      A.DOWNLOAD_DATE,      
-      A.PD_RULE_ID,      
-      A.ME_MODEL_ID AS PD_ME_MODEL_ID,      
-      A.BUCKET_GROUP,      
-      A.BUCKET_ID,      
-      A.FL_SEQ,       
-      A.FL_YEAR,      
-      A.FL_MONTH,       
-      A.PD_FINAL AS PD_FL,      
-      A.SEGMENTATION_ID        
-    FROM ' || V_TABLEINSERT8 || ' A       
-    WHERE      
-    A.PD_FINAL >= 0 AND A.DOWNLOAD_DATE= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE      
-    AND EXISTS      
-    (      
-      SELECT 1     
-      FROM TMP_IFRS_ECL_MODEL_ECL_' || P_RUNID || ' X      
-      WHERE X.PD_MODEL_ID = A.PD_RULE_ID      
-      AND X.PD_DATE = A.PD_EFFECTIVE_DATE      
-      AND X.SEGMENTATION_ID = A.SEGMENTATION_ID     
-    )';
-    EXECUTE (V_STR_QUERY);
-    -------------- END CREATE FOR PD FOWRWARD LOOKING MONTHLY ---------------------------- 
-
-
-    -----#4
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_YEARLY_' || P_RUNID || '';
-    EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_IFRS_ECL_PD_YEARLY_' || P_RUNID || ' AS     
-    SELECT       
-      A.DOWNLOAD_DATE,      
-      A.CURR_DATE,      
-      A.PD_RULE_ID,       
-      A.BUCKET_GROUP,      
-      A.BUCKET_ID,      
-      A.FL_SEQ,      
-      A.FL_YEAR,      
-      A.PD_RATE AS PD,      
-      A.CREATEDDATE    
-    FROM IFRS_PD_TERM_STRUCTURE_NOFL_YEARLY A      
-    WHERE      
-    A.PD_RATE >= 0      
-    AND EXISTS      
-    (      
-      SELECT 1      
-      FROM TMP_IFRS_ECL_MODEL_ECL_' || P_RUNID || ' X      
-      WHERE X.PD_MODEL_ID = A.PD_RULE_ID      
-      AND X.PD_DATE = A.DOWNLOAD_DATE      
-    ) AND A.FL_SEQ = 1      
-    ORDER BY A.CURR_DATE, BUCKET_GROUP, BUCKET_ID, PD_RULE_ID';
-    EXECUTE (V_STR_QUERY);
-
-
-    -------------- CREATE FOR PD FL FORWARD LOOKING YEARLY ----------------
-    -----#5
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_FL_YEARLY_' || P_RUNID || '';
-    EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_IFRS_ECL_PD_FL_YEARLY_' || P_RUNID || ' AS     
-    SELECT      
-        A.DOWNLOAD_DATE,      
-        A.PD_RULE_ID,      
-        A.ME_MODEL_ID AS PD_ME_MODEL_ID,      
-        A.BUCKET_GROUP,      
-        A.BUCKET_ID,      
-        A.FL_SEQ,      
-        A.FL_YEAR,       
-        A.PD_FINAL AS PD_FL,      
-        A.SEGMENTATION_ID      
-    FROM IFRS_IMP_PD_FL_TERM_YEARLY A       
-    WHERE      
-    A.PD_FINAL >= 0 AND A.FL_YEAR =1 AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE      
-    AND EXISTS      
-    (      
-        SELECT 1      
-        FROM TMP_IFRS_ECL_MODEL_ECL_' || P_RUNID || ' X      
-        WHERE X.PD_MODEL_ID = A.PD_RULE_ID      
-        AND X.SEGMENTATION_ID = A.SEGMENTATION_ID      
-    )';
-    EXECUTE (V_STR_QUERY);
-     -------------- END CREATE FOR PD FOWRWARD LOOKING YEARLY----------------------------
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_LGD_' || P_RUNID || '';
-    EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_IFRS_ECL_LGD_' || P_RUNID || ' AS     
-    SELECT A.DOWNLOAD_DATE,      
-        A.LGD_RULE_ID,       
-        A.FL_SEQ,      
-        MAX(A.FL_SEQ) OVER(PARTITION BY A.LGD_RULE_ID, A.MODEL_ID) MAX_SEQ,      
-        A.LGD      
-    FROM IFRS_LGD_TERM_STRUCTURE A      
-    WHERE      
-    A.LGD >= 0';
-    EXECUTE (V_STR_QUERY);
-
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO TMP_IFRS_ECL_LGD_' || P_RUNID || '  (DOWNLOAD_DATE, LGD_RULE_ID, LGD) SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, 99999, 1';
-    EXECUTE (V_STR_QUERY);
-
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT3 || '        
-    (        
-      DOWNLOAD_DATE,        
-      MASTERID,        
-      GROUP_SEGMENT,        
-      SEGMENT,        
-      SUB_SEGMENT,        
-      SEGMENTATION_ID,        
-      ACCOUNT_NUMBER,        
-      CUSTOMER_NUMBER,        
-      LT_SEGMENT,        
-      SICR_RULE_ID,        
-      SICR_FLAG,        
-      LIFETIME,        
-      STAGE,        
-      REVOLVING_FLAG,        
-      PD_SEGMENT,        
-      LGD_SEGMENT,        
-      EAD_SEGMENT,        
-      PREV_EIL_AMOUNT,        
-      BUCKET_GROUP,        
-      BUCKET_ID,        
-      EIL_MODEL_ID,        
-      EAD_MODEL_ID,        
-      CCF_RULES_ID,        
-      PD_MODEL_ID,        
-      LGD_MODEL_ID,         
-      SEQ,        
-      FL_YEAR,        
-      FL_MONTH,        
-      OUTSTANDING,        
-      UNAMORT_COST_AMT,         
-      UNAMORT_FEE_AMT,        
-      MARGIN_ACCRUED,        
-      UNUSED_AMOUNT,         
-      FAIR_VALUE_AMOUNT,         
-      EAD_BALANCE,        
-      PLAFOND,        
-      EIR,        
-      CCF,        
-      EAD,        
-      PD_BFL,        
-      LGD,        
-      DISC_EAD,        
-      EIL,       
-      EIL_BFL,        
-      PD,        
-      COLL_AMOUNT         
-    )  
-    SELECT      
-      A.DOWNLOAD_DATE,      
-      A.MASTERID,      
-      A.GROUP_SEGMENT,      
-      A.SEGMENT,      
-      A.SUB_SEGMENT,      
-      A.SEGMENTATION_ID,      
-      A.ACCOUNT_NUMBER,      
-      A.CUSTOMER_NUMBER,      
-      NULL AS LT_SEGMENT,      
-      A.SICR_RULE_ID,      
-      NULL AS SICR_FLAG,      
-      A.LIFETIME,      
-      A.STAGE,      
-      A.REVOLVING_FLAG,      
-      A.PD_SEGMENT,      
-      A.LGD_SEGMENT,      
-      A.EAD_SEGMENT,      
-      A.PREV_EIL_AMOUNT,      
-      A.BUCKET_GROUP,      
-      A.BUCKET_ID,      
-      A.EIL_MODEL_ID,      
-      A.EAD_MODEL_ID,       
-      A.CCF_RULES_ID,      
-      A.PD_MODEL_ID,      
-      A.LGD_MODEL_ID,      
-      A.SEQ,      
-      A.FL_YEAR,      
-      A.FL_MONTH,      
-      A.OUTSTANDING,      
-      A.UNAMORT_COST_AMT,       
-      A.UNAMORT_FEE_AMT,       
-      A.MARGIN_ACCRUED,      
-      A.UNUSED_AMOUNT,       
-      A.FAIR_VALUE_AMOUNT,       
-      A.EAD_BALANCE,       
-      A.PLAFOND,      
-      A.EIR,      
-      A.CCF,      
-      A.EAD,      
-      C.PD AS PD_BFL,      
-      D.LGD,      
-      CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
-      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END AS DISC_EAD,      
-      (CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
-      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * COALESCE(E.PD_FL,C.PD) * COALESCE(D.LGD,1) AS EIL,       
-      (CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
-      FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * C.PD * COALESCE(D.LGD,1) AS EIL_BFL,      
-      E.PD_FL AS PD ,      
-      A.COLL_AMOUNT      
-      FROM ' || V_TABLEINSERT5 || ' A     
-      JOIN TMP_IFRS_ECL_MODEL_ECL_' || P_RUNID || ' B ON A.EIL_MODEL_ID = B.EIL_MODEL_ID AND A.SEGMENTATION_ID = B.SEGMENTATION_ID      
-      JOIN TMP_IFRS_ECL_PD_MONTHLY_ECL_' || P_RUNID || ' C ON B.PD_MODEL_ID = C.PD_RULE_ID  AND A.BUCKET_ID = C.BUCKET_ID  AND A.SEQ = C.FL_SEQ AND B.PD_DATE = C.DOWNLOAD_DATE       
-      JOIN TMP_IFRS_ECL_LGD_' || P_RUNID || ' D ON B.LGD_MODEL_ID = D.LGD_RULE_ID AND COALESCE(B.LGD_DATE,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE) = D.DOWNLOAD_DATE       
-      JOIN TMP_IFRS_ECL_PD_FL_MONTHLY_ECL_' || P_RUNID || ' E ON B.PD_MODEL_ID = E.PD_RULE_ID AND A.BUCKET_ID = E.BUCKET_ID AND A.SEQ = E.FL_SEQ AND A.SEGMENTATION_ID= E.SEGMENTATION_ID       
-      WHERE A.EAD > 0';
     -- EXECUTE (V_STR_QUERY);
-    
+
     RAISE NOTICE '---> %', V_STR_QUERY;
+
+    -- -------------- CREATE FOR PD FORWARD LOOKING MONTHLY ----------------------------    
+    -- -----#3
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_FL_MONTHLY_ECL_' || P_RUNID || '';
+    -- EXECUTE (V_STR_QUERY);
+
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_IFRS_ECL_PD_FL_MONTHLY_ECL_' || P_RUNID || '  AS 
+    -- SELECT      
+    --   A.DOWNLOAD_DATE,      
+    --   A.PD_RULE_ID,      
+    --   A.ME_MODEL_ID AS PD_ME_MODEL_ID,      
+    --   A.BUCKET_GROUP,      
+    --   A.BUCKET_ID,      
+    --   A.FL_SEQ,       
+    --   A.FL_YEAR,      
+    --   A.FL_MONTH,       
+    --   A.PD_FINAL AS PD_FL,      
+    --   A.SEGMENTATION_ID        
+    -- FROM ' || V_TABLEINSERT8 || ' A       
+    -- WHERE      
+    -- A.PD_FINAL >= 0 AND A.DOWNLOAD_DATE= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE      
+    -- AND EXISTS      
+    -- (      
+    --   SELECT 1     
+    --   FROM TMP_IFRS_ECL_MODEL_ECL_' || P_RUNID || ' X      
+    --   WHERE X.PD_MODEL_ID = A.PD_RULE_ID      
+    --   AND X.PD_DATE = A.PD_EFFECTIVE_DATE      
+    --   AND X.SEGMENTATION_ID = A.SEGMENTATION_ID     
+    -- )';
+    -- EXECUTE (V_STR_QUERY);
+    -- -------------- END CREATE FOR PD FOWRWARD LOOKING MONTHLY ---------------------------- 
+
+
+    -- -----#4
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_YEARLY_' || P_RUNID || '';
+    -- EXECUTE (V_STR_QUERY);
+
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_IFRS_ECL_PD_YEARLY_' || P_RUNID || ' AS     
+    -- SELECT       
+    --   A.DOWNLOAD_DATE,      
+    --   A.CURR_DATE,      
+    --   A.PD_RULE_ID,       
+    --   A.BUCKET_GROUP,      
+    --   A.BUCKET_ID,      
+    --   A.FL_SEQ,      
+    --   A.FL_YEAR,      
+    --   A.PD_RATE AS PD,      
+    --   A.CREATEDDATE    
+    -- FROM IFRS_PD_TERM_STRUCTURE_NOFL_YEARLY A      
+    -- WHERE      
+    -- A.PD_RATE >= 0      
+    -- AND EXISTS      
+    -- (      
+    --   SELECT 1      
+    --   FROM TMP_IFRS_ECL_MODEL_ECL_' || P_RUNID || ' X      
+    --   WHERE X.PD_MODEL_ID = A.PD_RULE_ID      
+    --   AND X.PD_DATE = A.DOWNLOAD_DATE      
+    -- ) AND A.FL_SEQ = 1      
+    -- ORDER BY A.CURR_DATE, BUCKET_GROUP, BUCKET_ID, PD_RULE_ID';
+    -- EXECUTE (V_STR_QUERY);
+
+
+    -- -------------- CREATE FOR PD FL FORWARD LOOKING YEARLY ----------------
+    -- -----#5
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_PD_FL_YEARLY_' || P_RUNID || '';
+    -- EXECUTE (V_STR_QUERY);
+
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_IFRS_ECL_PD_FL_YEARLY_' || P_RUNID || ' AS     
+    -- SELECT      
+    --     A.DOWNLOAD_DATE,      
+    --     A.PD_RULE_ID,      
+    --     A.ME_MODEL_ID AS PD_ME_MODEL_ID,      
+    --     A.BUCKET_GROUP,      
+    --     A.BUCKET_ID,      
+    --     A.FL_SEQ,      
+    --     A.FL_YEAR,       
+    --     A.PD_FINAL AS PD_FL,      
+    --     A.SEGMENTATION_ID      
+    -- FROM IFRS_IMP_PD_FL_TERM_YEARLY A       
+    -- WHERE      
+    -- A.PD_FINAL >= 0 AND A.FL_YEAR =1 AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE      
+    -- AND EXISTS      
+    -- (      
+    --     SELECT 1      
+    --     FROM TMP_IFRS_ECL_MODEL_ECL_' || P_RUNID || ' X      
+    --     WHERE X.PD_MODEL_ID = A.PD_RULE_ID      
+    --     AND X.SEGMENTATION_ID = A.SEGMENTATION_ID      
+    -- )';
+    -- EXECUTE (V_STR_QUERY);
+    --  -------------- END CREATE FOR PD FOWRWARD LOOKING YEARLY----------------------------
+
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_IFRS_ECL_LGD_' || P_RUNID || '';
+    -- EXECUTE (V_STR_QUERY);
+
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_IFRS_ECL_LGD_' || P_RUNID || ' AS     
+    -- SELECT A.DOWNLOAD_DATE,      
+    --     A.LGD_RULE_ID,       
+    --     A.FL_SEQ,      
+    --     MAX(A.FL_SEQ) OVER(PARTITION BY A.LGD_RULE_ID, A.MODEL_ID) MAX_SEQ,      
+    --     A.LGD      
+    -- FROM IFRS_LGD_TERM_STRUCTURE A      
+    -- WHERE      
+    -- A.LGD >= 0';
+    -- EXECUTE (V_STR_QUERY);
+
+
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'INSERT INTO TMP_IFRS_ECL_LGD_' || P_RUNID || '  (DOWNLOAD_DATE, LGD_RULE_ID, LGD) SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, 99999, 1';
+    -- EXECUTE (V_STR_QUERY);
+
+
+    -- V_STR_QUERY := '';
+    -- V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT3 || '        
+    -- (        
+    --   DOWNLOAD_DATE,        
+    --   MASTERID,        
+    --   GROUP_SEGMENT,        
+    --   SEGMENT,        
+    --   SUB_SEGMENT,        
+    --   SEGMENTATION_ID,        
+    --   ACCOUNT_NUMBER,        
+    --   CUSTOMER_NUMBER,        
+    --   LT_SEGMENT,        
+    --   SICR_RULE_ID,        
+    --   SICR_FLAG,        
+    --   LIFETIME,        
+    --   STAGE,        
+    --   REVOLVING_FLAG,        
+    --   PD_SEGMENT,        
+    --   LGD_SEGMENT,        
+    --   EAD_SEGMENT,        
+    --   PREV_EIL_AMOUNT,        
+    --   BUCKET_GROUP,        
+    --   BUCKET_ID,        
+    --   EIL_MODEL_ID,        
+    --   EAD_MODEL_ID,        
+    --   CCF_RULES_ID,        
+    --   PD_MODEL_ID,        
+    --   LGD_MODEL_ID,         
+    --   SEQ,        
+    --   FL_YEAR,        
+    --   FL_MONTH,        
+    --   OUTSTANDING,        
+    --   UNAMORT_COST_AMT,         
+    --   UNAMORT_FEE_AMT,        
+    --   MARGIN_ACCRUED,        
+    --   UNUSED_AMOUNT,         
+    --   FAIR_VALUE_AMOUNT,         
+    --   EAD_BALANCE,        
+    --   PLAFOND,        
+    --   EIR,        
+    --   CCF,        
+    --   EAD,        
+    --   PD_BFL,        
+    --   LGD,        
+    --   DISC_EAD,        
+    --   EIL,       
+    --   EIL_BFL,        
+    --   PD,        
+    --   COLL_AMOUNT         
+    -- )  
+    -- SELECT      
+    --   A.DOWNLOAD_DATE,      
+    --   A.MASTERID,      
+    --   A.GROUP_SEGMENT,      
+    --   A.SEGMENT,      
+    --   A.SUB_SEGMENT,      
+    --   A.SEGMENTATION_ID,      
+    --   A.ACCOUNT_NUMBER,      
+    --   A.CUSTOMER_NUMBER,      
+    --   NULL AS LT_SEGMENT,      
+    --   A.SICR_RULE_ID,      
+    --   NULL AS SICR_FLAG,      
+    --   A.LIFETIME,      
+    --   A.STAGE,      
+    --   A.REVOLVING_FLAG,      
+    --   A.PD_SEGMENT,      
+    --   A.LGD_SEGMENT,      
+    --   A.EAD_SEGMENT,      
+    --   A.PREV_EIL_AMOUNT,      
+    --   A.BUCKET_GROUP,      
+    --   A.BUCKET_ID,      
+    --   A.EIL_MODEL_ID,      
+    --   A.EAD_MODEL_ID,       
+    --   A.CCF_RULES_ID,      
+    --   A.PD_MODEL_ID,      
+    --   A.LGD_MODEL_ID,      
+    --   A.SEQ,      
+    --   A.FL_YEAR,      
+    --   A.FL_MONTH,      
+    --   A.OUTSTANDING,      
+    --   A.UNAMORT_COST_AMT,       
+    --   A.UNAMORT_FEE_AMT,       
+    --   A.MARGIN_ACCRUED,      
+    --   A.UNUSED_AMOUNT,       
+    --   A.FAIR_VALUE_AMOUNT,       
+    --   A.EAD_BALANCE,       
+    --   A.PLAFOND,      
+    --   A.EIR,      
+    --   A.CCF,      
+    --   A.EAD,      
+    --   C.PD AS PD_BFL,      
+    --   D.LGD,      
+    --   CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
+    --   FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END AS DISC_EAD,      
+    --   (CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
+    --   FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * COALESCE(E.PD_FL,C.PD) * COALESCE(D.LGD,1) AS EIL,       
+    --   (CASE WHEN A.STAGE = 3 THEN A.EAD ELSE       
+    --   FUTIL_PV(COALESCE(A.EIR, 0)/100/12, A.SEQ, A.EAD) END) * C.PD * COALESCE(D.LGD,1) AS EIL_BFL,      
+    --   E.PD_FL AS PD ,      
+    --   A.COLL_AMOUNT      
+    --   FROM ' || V_TABLEINSERT5 || ' A     
+    --   JOIN TMP_IFRS_ECL_MODEL_ECL_' || P_RUNID || ' B ON A.EIL_MODEL_ID = B.EIL_MODEL_ID AND A.SEGMENTATION_ID = B.SEGMENTATION_ID      
+    --   JOIN TMP_IFRS_ECL_PD_MONTHLY_ECL_' || P_RUNID || ' C ON B.PD_MODEL_ID = C.PD_RULE_ID  AND A.BUCKET_ID = C.BUCKET_ID  AND A.SEQ = C.FL_SEQ AND B.PD_DATE = C.DOWNLOAD_DATE       
+    --   JOIN TMP_IFRS_ECL_LGD_' || P_RUNID || ' D ON B.LGD_MODEL_ID = D.LGD_RULE_ID AND COALESCE(B.LGD_DATE,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE) = D.DOWNLOAD_DATE       
+    --   JOIN TMP_IFRS_ECL_PD_FL_MONTHLY_ECL_' || P_RUNID || ' E ON B.PD_MODEL_ID = E.PD_RULE_ID AND A.BUCKET_ID = E.BUCKET_ID AND A.SEQ = E.FL_SEQ AND A.SEGMENTATION_ID= E.SEGMENTATION_ID       
+    --   WHERE A.EAD > 0';
+    -- EXECUTE (V_STR_QUERY);
 
     -- GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
     -- V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
