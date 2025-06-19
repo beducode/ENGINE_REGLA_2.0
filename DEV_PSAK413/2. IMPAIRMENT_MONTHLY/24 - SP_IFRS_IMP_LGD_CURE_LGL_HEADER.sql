@@ -64,6 +64,7 @@ BEGIN
         V_TABLEINSERT2 := 'IFRS_IMA_IMP_CURR_' || P_RUNID || '';
         V_TABLEINSERT3 := 'IFRS_IMA_IMP_PREV_' || P_RUNID || '';
         V_TABLEINSERT4 := 'IFRS_LGD_TERM_STRUCTURE';
+        V_TABLEINSERT5 := 'IFRS_LGD_CURE_LGL_HEADER';
         V_TABLELGDCONFIG := 'IFRS_LGD_RULES_CONFIG_' || P_RUNID || '';
     ELSE 
         V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
@@ -72,6 +73,7 @@ BEGIN
         V_TABLEINSERT2 := 'IFRS_IMA_IMP_CURR';
         V_TABLEINSERT3 := 'IFRS_IMA_IMP_PREV';
         V_TABLEINSERT4 := 'IFRS_LGD_TERM_STRUCTURE';
+        V_TABLEINSERT5 := 'IFRS_LGD_CURE_LGL_HEADER';
         V_TABLELGDCONFIG := 'IFRS_LGD_RULES_CONFIG';
     END IF;
 
@@ -99,7 +101,7 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE HEADER_' || P_RUNID || ' AS
-    SELECT * FROM IFRS_LGD_CURE_LGL_HEADER WHERE 1 = 2';
+    SELECT * FROM ' || V_TABLEINSERT5 || ' WHERE 1 = 2';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -163,6 +165,8 @@ BEGIN
     AND A.DEFAULT_RULE_ID = B.DEFAULT_RULE_ID';
     EXECUTE (V_STR_QUERY);
 
+    -- RAISE NOTICE '---> %', V_STR_QUERY;
+
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE HEADER_' || P_RUNID || ' A         
     SET LIQPEN_COUNT = B.LIQPEN_COUNT        
@@ -193,6 +197,8 @@ BEGIN
     AND A.LGD_RULE_ID = B.LGD_RULE_ID                         
     AND A.DEFAULT_RULE_ID = B.DEFAULT_RULE_ID';
     EXECUTE (V_STR_QUERY);
+
+    -- RAISE NOTICE '---> %', V_STR_QUERY;
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE HEADER_' || P_RUNID || ' A         
@@ -257,8 +263,10 @@ BEGIN
     AND A.DEFAULT_RULE_ID = B.DEFAULT_RULE_ID';
     EXECUTE (V_STR_QUERY);
 
+    -- RAISE NOTICE '----> %', V_STR_QUERY;
+
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || ' DELETE FROM IFRS_LGD_CURE_LGL_HEADER A        
+    V_STR_QUERY := V_STR_QUERY || ' DELETE FROM ' || V_TABLEINSERT5 || ' A        
     USING ' || V_TABLELGDCONFIG || ' B        
     WHERE A.LGD_RULE_ID = B.PKID                            
     AND A.DOWNLOAD_DATE = CASE WHEN B.LAG_1MONTH_FLAG = 1 THEN ''' || CAST(V_PREVMONTH AS VARCHAR(10)) || '''::DATE ELSE ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE END
@@ -266,7 +274,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_LGD_CURE_LGL_HEADER        
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT5 || '        
     (        
     DOWNLOAD_DATE        
     ,LGD_RULE_ID        
@@ -295,6 +303,8 @@ BEGIN
     FROM HEADER_' || P_RUNID || '';
     EXECUTE (V_STR_QUERY);
 
+    -- RAISE NOTICE '----> %', V_STR_QUERY;
+
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT4 || ' A        
     USING ' || V_TABLELGDCONFIG || ' B        
@@ -318,7 +328,7 @@ BEGIN
     ,A.LGD_RULE_NAME                            
     ,A.DEFAULT_RULE_ID                            
     ,LGD                            
-    FROM IFRS_LGD_CURE_LGL_HEADER A                          
+    FROM ' || V_TABLEINSERT5 || ' A                          
     JOIN ' || V_TABLELGDCONFIG || ' B                          
     ON A.LGD_RULE_ID = B.PKID        
     AND A.DEFAULT_RULE_ID = B.DEFAULT_RULE_ID        
