@@ -36,6 +36,9 @@ DECLARE
     V_TABLEINSERT13 VARCHAR(100);
     V_TABLEINSERT14 VARCHAR(100);
     V_TABLEINSERT15 VARCHAR(100);
+    V_TABLEINSERT16 VARCHAR(100);
+    V_TABLEINSERT17 VARCHAR(100);
+    V_TABLEINSERT18 VARCHAR(100);
 
     ---- CONDITION
     V_RETURNROWS INT;
@@ -74,6 +77,9 @@ BEGIN
         V_TABLEINSERT7 := 'IFRS_JUDGEMENT_RATING_TREASURY';
         V_TABLEINSERT9 := 'IFRS_PD_EXTERNAL_TREASURY';
         V_TABLEINSERT10 := 'IFRS_PD_EXTERNAL_MAPPING';
+        V_TABLEINSERT13 := 'IFRS_RECOVERY_RATE_TREASURY';
+        V_TABLEINSERT15 := 'IFRS_CUSTOMER_GRADING_CORP';
+        V_TABLEINSERT17 := 'IFRS_ASSET_CLASSIFICATION_CORP';
     ELSE 
         V_TABLEINSERT1 := 'IFRS_PD_MASTERSCALE_CORP';
         V_TABLEINSERT3 := 'IFRS_RECOVERY_CORP';
@@ -81,6 +87,9 @@ BEGIN
         V_TABLEINSERT7 := 'IFRS_JUDGEMENT_RATING_TREASURY';
         V_TABLEINSERT9 := 'IFRS_PD_EXTERNAL_TREASURY';
         V_TABLEINSERT10 := 'IFRS_PD_EXTERNAL_MAPPING';
+        V_TABLEINSERT13 := 'IFRS_RECOVERY_RATE_TREASURY';
+        V_TABLEINSERT15 := 'IFRS_CUSTOMER_GRADING_CORP';
+        V_TABLEINSERT17 := 'IFRS_ASSET_CLASSIFICATION_CORP';
     END IF;
 
     V_TABLEINSERT2 := 'TBLU_PD_MASTERSCALE';
@@ -89,6 +98,9 @@ BEGIN
     V_TABLEINSERT8 := 'TBLU_JUDGEMENT_RATING_TREASURY';
     V_TABLEINSERT11 := 'TBLU_PD_EXTERNAL_PEFINDO';
     V_TABLEINSERT12 := 'TBLU_PD_EXTERNAL_SNP';
+    V_TABLEINSERT14 := 'TBLU_RECOVERY_RATE_TREASURY';
+    V_TABLEINSERT16 := 'TBLU_CUSTOMER_GRADING';
+    V_TABLEINSERT18 := 'TBLU_ASSET_CLASSIFICATION_CORP';
 
     IF P_DOWNLOAD_DATE IS NULL 
     THEN
@@ -197,7 +209,7 @@ BEGIN
     ,CREATEDHOST        
     )        
     SELECT         
-    CASE WHEN F_EOMONTH(DOWNLOAD_DATE, 0, ''M'', ''NEXT'') <= ''20110131''THEN ''20110131''ELSE F_EOMONTH(DOWNLOAD_DATE, 0, ''M'', ''NEXT'') END AS DOWNLOAD_DATE      
+    CASE WHEN F_EOMONTH(DOWNLOAD_DATE, 0, ''M'', ''NEXT'') <= ''20110131''THEN ''20110131'' ELSE F_EOMONTH(DOWNLOAD_DATE, 0, ''M'', ''NEXT'') END AS DOWNLOAD_DATE      
     ,DEFAULT_DATE        
     ,REPLACE(OS_AT_DEFAULT, '','', ''.'') AS OS_AT_DEFAULT        
     ,CUSTOMER_NUMBER        
@@ -213,7 +225,9 @@ BEGIN
     ,CREATEDHOST        
     FROM ' || V_TABLEINSERT4 ||'        
     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRMONTH AS VARCHAR(10)) || '''';
-    EXECUTE (V_STR_QUERY);
+    -- EXECUTE (V_STR_QUERY);
+
+    RAISE NOTICE '---> %', V_STR_QUERY;
 
 
     ---------------------------------------------      
@@ -466,10 +480,113 @@ BEGIN
     -------------------------------------------      
     ---- START TBLU_RECOVERY_RATE_TREASURY ----      
     -------------------------------------------
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DELETE ' || V_TABLEINSERT13 || ' WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    EXECUTE (V_STR_QUERY);
+
+    V_CHECKROWS := 0;
+    EXECUTE 'SELECT COUNT(*) FROM ' || V_TABLEINSERT14 || '  WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ' INTO V_CHECKROWS;
+
+    IF (V_CHECKROWS > 0) THEN
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT13 || '      
+        (      
+        DOWNLOAD_DATE      
+        ,SEGMENT      
+        ,RECOVERY_RATE       
+        )      
+        SELECT       
+        DOWNLOAD_DATE      
+        ,SEGMENT      
+        ,CAST(RECOVERY_RATE AS FLOAT) / 100 AS RECOVERY_RATE      
+        FROM ' || V_TABLEINSERT14 || '      
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRMONTH AS VARCHAR(10)) || ''' ';
+        EXECUTE (V_STR_QUERY);
+
+    ELSE
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT13 || '      
+        (      
+        DOWNLOAD_DATE      
+        ,SEGMENT      
+        ,RECOVERY_RATE       
+        )      
+        SELECT       
+        ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE      
+        ,SEGMENT      
+        ,RECOVERY_RATE    
+        FROM ' || V_TABLEINSERT13 || '      
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVMONTH AS VARCHAR(10)) || ''' ';
+        EXECUTE (V_STR_QUERY);
+
+    END IF;
+
+    ------------------------------------------      
+    ---- START IFRS_CUSTOMER_GRADING_CORP ----      
+    ------------------------------------------   
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DELETE ' || V_TABLEINSERT15 || ' WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || ' INSERT INTO ' || V_TABLEINSERT15 || '       
+    (      
+    DOWNLOAD_DATE      
+    ,CUSTOMER_NUMBER        
+    ,SANDI_BANK      
+    ,OBLIGOR_GRADE      
+    ,JAP_NON_JAP_IDENTIFIER      
+    ,WATCH_LIST_FLAG      
+    ,CREATEDBY      
+    ,CREATEDDATE      
+    )      
+    SELECT      
+    DOWNLOAD_DATE      
+    ,CUSTOMER_NUMBER        
+    ,SANDI_BANK           
+    ,UPPER(MAX(OBLIGOR_GRADE))      
+    ,MAX(JAP_NON_JAP_IDENTIFIER)      
+    ,MAX(CASE WHEN WATCH_LIST_FLAG = 1 THEN 1 ELSE 0 END)      
+    ,''SP_IFRS_SYNC_CORPORATE_DATA'' AS CREATEDBY      
+    ,GETDATE () AS CREATEDDATE      
+    FROM ' || V_TABLEINSERT16 || '       
+    WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE     
+    GROUP BY DOWNLOAD_DATE, CUSTOMER_NUMBER, SANDI_BANK  ';
+    EXECUTE (V_STR_QUERY);
+
+
+    ----------------------------------      
+    ---- START IFRS_SYNC_TREASURY ----      
+    ----------------------------------
+    CALL SP_IFRS_SYNC_TREASURY(P_RUNID, NULL, P_PRC);
+
+
+    --------------------------------      
+    ---- START SYNC ASSET CLASS CORP ----      
+    --------------------------------   
     
-        
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DELETE ' || V_TABLEINSERT17 || ' WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    EXECUTE (V_STR_QUERY);
 
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO  IFRS_ASSET_CLASSIFICATION_CORP (DOWNLOAD_DATE        
+    ,FACILITY_NUMBER        
+    ,SPPI_RESULT        
+    ,BM_RESULT)        
+    SELECT DOWNLOAD_DATE        
+    ,FACILITY_NUMBER        
+    ,SPPI_RESULT        
+    ,CASE WHEN BM_RESULT = ''OTHERS'' THEN ''TRADE''        
+    ELSE BM_RESULT END AS BM_RESULT        
+    FROM ' || V_TABLEINSERT18 || ' WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    EXECUTE (V_STR_QUERY);
 
+    ---- GET RECORD
     GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
     V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
     V_RETURNROWS := 0;
