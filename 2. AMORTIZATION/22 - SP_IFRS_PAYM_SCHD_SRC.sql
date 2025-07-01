@@ -18,7 +18,6 @@ DECLARE
     V_TABLEINSERT1 VARCHAR(100);
     V_TABLEINSERT2 VARCHAR(100);
     V_TABLEINSERT3 VARCHAR(100);
-    V_TABLEINSERT4 VARCHAR(100);
     V_TABLEINSERT5 VARCHAR(100);
     V_TABLEINSERT6 VARCHAR(100);
     V_TABLEINSERT7 VARCHAR(100);
@@ -73,7 +72,6 @@ BEGIN
         V_TABLEINSERT1 := 'IFRS_ACCT_COST_FEE_' || P_RUNID || '';
         V_TABLEINSERT2 := 'IFRS_ACCT_COST_FEE_SUMM_' || P_RUNID || '';
         V_TABLEINSERT3 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
-        V_TABLEINSERT4 := 'IFRS_MASTER_EXCHANGE_RATE_' || P_RUNID || '';
         V_TABLEINSERT5 := 'IFRS_PAYM_CORE_SRC_' || P_RUNID || '';
         V_TABLEINSERT6 := 'IFRS_PAYM_SCHD_' || P_RUNID || '';
         V_TABLEINSERT7 := 'IFRS_PAYM_SCHD_ALL_' || P_RUNID || '';
@@ -83,7 +81,6 @@ BEGIN
         V_TABLEINSERT1 := 'IFRS_ACCT_COST_FEE';
         V_TABLEINSERT2 := 'IFRS_ACCT_COST_FEE_SUMM';
         V_TABLEINSERT3 := 'IFRS_IMA_AMORT_CURR';
-        V_TABLEINSERT4 := 'IFRS_MASTER_EXCHANGE_RATE';
         V_TABLEINSERT5 := 'IFRS_PAYM_CORE_SRC';
         V_TABLEINSERT6 := 'IFRS_PAYM_SCHD';
         V_TABLEINSERT7 := 'IFRS_PAYM_SCHD_ALL';
@@ -827,10 +824,10 @@ BEGIN
                 ) - 1 >= CAST(VALUE2 AS INT) 
                 THEN CASE 
                     WHEN A.ICC IN (''1'', ''2'') 
-                    THEN A.PMT_DATE - (A.PMT_DATE + ((CAST(VALUE2 AS INT) * -1) || '' MONTHS'')::INTERVAL) 
+                    THEN EXTRACT(DAY FROM A.PMT_DATE - (A.PMT_DATE + ((CAST(B.VALUE2 AS INT) * -1) || '' MONTHS'')::INTERVAL)) 
                     ELSE 30 * CAST(VALUE2 AS INT) 
                 END 
-                ELSE I_DAYS 
+                ELSE A.I_DAYS 
             END 
             ,INT_AMT = CASE 
                 WHEN (
@@ -842,14 +839,14 @@ BEGIN
                     THEN (CAST(A.I_DAYS AS FLOAT) / CAST(CASE 
                         WHEN (NEXT_PAYMENT_DATE - LAST_PAYM_DATE) = 0 
                         THEN 1 
-                        ELSE (NEXT_PAYMENT_DDATE - LAST_PAYM_DATE) 
-                    END AS FLOAT)) * INT_AMT 
+                        ELSE (NEXT_PAYMENT_DATE - LAST_PAYM_DATE) 
+                    END AS FLOAT)) * A.INT_AMT 
                     ELSE (CAST(A.I_DAYS AS FLOAT) / CAST(
                         (((F_CNT_DAYS_30_360(LAST_PAYM_DATE, NEXT_PAYMENT_DATE) - 1) / 30) + 1) * 30
                         AS FLOAT
-                    )) * INT_AMT 
+                    )) * A.INT_AMT 
                 END 
-                ELSE INT_AMT 
+                ELSE A.INT_AMT 
             END 
         FROM ' || V_TABLEINSERT5 || ' A 
         JOIN (SELECT * FROM TBLM_COMMONCODEDETAIL WHERE COMMONCODE = ''SCM010'') B 
@@ -863,7 +860,7 @@ BEGIN
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT5 || ' 
         SET I_DAYS = CASE 
             WHEN A.ICC IN (''1'', ''2'') 
-            THEN A.PMT_DATE - (A.PMT_DATE + ((CAST(VALUE2 AS INT) * -1) || '' MONTHS'')::INTERVAL) 
+            THEN EXTRACT(DAY FROM A.PMT_DATE - (A.PMT_DATE + ((CAST(VALUE2 AS INT) * -1) || '' MONTHS'')::INTERVAL)) 
             ELSE 30 * CAST(VALUE2 AS INT) 
         END 
         FROM ' || V_TABLEINSERT5 || ' A 
@@ -894,7 +891,7 @@ BEGIN
         WHERE MASTERID IN (
             SELECT MASTERID 
             FROM ' || V_TABLEINSERT1 || ' 
-            WHERE DOWNLOAD_DDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+            WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             AND STATUS IN (''FRZPYM'', ''FRZNF'') 
             GROUP BY MASTERID 
         ) ';
@@ -940,7 +937,7 @@ BEGIN
             JOIN ' || V_TABLEINSERT3 || ' B 
                 ON A.MASTERID = B.MASTERID 
                 AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
-            JOIN ' || V_TABLEINSERT4 || ' C 
+            JOIN ' || 'IFRS_MASTER_EXCHANGE_RATE' || ' C 
                 ON B.CURRENCY = C.CURRENCY 
                 AND B.DOWNLOAD_DATE = C.DOWNLOAD_DATE 
             WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
@@ -948,7 +945,7 @@ BEGIN
             ON SCHD.PMTDATE = TRANS.DOWNLOAD_DATE 
             AND SCHD.MASTERID = TRANS.MASTERID 
         WHERE SCHD.PMTDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND (TRANS.AMOUNT / (SCHD.OSPRN * TRANS.RATE_AMOUNT)) * 100 >= ' || V_PARAM_EIR_TRESHOLD || ' 
+        AND (TRANS.AMOUNT / (SCHD.OSPRN * TRANS.RATE_AMOUNT)) * 100 >= ' || V_PARAM_EIR_THRESHOLD || ' 
         AND FEE.STATUS = ''ACT'' ';
     EXECUTE (V_STR_QUERY);
 
@@ -983,7 +980,7 @@ BEGIN
             JOIN ' || V_TABLEINSERT3 || ' B 
                 ON A.MASTERID = B.MASTERID 
                 AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE 
-            JOIN ' || V_TABLEINSERT4 || ' C 
+            JOIN ' || 'IFRS_MASTER_EXCHANGE_RATE' || ' C 
                 ON B.CURRENCY = C.CURRENCY 
                 AND B.DOWNLOAD_DATE = C.DOWNLOAD_DATE 
             WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
