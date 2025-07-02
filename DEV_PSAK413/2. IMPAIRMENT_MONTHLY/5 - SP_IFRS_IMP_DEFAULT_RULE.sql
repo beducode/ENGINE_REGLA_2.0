@@ -85,7 +85,7 @@ BEGIN
         V_TABLENAME_MON := 'TMP_IMAM_' || P_RUNID || '';
         V_TABLEINSERT1 := 'TMP_IFRS_ECL_IMA_' || P_RUNID || '';
         V_TABLEINSERT2 := 'IFRS_IMA_IMP_CURR_' || P_RUNID || '';
-        V_TABLEINSERT3 := 'IFRS_DEFAULT_' || P_RUNID || '';
+        V_TABLEINSERT3 := 'IFRS_DEFAULT';
     ELSE 
         V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
         V_TABLENAME_MON := 'IFRS_MASTER_ACCOUNT_MONTHLY';
@@ -111,17 +111,17 @@ BEGIN
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
-    -------- ====== PRE SIMULATION TABLE ======
-    IF P_PRC = 'S' THEN
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT3 || ' ';
-        EXECUTE (V_STR_QUERY);
+    -- -------- ====== PRE SIMULATION TABLE ======
+    -- IF P_PRC = 'S' THEN
+    --     V_STR_QUERY := '';
+    --     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT3 || ' ';
+    --     EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT3 || ' AS SELECT * FROM IFRS_DEFAULT WHERE 0=1';
-        EXECUTE (V_STR_QUERY);
-    END IF;
-    -------- ====== PRE SIMULATION TABLE ======
+    --     V_STR_QUERY := '';
+    --     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT3 || ' AS SELECT * FROM IFRS_DEFAULT WHERE 0=1';
+    --     EXECUTE (V_STR_QUERY);
+    -- END IF;
+    -- -------- ====== PRE SIMULATION TABLE ======
     
     -------- ====== BODY ======
     V_STR_QUERY := '';

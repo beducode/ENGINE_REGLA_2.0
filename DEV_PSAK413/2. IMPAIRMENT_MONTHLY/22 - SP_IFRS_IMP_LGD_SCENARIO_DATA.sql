@@ -73,10 +73,10 @@ BEGIN
         V_TABLEINSERT1 := 'TMP_IFRS_ECL_IMA_' || P_RUNID || '';
         V_TABLEINSERT2 := 'IFRS_IMA_IMP_CURR_' || P_RUNID || '';
         V_TABLEINSERT3 := 'IFRS_IMA_IMP_PREV_' || P_RUNID || '';
-        V_TABLEINSERT4 := 'IFRS_LGD_SCENARIO_DATA_' || P_RUNID || '';
+        V_TABLEINSERT4 := 'IFRS_LGD_SCENARIO_DATA';
         V_TABLELGDCONFIG := 'IFRS_LGD_RULES_CONFIG_' || P_RUNID || '';
         V_TABLEINSERT5 := 'IFRS_SCENARIO_SEGMENT_GENERATE_QUERY_' || P_RUNID || '';
-        V_TABLEINSERT6 := 'IFRS_DEFAULT_' || P_RUNID || '';
+        V_TABLEINSERT6 := 'IFRS_DEFAULT';
     ELSE 
         V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
         V_TABLENAME_MON := 'IFRS_MASTER_ACCOUNT_MONTHLY';
@@ -106,17 +106,17 @@ BEGIN
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
-    -------- ====== PRE SIMULATION TABLE ======
-    IF P_PRC = 'S' THEN
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT4 || ' ';
-        EXECUTE (V_STR_QUERY);
+    -- -------- ====== PRE SIMULATION TABLE ======
+    -- IF P_PRC = 'S' THEN
+    --     V_STR_QUERY := '';
+    --     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT4 || ' ';
+    --     EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_LGD_SCENARIO_DATA WHERE 0=1';
-        EXECUTE (V_STR_QUERY);
-    END IF;
-    -------- ====== PRE SIMULATION TABLE ======
+    --     V_STR_QUERY := '';
+    --     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_LGD_SCENARIO_DATA WHERE 0=1';
+    --     EXECUTE (V_STR_QUERY);
+    -- END IF;
+    -- -------- ====== PRE SIMULATION TABLE ======
     
     -------- ====== BODY ======
     V_STR_QUERY := '';
@@ -188,12 +188,12 @@ BEGIN
         ,''' || V_GROUP_SEGMENT || ''' AS GROUP_SEGMENT                                    
         ,A.EIR_SEGMENT                              
         ,LGD_METHOD                                    
-        ,CASE CALC_METHOD WHEN ''CUSTOMER'' THEN A.CUSTOMER_NUMBER WHEN ''ACCOUNT'' THEN A.MASTERID END AS LGD_UNIQUE_ID            
+        ,CASE CALC_METHOD WHEN ''CUSTOMER'' THEN A.CUSTOMER_NUMBER ELSE A.MASTERID END AS LGD_UNIQUE_ID            
         ,UPPER(CALC_METHOD) AS CALC_METHOD                                  
         ,0 AS CALC_AMOUNT                                    
         ,A.OUTSTANDING * COALESCE(A.EXCHANGE_RATE, 1) AS OUTSTANDING                                    
         ,COALESCE(IMPAIRED_FLAG, ''C'') AS IMPAIRED_FLAG                          
-        ,CASE WHEN C.MASTERID IS NOT NULL THEN 1 ELSE 0 END DEFAULT_FLAG                                    
+        ,CASE WHEN COALESCE(C.MASTERID,''FALSE'') = ''FALSE'' THEN 1 ELSE 0 END DEFAULT_FLAG                                    
         ,FAIR_VALUE_AMOUNT * COALESCE(A.EXCHANGE_RATE, 1) AS FAIR_VALUE_AMOUNT                                    
         ,A.BI_COLLECTABILITY                                    
         ,A.DAY_PAST_DUE                                    
@@ -226,8 +226,7 @@ BEGIN
         ) E ON A.DOWNLOAD_DATE = E.DOWNLOAD_DATE                         
         AND A.MASTERID = E.MASTERID                          
         WHERE                                   
-        A.DOWNLOAD_DATE = CASE WHEN B.LAG_1MONTH_FLAG = 1 THEN ''' || CAST(V_PREVMONTH AS VARCHAR(10)) || '''::DATE          
-        ELSE ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE END  
+        A.DOWNLOAD_DATE = CASE WHEN B.LAG_1MONTH_FLAG = 1 THEN ''' || CAST(V_PREVMONTH AS VARCHAR(10)) || '''::DATE ELSE ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE END  
         ' || CASE WHEN V_GROUP_SEGMENT LIKE '%JENIUS%' THEN 'AND A.CUSTOMER_NUMBER NOT IN (SELECT DISTINCT CUSTOMER_NUMBER FROM IFRS_EXCLUDE_JENIUS) ' ELSE '' END || 'AND ' || REPLACE(V_CONDITION,'"','') || '';
         EXECUTE (V_STR_QUERY);
 
@@ -333,7 +332,7 @@ BEGIN
     -------- ====== RESULT ======
     V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT4 || '';
     CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
-    -------- ====== RESULT ======
+    ------ ====== RESULT ======
 
 END;
 
