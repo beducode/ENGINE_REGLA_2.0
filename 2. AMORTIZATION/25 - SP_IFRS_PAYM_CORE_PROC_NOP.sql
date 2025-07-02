@@ -1,0 +1,192 @@
+---- DROP PROCEDURE SP_IFRS_PAYM_CORE_PROC_NOP;
+
+CREATE OR REPLACE PROCEDURE SP_IFRS_PAYM_CORE_PROC_NOP(
+    IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
+    IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
+    IN P_PRC VARCHAR(1) DEFAULT 'S')
+LANGUAGE PLPGSQL AS $$
+DECLARE
+    ---- DATE
+    V_PREVDATE DATE;
+    V_CURRDATE DATE;
+
+    ---- QUERY   
+    V_STR_QUERY TEXT;
+
+    ---- TABLE LIST       
+    V_TABLEINSERT1 VARCHAR(100);
+    V_TABLEINSERT2 VARCHAR(100);
+    V_TABLEINSERT3 VARCHAR(100);
+    
+    ---- CONDITION
+    V_RETURNROWS INT;
+    V_RETURNROWS2 INT;
+    V_TABLEDEST VARCHAR(100);
+    V_COLUMNDEST VARCHAR(100);
+    V_SPNAME VARCHAR(100);
+    V_OPERATION VARCHAR(100);
+
+    ---- RESULT
+    V_QUERYS TEXT;
+
+    --- VARIABLE
+    V_SP_NAME VARCHAR(100);
+    STACK TEXT; 
+    FCESIG TEXT;
+BEGIN 
+    -------- ====== VARIABLE ======
+	GET DIAGNOSTICS STACK = PG_CONTEXT;
+	FCESIG := substring(STACK from 'function (.*?) line');
+	V_SP_NAME := UPPER(LEFT(fcesig::regprocedure::text, POSITION('(' in fcesig::regprocedure::text)-1));
+
+    IF COALESCE(P_PRC, NULL) IS NULL THEN
+        P_PRC := 'S';
+    END IF;
+
+    IF COALESCE(P_RUNID, NULL) IS NULL THEN
+        P_RUNID := 'S_00000_0000';
+    END IF;
+
+    IF P_PRC = 'S' THEN 
+        V_TABLEINSERT1 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
+        V_TABLEINSERT2 := 'IFRS_PAYM_CORE_' || P_RUNID || '';
+        V_TABLEINSERT3 := 'IFRS_ACCT_EIR_PAYM_' || P_RUNID || '';
+    ELSE 
+        V_TABLEINSERT1 := 'IFRS_IMA_AMORT_CURR';
+        V_TABLEINSERT2 := 'IFRS_PAYM_CORE';
+        V_TABLEINSERT3 := 'IFRS_ACCT_EIR_PAYM';
+    END IF;
+    
+    IF P_DOWNLOAD_DATE IS NULL 
+    THEN
+        SELECT
+            CURRDATE, PREVDATE INTO V_CURRDATE, V_PREVDATE
+        FROM
+            IFRS_PRC_DATE;
+    ELSE        
+        V_CURRDATE := P_DOWNLOAD_DATE;
+        V_PREVDATE := V_CURRDATE - INTERVAL '1 DAY';
+    END IF;
+    
+    V_RETURNROWS2 := 0;
+    -------- ====== VARIABLE ======
+
+    -------- ====== PRE SIMULATION TABLE ======
+    IF P_PRC = 'S' THEN
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT2 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT2 || ' AS SELECT * FROM IFRS_PAYM_CORE WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT3 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT3 || ' AS SELECT * FROM IFRS_ACCT_EIR_PAYM WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+    END IF;
+    -------- ====== PRE SIMULATION TABLE ======
+
+    -------- ====== BODY ======
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_PAYM_CORE_PROC_NOP', '');
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' A 
+        SET EIR1 = 12, EIR2 = 12.1 ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT3 || ' 
+        (
+            MASTERID 
+		    ,DOWNLOAD_DATE 
+		    ,N_LOAN_AMT 
+		    ,N_INT_RATE 
+		    ,STARTAMORTDATE 
+		    ,ENDAMORTDATE 
+		    ,GRACEDATE 
+		    ,ISGRACE 
+		    ,PREV_PMT_DATE 
+		    ,PMT_DATE 
+		    ,I_DAYS 
+		    ,COUNTER 
+		    ,N_OSPRN_PREV 
+		    ,N_INSTALLMENT 
+		    ,N_PRN_PAYMENT 
+		    ,N_INT_PAYMENT 
+		    ,N_INT_PAYMENT_ORG 
+		    ,N_OSPRN 
+		    ,DISB_PERCENTAGE 
+		    ,DISB_AMOUNT 
+		    ,PLAFOND 
+		    ,PERIOD 
+		    ,INTCALCCODE 
+		    ,PAYMENTCODE 
+		    ,PAYMENTTERM 
+        ) 
+        SELECT 
+            A.MASTERID 
+            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE 
+            ,MAX(A.OS_PRN_PREV) OVER (PARTITION BY A.MASTERID) AS N_LOAN_AMT 
+            ,A.INT_RATE 
+            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS STARTAMORTDATE 
+            ,MAX(A.PMT_DATE) OVER (PARTITION BY A.MASTERID) AS ENDAMORTDATE 
+            ,COALESCE(A.GRACE_DATE, ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE) AS GRACEDATE 
+            ,CASE 
+                WHEN A.GRACE_DATE IS NOT NULL 
+                THEN ''Y'' 
+                ELSE ''N'' 
+            END AS ISGRACE 
+            ,A.PREV_PMT_DATE 
+		    ,A.PMT_DATE 
+		    ,A.I_DAYS 
+		    ,A.COUNTER 
+		    ,A.OS_PRN_PREV 
+		    ,(A.PRN_AMT + A.INT_AMT) AS INSTALLMENT 
+		    ,A.PRN_AMT 
+		    ,A.INT_AMT 
+		    ,A.INT_AMT 
+		    ,A.OS_PRN 
+		    ,A.DISB_PERCENTAGE 
+		    ,A.DISB_AMOUNT 
+		    ,A.PLAFOND 
+		    ,MAX(A.COUNTER) OVER (PARTITION BY A.MASTERID) AS PERIOD
+		    ,ICC AS INTCALCCODE 
+		    ,''-'' PAYMENTCODE 
+		    ,''-'' PAYMENTTERM 
+        FROM ' || V_TABLEINSERT2 || ' A 
+        LEFT JOIN ' || V_TABLEINSERT1 || ' B 
+        ON B.MASTERID = A.MASTERID ';
+    EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+    ---- END
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_PAYM_CORE_PROC_NOP', '');
+    
+    RAISE NOTICE 'SP_IFRS_PAYM_CORE_PROC_NOP | AFFECTED RECORD : %', V_RETURNROWS2;
+    ---------- ====== BODY ======
+
+    -------- ====== LOG ======
+    V_TABLEDEST = V_TABLEINSERT3;
+    V_COLUMNDEST = '-';
+    V_SPNAME = 'SP_IFRS_PAYM_CORE_PROC_NOP';
+    V_OPERATION = 'INSERT';
+    
+    CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
+    -------- ====== LOG ======
+
+    -------- ====== RESULT ======
+    V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT3 || '';
+    CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
+    -------- ====== RESULT ======
+
+END;
+
+$$;
