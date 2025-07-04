@@ -1,6 +1,6 @@
----- DROP PROCEDURE SP_IFRS_ACCT_COST_FEE_SUMM;
+---- DROP PROCEDURE SP_IFRS_RESET_AMT_PRC;
 
-CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_COST_FEE_SUMM(
+CREATE OR REPLACE PROCEDURE SP_IFRS_RESET_AMT_PRC(
     IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
     IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
     IN P_PRC VARCHAR(1) DEFAULT 'S')
@@ -14,19 +14,18 @@ DECLARE
     V_STR_QUERY TEXT;
 
     ---- TABLE LIST       
-    V_TABLEINSERT1 VARCHAR(100);
-    V_TABLEINSERT2 VARCHAR(100);
-    
-    ---- CONDITION
-    V_RETURNROWS INT;
-    V_RETURNROWS2 INT;
-    V_TABLEDEST VARCHAR(100);
-    V_COLUMNDEST VARCHAR(100);
-    V_SPNAME VARCHAR(100);
-    V_OPERATION VARCHAR(100);
-
-    ---- RESULT
-    V_QUERYS TEXT;
+    V_TABLEUPDATE1 VARCHAR(100);
+    V_TABLEUPDATE2 VARCHAR(100);
+    V_TABLEUPDATE3 VARCHAR(100);
+    V_TABLEUPDATE4 VARCHAR(100);
+    V_TABLEUPDATE5 VARCHAR(100);
+    V_TABLEUPDATE6 VARCHAR(100);
+    V_TABLEUPDATE7 VARCHAR(100);
+    V_TABLEUPDATE8 VARCHAR(100);
+    V_TABLEUPDATE9 VARCHAR(100);
+    V_TABLEUPDATE10 VARCHAR(100);
+    V_TABLEUPDATE11 VARCHAR(100);
+    V_TABLEUPDATE12 VARCHAR(100);
 
     --- VARIABLE
     V_SP_NAME VARCHAR(100);
@@ -47,11 +46,19 @@ BEGIN
     END IF;
 
     IF P_PRC = 'S' THEN 
-        V_TABLEINSERT1 := 'IFRS_ACCT_COST_FEE_' || P_RUNID || '';
-        V_TABLEINSERT2 := 'IFRS_ACCT_COST_FEE_SUMM_' || P_RUNID || '';
+        V_TABLEUPDATE1 := 'TMP_T1_' || P_RUNID || '';
+        V_TABLEUPDATE2 := 'IFRS_ACCT_CLOSED_' || P_RUNID || '';
+        V_TABLEUPDATE3 := 'IFRS_ACCT_SL_ACF_' || P_RUNID || '';
+        V_TABLEUPDATE4 := 'IFRS_ACCT_SL_ECF_' || P_RUNID || '';
+        V_TABLEUPDATE5 := 'IFRS_ACCT_SL_ACCRU_PREV_' || P_RUNID || '';
+
     ELSE 
-        V_TABLEINSERT1 := 'IFRS_ACCT_COST_FEE';
-        V_TABLEINSERT2 := 'IFRS_ACCT_COST_FEE_SUMM';
+        V_TABLEUPDATE1 := 'TMP_T1';
+        V_TABLEUPDATE2 := 'IFRS_ACCT_CLOSED';
+        V_TABLEUPDATE3 := 'IFRS_ACCT_SL_ACF';
+        V_TABLEUPDATE4 := 'IFRS_ACCT_SL_ECF';
+        V_TABLEUPDATE5 := 'IFRS_ACCT_SL_ACCRU_PREV';
+      
     END IF;
     
     IF P_DOWNLOAD_DATE IS NULL 
@@ -64,171 +71,217 @@ BEGIN
         V_CURRDATE := P_DOWNLOAD_DATE;
         V_PREVDATE := V_CURRDATE - INTERVAL '1 DAY';
     END IF;
-    
-    V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
     -------- ====== PRE SIMULATION TABLE ======
     IF P_PRC = 'S' THEN
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT2 || ' ';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEUPDATE1 || ', ' || V_TABLEUPDATE2 || ', ' || V_TABLEUPDATE3 || ', ' || V_TABLEUPDATE4 || ', ' || V_TABLEUPDATE5 || ', ' || V_TABLEUPDATE6 || ', ' || V_TABLEUPDATE7 || ', ' || V_TABLEUPDATE8 || ', ' || V_TABLEUPDATE9 || ', ' || V_TABLEUPDATE10 || ', ' || V_TABLEUPDATE11 || ', ' || V_TABLEUPDATE12 || ' ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT2 || ' AS SELECT * FROM IFRS_ACCT_COST_FEE_SUMM WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEUPDATE1 || ' AS SELECT * FROM TMP_T1 WHERE 1=0; ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEUPDATE2 || ' AS SELECT * FROM IFRS_ACCT_CLOSED WHERE 1=0; ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEUPDATE3 || ' AS SELECT * FROM IFRS_ACCT_SL_ACF WHERE 1=0; ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEUPDATE4 || ' AS SELECT * FROM IFRS_ACCT_SL_ECF WHERE 1=0; ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEUPDATE5 || ' AS SELECT * FROM IFRS_ACCT_SL_ACCRU_PREV WHERE 1=0; ';
         EXECUTE (V_STR_QUERY);
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
 
     -------- ====== BODY ======
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_COST_FEE_SUMM', '');
+    ---- DELETE ECF
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_SL_LAST_ACF', '');
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT2 || ' 
-        WHERE DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    V_STR_QUERY := 'TRUNCATE TABLE ' || V_TABLEUPDATE1 ||
     EXECUTE (V_STR_QUERY);
 
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
-        ( 
-            DOWNLOAD_DATE 
-            ,MASTERID 
-            ,BRCODE 
-            ,CIFNO 
-            ,FACNO 
-            ,ACCTNO 
-            ,DATASOURCE 
-            ,CCY 
-            ,AMOUNT_FEE 
-            ,AMOUNT_COST 
-            ,CREATEDDATE 
-            ,CREATEDBY 
-            ,AMORT_FEE 
-            ,AMORT_COST 
-        ) SELECT  
-            DOWNLOAD_DATE 
-            ,MASTERID 
-            ,BRCODE 
-            ,CIFNO 
-            ,FACNO 
-            ,ACCTNO 
-            ,DATASOURCE 
-            ,CCY 
-            ,AMOUNT_FEE 
-            ,AMOUNT_COST 
-            ,CREATEDDATE 
-            ,CREATEDBY 
-            ,AMORT_FEE 
-            ,AMORT_COST 
-        FROM ( 
-            SELECT 
-                ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE 
-                ,A.MASTERID 
-                ,A.BRCODE 
-                ,A.CIFNO 
-                ,A.FACNO 
-                ,A.ACCTNO 
-                ,A.DATASOURCE 
-                ,A.CCY 
-                ,SUM(COALESCE(A.AMOUNT_FEE, 0)) AS AMOUNT_FEE 
-                ,SUM(COALESCE(A.AMOUNT_COST, 0)) AS AMOUNT_COST 
-                ,CURRENT_TIMESTAMP AS CREATEDDATE 
-                ,''CF_SUMM'' AS CREATEDBY 
-                ,SUM(COALESCE(A.AMORT_FEE, 0)) AS AMORT_FEE 
-                ,SUM(COALESCE(A.AMORT_COST, 0)) AS AMORT_COST 
-            FROM ( 
-                SELECT 
-                    MASTERID 
-                    ,BRCODE 
-                    ,CIFNO 
-                    ,FACNO 
-                    ,ACCTNO 
-                    ,DATASOURCE 
-                    ,CCY 
-                    ,AMOUNT_FEE 
-                    ,AMOUNT_COST 
-                    ,AMORT_FEE 
-                    ,AMORT_COST 
-                FROM ' || V_TABLEINSERT2 || ' 
-                WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
-
-                UNION ALL 
-
-                SELECT 
-                    MASTERID 
-				    ,BRCODE 
-				    ,CIFNO 
-				    ,FACNO 
-				    ,ACCTNO 
-				    ,DATASOURCE 
-				    ,CCY 
-                    ,SUM(CASE 
-                        WHEN FLAG_CF = ''F'' 
-                        THEN CASE 
-                            WHEN FLAG_REVERSE = ''Y'' 
-                            THEN -1 * AMOUNT 
-                            ELSE AMOUNT 
-                        END
-                        ELSE 0 
-                    END) AS AMOUNT_FEE 
-                    ,SUM(CASE 
-                        WHEN FLAG_CF = ''C'' 
-                        THEN CASE 
-                            WHEN FLAG_REVERSE = ''Y'' 
-                            THEN -1 * AMOUNT 
-                            ELSE AMOUNT 
-                        END
-                        ELSE 0 
-                    END) AS AMOUNT_COST 
-                    ,0 AS AMORT_FEE 
-                    ,0 AS AMORT_COST 
-                FROM ' || V_TABLEINSERT1 || ' 
-                WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
-                AND STATUS IN (''ACT'', ''PNL'') 
-                AND SRCPROCESS NOT IN (''SL_TO_EIR'', ''STOP_REV'') 
-                GROUP BY 
-                    MASTERID 
-                    ,BRCODE 
-                    ,CIFNO 
-                    ,FACNO 
-                    ,ACCTNO 
-                    ,DATASOURCE 
-                    ,CCY 
-            ) A 
-            GROUP BY 
-                A.MASTERID 
-                ,A.BRCODE 
-                ,A.CIFNO 
-                ,A.FACNO 
-                ,A.ACCTNO 
-                ,A.DATASOURCE 
-                ,A.CCY 
-        ) Z ';
+    V_STR_QUERY := 'INSERT INTO ' || V_TABLEUPDATE1 || ' (MASTERID)
+        SELECT DISTINCT A.MASTERID
+        FROM ' || V_TABLEUPDATE2 || ' A
+        JOIN ' || V_TABLEUPDATE3 || ' B ON B.DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
+        AND B.MASTERID = A.MASTERID
+        JOIN ' || V_TABLEUPDATE4 || ' C ON C.AMORTSTOPDATE IS NULL 
+        AND C.MASTERID = A.MASTERID
+        AND C.PREVDATE = C.PMTDATE
+        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE';
     EXECUTE (V_STR_QUERY);
 
-    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
-    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
-    V_RETURNROWS := 0;
+    V_STR_QUERY := 'TRUNCATE TABLE ' || V_TABLEUPDATE1 ||
+    EXECUTE (V_STR_QUERY);
 
+    V_STR_QUERY := 'INSERT INTO ' || V_TABLEUPDATE1 || ' (ID)
+        SELECT MAX(ID) ID
+        FROM ' || V_TABLEUPDATE3 || '
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
+        AND MASTERID IN (SELECT MASTERID FROM ' || V_TABLEUPDATE1 || ')
+        GROUP BY MASTERID';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := 'UPDATE ' || V_TABLEUPDATE5 || '
+        SET STATUS = ''' || CAST(V_CURRDATE AS VARCHAR(8)) || '''::DATE
+        ,CREATEDBY = ''SL_LAST_ACF''
+        WHERE STATUS = ''ACT''
+        AND MASTERID IN (SELECT MASTERID FROM ' || V_TABLEUPDATE1 || ')';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := 'INSERT INTO ' || V_TABLEUPDATE3 || ' (
+        DOWNLOAD_DATE  
+        ,FACNO  
+        ,CIFNO  
+        ,ACCTNO  
+        ,DATASOURCE  
+        ,ECFDATE  
+        ,MASTERID  
+        ,BRANCH  
+        ,N_UNAMORT_FEE  
+        ,N_AMORT_FEE  
+        ,N_ACCRU_FEE  
+        ,N_ACCRUFULL_FEE  
+        ,N_UNAMORT_COST  
+        ,N_AMORT_COST  
+        ,N_ACCRU_COST  
+        ,N_ACCRUFULL_COST  
+        ,N_ACCRU_PREV_FEE  
+        ,N_ACCRU_PREV_COST  
+        ,DO_AMORT  
+        ,CREATEDDATE  
+        ,CREATEDBY  
+        ,ACF_CODE
+        )
+        SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE' || '
+        ,FACNO
+        ,CIFNO
+        ,ACCTNO
+        ,DATASOURCE
+        ,ECFDATE
+        ,MASTERID
+        ,BRANCH
+        ,0
+        ,N_AMORT_FEE + N_UNAMORT_FEE
+        ,CASE
+        WHEN DO_AMORT = ''Y''
+        THEN N_AMORT_FEE - N_UNAMORT_FEE 
+        ELSE - N_UNAMORT_FEE + N_ACCRU_FEE  
+        END
+        , CASE
+        WHEN DO_AMORT = ''Y''
+        THEN N_AMORT_FEE - N_UNAMORT_FEE 
+        ELSE - N_UNAMORT_FEE + N_ACCRU_FEE  
+        END
+        ,0 AS N_UNAMORT_COST2
+        ,N_AMORT_COST + N_UNAMORT_COST
+        ,CASE
+        WHEN DO_AMORT = ''Y''
+        THEN N_AMORT_COST - N_UNAMORT_COST 
+        ELSE - N_UNAMORT_COST + N_ACCRU_COST  
+        END
+        ,CASE
+        WHEN DO_AMORT = ''Y''
+        THEN N_AMORT_COST - N_UNAMORT_COST 
+        ELSE - N_UNAMORT_COST + N_ACCRU_COST  
+        END
+        ,0
+        ,0
+        ,''Y'' AS DO_AMORT2
+        ,CURRENT_TIMESTAMP AS CREATEDDATE2
+        ,''SP_SL_LAST_ACF'' AS CREATEDBY2
+        ,''9''
+        FROM ' || V_TABLEUPDATE3 || '
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
+        AND ID IN (
+        SELECT ID
+        FROM ' || V_TABLEUPDATE1 || ')';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := 'UPDATE ' || V_TABLEUPDATE4 || ' 
+        SET AMORTSTOPDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        ,AMORTSTOPREASON = ''CLOSED''
+        WHERE MASTERID IN (SELECT MASTERID FROM ' || V_TABLEUPDATE1 || ')
+        AND AMORTSTOPDATE IS NULL ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := 'TRUNCATE TABLE ' || TMP_T2 ||
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := 'INSERT INTO ' || TMP_T2 || ' (MASTERID)
+        SELECT MASTERID
+        FROM ' || V_TABLEUPDATE3 || '
+        WHEN (
+        N_UNAMORT_FEE > 0
+        OR N_UNAMORT_COST < 0
+        )
+        AND FLAG_AL IN (''A'', ''O'')
+        THEN 1
+        ELSE 0
+        END = 1
+        AND ACF_CODE = ''2''
+        AND DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := 'UPDATE ' || V_TABLEUPDATE3 || '
+        SET N_UNAMORT_FEE = 0
+        ,N_AMORT_FEE = N_AMORT_FEE + N_UNAMORT_FEE
+        ,N_ACCRU_FEE = CASE
+        WHEN DO_AMORT = ''Y''
+        THEN N_AMORT_FEE - N_UNAMORT_FEE  
+        ELSE - N_UNAMORT_FEE + N_ACCRU_FEE  
+        END
+        ,N_UNAMORT_COST = 0
+        ,N_AMORT_COST = N_AMORT_COST + N_UNAMORT_COST
+        ,N_ACCRU_COST = CASE
+        WHEN DO_AMORT = ''Y''
+        THEN N_AMORT_COST - N_UNAMORT_COST  
+        ELSE - N_UNAMORT_COST + N_ACCRU_COST  
+        END
+        ,N_ACCRUFULL_COST = CASE
+        WHEN DO_AMORT = ''Y''
+        THEN N_AMORT_COST - N_UNAMORT_COST  
+        ELSE - N_UNAMORT_COST + N_ACCRU_COST  
+        END
+        ,N_ACCRU_PREV_FEE = 0
+        ,N_ACCRU_PREV_COST = 0
+        ,DO_AMORT = ''Y''
+        ,CREATEDDATE = CURRENT_TIMESTAMP
+        ,CREATEDBY = ''SP_SL_LAST_ACF''
+        WHERE CASE 
+        WHEN (N_UNAMORT_FEE > 0 OR N_UNAMORT_COST < 0)
+        AND FLAG_AL IN (''A'', ''O'')
+        THEN 1
+        WHEN (N_UNAMORT_FEE < 0 OR N_UNAMORT_COST > 0)
+        AND FLAG_AL NOT IN (''A'', ''O'')
+        THEN 1
+        ELSE 0
+        END = 1
+        AND ACF_CODE = ''2''
+        AND DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := 'UPDATE ' || V_TABLEUPDATE4 || '
+        SET AMORTSTOPDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        ,AMORTSTOPREASON = ''ABN''
+        WHERE MASTERID IN (SELECT MASTERID FROM ' || TMP_T2 || ')
+        AND AMORTSTOPDATE IS NULL ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := 'UPDATE ' || V_TABLEUPDATE5 || '
+        SET STATUS = ' || '''' || CAST(V_CURRDATE AS VARCHAR(8)) || '''::DATE
+        ,CREATEDBY = ''SL_LAST_ACF''
+        WHERE STATUS = ''ACT''
+        AND MASTERID IN (SELECT MASTERID FROM ' || TMP_T2 || ')';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := 'UPDATE ' || V_TABLEUPDATE4 || '
+        SET AMORTSTOPDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        ,AMORTSTOPREASON = ''END''
+        WHERE AMORTENDDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        AND AMORTSTOPDATE IS NULL';
+    EXECUTE (V_STR_QUERY);
+       
     ---- END
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_COST_FEE_SUMM', '');
-
-    RAISE NOTICE 'SP_IFRS_ACCT_COST_FEE_SUMM | AFFECTED RECORD : %', V_RETURNROWS2;
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_SL_LAST_ACF', '');
     ---------- ====== BODY ======
-
-    -------- ====== LOG ======
-    V_TABLEDEST = V_TABLEINSERT2;
-    V_COLUMNDEST = '-';
-    V_SPNAME = 'SP_IFRS_ACCT_COST_FEE_SUMM';
-    V_OPERATION = 'INSERT';
-    
-    CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
-    -------- ====== LOG ======
-
-    -------- ====== RESULT ======
-    V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT2 || '';
-    CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
-    -------- ====== RESULT ======
 
 END;
 
