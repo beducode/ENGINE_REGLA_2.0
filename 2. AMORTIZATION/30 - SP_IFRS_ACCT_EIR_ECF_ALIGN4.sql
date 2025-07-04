@@ -50,9 +50,15 @@ BEGIN
     END IF;
 
     IF P_PRC = 'S' THEN 
-        V_TABLEINSERT1 := 'IFRS_ACCT_EIR_ECF_NOCF_' || P_RUNID || '';
+        V_TABLEINSERT1 := 'IFRS_ACCT_EIR_ECF_' || P_RUNID || '';
+        V_TABLEINSERT2 := 'IFRS_ACCT_EIR_ACFF_' || P_RUNID || '';
+        V_TABLEINSERT3 := 'IFRS_MASTER_ACCOUNT_' || P_RUNID || '';
+        V_TABLEINSERT4 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
     ELSE 
-        V_TABLEINSERT1 := 'IFRS_ACCT_EIR_ECF_NOCF';
+        V_TABLEINSERT1 := 'IFRS_ACCT_EIR_ECF';
+        V_TABLEINSERT2 := 'IFRS_ACCT_EIR_ACF';
+        V_TABLEINSERT3 := 'IFRS_MASTER_ACCOUNT';
+        V_TABLEINSERT4 := 'IFRS_IMA_AMORT_CURR';
     END IF;
     
     IF P_DOWNLOAD_DATE IS NULL 
@@ -82,85 +88,122 @@ BEGIN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM IFRS_ACCT_EIR_ECF_NOCF WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT2 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT2 || ' AS SELECT * FROM IFRS_ACCT_EIR_ECF_NOCF WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT3 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT3 || ' AS SELECT * FROM IFRS_ACCT_EIR_ECF_NOCF WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT4 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_ACCT_EIR_ECF_NOCF WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
 
     -------- ====== BODY ======
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_EIR_ECF_ALIGN4', '');
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_EIR_UPD_UNAMORT', '');
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T8' || '';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_B1' || '';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_T8' || ' 
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_B1' || ' 
         (
             MASTERID 
-            ,DTMAX 
-            ,CURRDATE 
-        ) SELECT 
-            MASTERID 
-            ,MAX(PMT_DATE) AS DTMAX 
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+        ) SELECT DISTINCT MASTERID
         FROM ' || V_TABLEINSERT1 || ' 
-        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        GROUP BY MASTERID ';
-    EXECUTE (V_STR_QUERY);
-
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_ECF_ALIGN4', 'TMP T8 PREPARED');
-    
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT1 || ' A 
-        SET 
-            N_UNAMORT_AMT = 0 
-            ,N_COST_UNAMORT_AMT = 0 
-            ,N_FEE_UNAMORT_AMT = 0 
-            ,N_AMORT_AMT = - 1 * N_UNAMORT_AMT_PREV 
-            ,N_COST_AMORT_AMT = - 1 * N_COST_UNAMORT_AMT_PREV 
-            ,N_FEE_AMORT_AMT = - 1 * N_FEE_UNAMORT_AMT_PREV 
-            ,N_FAIRVALUE = 0 
-        FROM ' || 'TMP_T8' || ' B 
-        WHERE A.MASTERID = B.MASTERID 
-        AND B.DTMAX = A.PMT_DATE 
-        AND A.DOWNLOAD_DATE = B.CURRDATE ';
+        WHERE AMORTSTOPDATE IS NULL';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT1 || ' A 
-        SET 
-            N_DAILY_AMORT_COST = CASE 
-                WHEN I_DAYS2 = 0 
-                THEN 0 
-                ELSE CASE
-                    WHEN ' || V_FUNCROUND || ' = 0 
-                    THEN ROUND(N_COST_AMORT_AMT / CAST(I_DAYS2 AS NUMERIC(32, 6)), ' || V_ROUND || ') 
-                    ELSE TRUNC(N_COST_AMORT_AMT / CAST(I_DAYS2 AS NUMERIC(32, 6)), ' || V_ROUND || ') 
-                END 
-            END 
-            ,N_DAILY_AMORT_FEE = CASE 
-                WHEN I_DAYS2 = 0 
-                THEN 0 
-                ELSE CASE
-                    WHEN ' || V_FUNCROUND || ' = 0 
-                    THEN ROUND(N_FEE_AMORT_AMT / CAST(I_DAYS2 AS NUMERIC(32, 6)), ' || V_ROUND || ') 
-                    ELSE TRUNC(N_FEE_AMORT_AMT / CAST(I_DAYS2 AS NUMERIC(32, 6)), ' || V_ROUND || ') 
-                END 
-            END 
-        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_P1' || '';
     EXECUTE (V_STR_QUERY);
 
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_ECF_ALIGN4', 'DAILY AMORT UPDATED');
-    
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT1 || ' A 
-        SET ENDAMORTDATE = B.DTMAX 
-        FROM ' || 'TMP_T8' || ' B 
-        WHERE A.MASTERID = B.MASTERID 
-        AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_P1' || ' 
+        (
+            ID 
+        ) SELECT MAX(ID) ID
+        FROM ' || V_TABLEINSERT2 || '
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        AND MASTERID IN (
+            SELECT MASTERID
+            FROM ' || 'TMP_B1' || '
+        )
+        GROUP BY MASTERID';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_U1' || ' 
+        (
+            DOWNLOAD_DATE  
+            ,MASTERID  
+            ,N_UNAMORT_FEE  
+            ,N_UNAMORT_COST  
+            ,ECFDATE  
+            ,ACCTNO  
+            ,ENDAMORTDATE  
+        ) SELECT  B.DOWNLOAD_DATE  
+            ,B.MASTERID  
+            ,B.N_UNAMORT_FEE  
+            ,B.N_UNAMORT_COST  
+            ,B.ECFDATE  
+            ,B.ACCTNO  
+            ,E.ENDAMORTDATE
+        FROM ' || V_TABLEINSERT2 || ' B
+        JOIN TMP_P1 C ON C.ID = B.ID
+        LEFT JOIN ' || V_TABLEINSERT1 || ' E ON E.MASTERID = B.MASTERID
+        AND E.PREV_PMT_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
+        AND E.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT3 || ' 
+        SET N_UNAMORT_FEE = B.N_UNAMORT_FEE
+            ,N_UNAMORT_COST = B.N_UNAMORT_COST
+            ,FAIR_VALUE_AMOUNT = ' || V_TABLEINSERT4||'.OUTSTANDING + X.N_UNAMORT_FEE + X.N_UNAMORT_COST  
+            ,LOAN_START_AMORTIZATION = X.ECFDATE  
+            ,LOAN_END_AMORTIZATION = X.ENDAMORTDATE  
+            ,AMORT_TYPE = 'EIR'
+        FROM TMP_U1 B
+        WHERE B.MASTERID = ' || V_TABLEINSERT3 || '.MASTERID
+        AND B.ACCTNO = ' || V_TABLEINSERT3 || '.ACCOUNT_NUMBER';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT3 || ' 
+        SET EIR = B.N_EFT_INT-RATE
+        FROM (
+            SELECT MASTERID
+            , MAX(N_EFF_INT_RATE) N_EFT_INT_RATE
+            FROM ' || V_TABLEINSERT2 || '
+            WHERE AMORTSTOPDATE IS NULL 
+            AND PREV_PMT_DATE = PMT_DATE
+            GROUP BY MASTERID
+        ) B
+        WHERE B.MASTERID = ' || V_TABLEINSERT3 || '.MASTERID
+        AND ' || V_TABLEINSERT3 || '.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE';
     EXECUTE (V_STR_QUERY);
 
     ---- END
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_EIR_ECF_ALIGN4', '');
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_EIR_UPD_UNAMORT', '');
         
     ---------- ====== BODY ======
 
