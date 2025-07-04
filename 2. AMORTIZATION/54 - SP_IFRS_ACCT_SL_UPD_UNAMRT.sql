@@ -1,125 +1,225 @@
-USE [IFRS9]
-GO
-/****** Object:  StoredProcedure [dbo].[SP_IFRS_ACCT_SL_UPD_UNAMRT]    Script Date: 14/06/2024 06:32:28 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+---- DROP PROCEDURE SP_IFRS_ACCT_EIR_GS_RANGE;
 
-CREATE PROCEDURE [dbo].[SP_IFRS_ACCT_SL_UPD_UNAMRT]
+CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_GS_RANGE(
+    IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
+    IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
+    IN P_PRC VARCHAR(1) DEFAULT 'S',
+    IN P_ID1 BIGINT DEFAULT NULL,
+    IN P_ID2 BIGINT DEFAULT NULL)
+LANGUAGE PLPGSQL AS $$
+DECLARE
+    ---- DATE
+    V_PREVDATE DATE;
+    V_CURRDATE DATE;
 
-AS
+    ---- QUERY   
+    V_STR_QUERY TEXT;
 
-declare @v_currdate	date
-	,@v_prevdate	date	
+    ---- TABLE LIST       
+    V_TABLEINSERT1 VARCHAR(100);
+    V_TABLEINSERT2 VARCHAR(100);
+    
+    ---- CONDITION
+    V_RETURNROWS INT;
+    V_RETURNROWS2 INT;
+    V_TABLEDEST VARCHAR(100);
+    V_COLUMNDEST VARCHAR(100);
+    V_SPNAME VARCHAR(100);
+    V_OPERATION VARCHAR(100);
 
+    ---- RESULT
+    V_QUERYS TEXT;
 
-begin
+    --- VARIABLE
+    V_SP_NAME VARCHAR(100);
+    STACK TEXT; 
+    FCESIG TEXT;
+BEGIN 
+    -------- ====== VARIABLE ======
+	GET DIAGNOSTICS STACK = PG_CONTEXT;
+	FCESIG := substring(STACK from 'function (.*?) line');
+	V_SP_NAME := UPPER(LEFT(fcesig::regprocedure::text, POSITION('(' in fcesig::regprocedure::text)-1));
 
-select @v_currdate=max(currdate),@v_prevdate=max(prevdate) from IFRS_PRC_DATE_AMORT 
+    IF COALESCE(P_PRC, NULL) IS NULL THEN
+        P_PRC := 'S';
+    END IF;
 
+    IF COALESCE(P_RUNID, NULL) IS NULL THEN
+        P_RUNID := 'S_00000_0000';
+    END IF;
 
-insert into IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
-VALUES(@v_currdate,current_timestamp,'START','SP_IFRS_ACCT_SL_UPD_UNAMORT','')
+    IF COALESCE(P_ID1, NULL) IS NULL THEN
+        P_ID1 := 0;
+    END IF;
 
+    IF COALESCE(P_ID2, NULL) IS NULL THEN
+        P_ID2 := 0;
+    END IF;
 
--- clean up
-update IFRS_IMA_AMORT_CURR
-set UNAMORT_FEE_AMT = 0
-    ,UNAMORT_COST_AMT = 0
-    ,FAIR_VALUE_AMOUNT = null
-    ,LOAN_START_AMORTIZATION = null
-    ,LOAN_END_AMORTIZATION = null
-where DOWNLOAD_DATE=@v_currdate
+    IF P_PRC = 'S' THEN 
+        V_TABLEINSERT1 := 'IFRS_ACCT_EIR_PAYM_GS_' || P_RUNID || '';
+        V_TABLEINSERT2 := 'IFRS_ACCT_EIR_PAYM_GS_DATE_' || P_RUNID || '';
+    ELSE 
+        V_TABLEINSERT1 := 'IFRS_ACCT_EIR_PAYM_GS';
+        V_TABLEINSERT2 := 'IFRS_ACCT_EIR_PAYM_GS_DATE';
+    END IF;
+    
+    IF P_DOWNLOAD_DATE IS NULL 
+    THEN
+        SELECT
+            CURRDATE, PREVDATE INTO V_CURRDATE, V_PREVDATE
+        FROM
+            IFRS_PRC_DATE;
+    ELSE        
+        V_CURRDATE := P_DOWNLOAD_DATE;
+        V_PREVDATE := V_CURRDATE - INTERVAL '1 DAY';
+    END IF;
+    
+    V_RETURNROWS2 := 0;
+    -------- ====== VARIABLE ======
 
+    -------- ====== PRE SIMULATION TABLE ======
+    IF P_PRC = 'S' THEN
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT1 || ' ';
+        EXECUTE (V_STR_QUERY);
 
-update IFRS_MASTER_ACCOUNT 
-set --UNAMORT_AMT_TOTAL = 0
-    --,unamortizedamount_sl = 0
-    UNAMORT_FEE_AMT = 0
-	--,unamortized_fee_amount_sl = 0
-    ,UNAMORT_COST_AMT = 0
-	--,unamortized_cost_amount_sl = 0
-    ,FAIR_VALUE_AMOUNT = null
-    ,LOAN_START_AMORTIZATION = null
-    ,LOAN_END_AMORTIZATION = null
-where DOWNLOAD_DATE=@v_currdate
- 
-insert into IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
-VALUES(@v_currdate,current_timestamp,'DEBUG','SP_IFRS_ACCT_SL_UPD_UNAMORT','')
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM IFRS_ACCT_EIR_PAYM_GS WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
 
---get active ecf
-truncate table TMP_B1
-insert into TMP_B1(MASTERID)
-select distinct masterid 
-from IFRS_ACCT_SL_ECF
-where AMORTSTOPDATE is null
- 
---get last acf id
-truncate table TMP_P1
-insert into TMP_P1(id)
-select max(id) id
-from IFRS_ACCT_SL_ACF
-where DOWNLOAD_DATE=@v_currdate and masterid in (select masterid from TMP_B1)
-group by masterid
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT2 || ' ';
+        EXECUTE (V_STR_QUERY);
 
-insert into IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
-VALUES(@v_currdate,current_timestamp,'DEBUG1','SP_IFRS_ACCT_SL_UPD_UNAMORT','')
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT2 || ' AS SELECT * FROM IFRS_ACCT_EIR_PAYM_GS_DATE WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+    END IF;
+    -------- ====== PRE SIMULATION TABLE ======
 
--- update to master acct
-update dbo.IFRS_IMA_AMORT_CURR
-set UNAMORT_FEE_AMT = x.n_unamort_fee
-    ,UNAMORT_COST_AMT = x.n_unamort_cost
-    ,FAIR_VALUE_AMOUNT = dbo.IFRS_IMA_AMORT_CURR.outstanding + x.n_unamort_fee + x.n_unamort_cost
-    --,FAIR_VALUE_AMOUNT = dbo.IFRS_IMA_AMORT_CURR.OUTSTANDING_JF + x.n_unamort_fee + x.n_unamort_cost 
-	,LOAN_START_AMORTIZATION=x.ecfdate
-    ,LOAN_END_AMORTIZATION=x.amortenddate
-    ,amort_type='SL'
-from 
-(	select b.DOWNLOAD_DATE,b.masterid,b.n_unamort_fee,b.n_unamort_cost,b.ecfdate,e.amortenddate
-	from IFRS_ACCT_SL_ACF b
-	join TMP_P1 c on c.id=b.id
-	left join IFRS_ACCT_SL_ECF e on e.masterid=b.masterid and e.prevdate=e.pmtdate and e.DOWNLOAD_DATE=b.ecfdate
-) x 
-where x.masterid=dbo.IFRS_IMA_AMORT_CURR.masterid
-and dbo.IFRS_IMA_AMORT_CURR.DOWNLOAD_DATE = @v_currdate
+    -------- ====== BODY ======
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_SL_UPD_UNAMORT', '');
 
-insert into IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
-VALUES(@v_currdate,current_timestamp,'DEBUG2','SP_IFRS_ACCT_SL_UPD_UNAMORT','')
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || 'IFRS_IMA_AMORT_CURR' || '
+        SET UNAMORT_FEE_AMT = 0
+            ,UNAMORT_COST_AMT = 0
+            ,FAIR_VALUE_AMOUNT = NULL
+            ,LOAN_START_AMORTIZATION = NULL
+            ,LOAN_END_AMORTIZATION = NULL
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE';
+    EXECUTE (V_STR_QUERY);
 
-update IFRS_MASTER_ACCOUNT
-set UNAMORT_FEE_AMT = b.UNAMORT_FEE_AMT
-    ,UNAMORT_COST_AMT = b.UNAMORT_COST_AMT
-    ,FAIR_VALUE_AMOUNT = b.FAIR_VALUE_AMOUNT
-    ,LOAN_START_AMORTIZATION = b.LOAN_START_AMORTIZATION
-    ,LOAN_END_AMORTIZATION = b.LOAN_END_AMORTIZATION
-    ,amort_type = b.amort_type
-	--20160407 update to sl unamort fields
-	--,unamortizedamount_sl = b.unamortizedamount
-	--,unamortized_fee_amount_sl = b.unamortized_fee_amount
-    --,unamortized_cost_amount_sl = b.unamortized_cost_amount
-from IFRS_IMA_AMORT_CURR b
-where dbo.IFRS_MASTER_ACCOUNT.MASTERID=b.masterid and dbo.IFRS_MASTER_ACCOUNT.DOWNLOAD_DATE=b.DOWNLOAD_DATE and b.amort_type='SL'
---and b.DOWNLOAD_DATE = @v_currdate
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || 'IFRS_MASTER_ACCOUNT' || '
+        SET UNAMORT_FEE_AMT = 0
+            ,UNAMORT_COST_AMT = 0
+            ,FAIR_VALUE_AMOUNT = NULL
+            ,LOAN_START_AMORTIZATION = NULL
+            ,LOAN_END_AMORTIZATION = NULL
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE';
+    EXECUTE (V_STR_QUERY);
 
-
---20160407 update to sl unamort fields
-/* pindah ke atas dijadikan single update
-update dbo.PMA
-set  unamortizedamount_sl = b.unamortizedamount
-    ,unamortized_fee_amount_sl = b.unamortized_fee_amount
-    ,unamortized_cost_amount_sl = b.unamortized_cost_amount
-from IFRS_IMA_AMORT_CURR b
-where dbo.PMA.masterid=b.masterid and dbo.PMA.DOWNLOAD_DATE=b.DOWNLOAD_DATE and b.amort_type='SL'
-*/
-
-insert into IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
-VALUES(@v_currdate,current_timestamp,'END','SP_IFRS_ACCT_SL_UPD_UNAMORT','')
-
-end
-
-
-
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'INSERT INTO ', 'SP_IFRS_ACCT_SL_UPD_UNAMORT', '');
 
 
-GO
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_B1' || ' ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_B1' || '(MASTERID) 
+        SELECT DISTINCT MASTERID 
+        FROM ' || 'IFRS_ACCT_SL_ECF' || '
+        WHERE AMORTSTOPDATE IS NULL';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_P1' || ' ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_P1' || '(ID) 
+        SELECT MAX(ID) AS ID
+        FROM ' || 'IFRS_ACCT_SL_ACF' || '
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+            AND MASTERID IN (SELECT MASTERID FROM TMP_B1)
+        GROUP BY MASTERID';
+    EXECUTE (V_STR_QUERY);
+
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'INSERT INTO ', 'SP_IFRS_ACCT_SL_UPD_UNAMORT', '');
+
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || 'IFRS_IMA_AMORT_CURR' || '
+    SET UNAMORT_FEE_AMT = X.N_UNAMORT_FEE
+        ,UNAMORT_COST_AMT = X.N_UNAMORT_COST
+        ,FAIR_VALUE_AMOUNT = ' || 'IFRS_IMA_AMORT_CURR' || '.OUTSTANDING + X.N_UNAMORT_FEE + X.N_UNAMORT_COST
+        ,LOAN_START_AMORTIZATION = X.ECFDATE
+        ,LOAN_END_AMORTIZATION = X.AMORTENDDATE
+        ,AMORT_TYPE = ''SL''
+    FROM (
+        SELECT B.DOWNLOAD_DATE
+            ,B.MASTERID
+            ,B.N_UNAMORT_FEE
+            ,B.N_UNAMORT_COST
+            ,B.ECFDATE
+            ,B.ACCTNO
+            ,E.AMORTENDDATE
+        FROM ' || 'IFRS_ACCT_SL_ACF' || ' B
+        JOIN ' || 'TMP_P1' || ' C ON C.ID = B.ID
+        LEFT JOIN ' || 'IFRS_ACCT_SL_ECF' || ' E ON E.MASTERID = B.MASTERID 
+            AND E.PREV_PMT_DATE = E.PMT_DATE 
+            AND E.DOWNLOAD_DATE = B.ECFDATE
+    ) AS X
+    WHERE ' || 'IFRS_IMA_AMORT_CURR' || '.MASTERID = X.MASTERID 
+        AND ' || 'IFRS_IMA_AMORT_CURR' || '.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE';
+    EXECUTE (V_STR_QUERY);
+
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'INSERT INTO ', 'SP_IFRS_ACCT_SL_UPD_UNAMORT', '');
+
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || 'IFRS_MASTER_ACCOUNT' || '
+    SET UNAMORT_FEE_AMT = b.UNAMORT_FEE_AMT
+        ,UNAMORT_COST_AMT = b.UNAMORT_COST_AMT
+        ,FAIR_VALUE_AMOUNT = b.FAIR_VALUE_AMOUNT
+        ,LOAN_START_AMORTIZATION = b.LOAN_START_AMORTIZATION
+        ,LOAN_END_AMORTIZATION = b.LOAN_END_AMORTIZATION
+        ,AMORT_TYPE = b.AMORT_TYPE
+    FROM ' || 'IFRS_IMA_AMORT_CURR' || ' B
+    WHERE ' || 'IFRS_MASTER_ACCOUNT' || '.MASTERID = B.MASTERID 
+        AND ' || 'IFRS_MASTER_ACCOUNT' || '.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        AND B.AMORT_TYPE = ''SL''';
+    EXECUTE (V_STR_QUERY);
+
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+
+    ---- END
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_SL_UPD_UNAMORT', '');
+        
+    RAISE NOTICE 'IFRS_ACCT_EIR_PAYM_GS_DATE | AFFECTED RECORD : %', V_RETURNROWS2;
+    ---------- ====== BODY ======
+
+    -------- ====== LOG ======
+    V_TABLEDEST = V_TABLEINSERT1;
+    V_COLUMNDEST = '-';
+    V_SPNAME = 'IFRS_ACCT_EIR_PAYM_GS_DATE';
+    V_OPERATION = 'INSERT';
+    
+    CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
+    -------- ====== LOG ======
+
+    -------- ====== RESULT ======
+    V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT1 || '';
+    CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
+    -------- ====== RESULT ======
+
+END;
+
+$$;
