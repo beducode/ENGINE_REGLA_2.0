@@ -68,6 +68,8 @@ BEGIN
         V_TABLEINSERT10 := 'IFRS_ACCT_SL_STOP_REV_' || P_RUNID || '';
         V_TABLEINSERT11 := 'TMP_T5_' || P_RUNID || '';
         V_TABLEINSERT12 := 'TMP_T6_' || P_RUNID || '';
+        V_TABLEINSERT13 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
+        V_TABLEINSERT14 := 'IFRS_LBM_ACCT_EIR_GAIN_LOSS_' || P_RUNID || '';
         V_TMPTABLE1 := 'TMP_LAST_EIR_CF_PREV_' || P_RUNID || '';
     ELSE 
         V_TABLEINSERT1 := 'IFRS_ACCT_JOURNAL_INTM';
@@ -82,6 +84,8 @@ BEGIN
         V_TABLEINSERT10 := 'IFRS_ACCT_SL_STOP_REV';
         V_TABLEINSERT11 := 'TMP_T5';
         V_TABLEINSERT12 := 'TMP_T6';
+        V_TABLEINSERT13 := 'IFRS_IMA_AMORT_CURR';
+        V_TABLEINSERT14 := 'IFRS_LBM_ACCT_EIR_GAIN_LOSS';
         V_TMPTABLE1 := 'TMP_LAST_EIR_CF_PREV';
     END IF;
     
@@ -1700,7 +1704,74 @@ BEGIN
                 )';
         EXECUTE (V_STR_QUERY);    
     END IF;
+
+     /*          
+    -- INTM REVERSE DATA          
+    UPDATE IFRS_ACCT_JOURNAL_INTM          
+    SET N_AMOUNT_IDR = IFRS_ACCT_JOURNAL_INTM.N_AMOUNT * ISNULL (RATE_AMOUNT, 1)          
+    FROM PSAK_MASTER_EXCHANGE_RATE_CURR B          
+    WHERE  IFRS_ACCT_JOURNAL_INTM.CCY = B.CURRENCY          
+    AND IFRS_ACCT_JOURNAL_INTM.DOWNLOAD_DATE = @V_CURRDATE           
+    AND IFRS_ACCT_JOURNAL_INTM.REVERSE = 'Y'          
+    */        
+    --20180226 GAIN LOSS PARTIAL PAYMENT   
     
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || '
+        (
+            FACNO        
+            ,CIFNO        
+            ,DOWNLOAD_DATE        
+            ,DATASOURCE        
+            ,PRDCODE      
+            ,TRXCODE        
+            ,CCY        
+            ,JOURNALCODE        
+            ,[STATUS]        
+            ,[REVERSE]        
+            ,N_AMOUNT        
+            ,CREATEDDATE        
+            ,SOURCEPROCESS        
+            ,ACCTNO        
+            ,MASTERID        
+            ,FLAG_CF        
+            ,BRANCH        
+            ,PRDTYPE        
+            ,JOURNALCODE2        
+            ,CF_ID        
+            ,METHOD 
+        ) SELECT 
+            A.FACILITY_NUMBER        
+            ,A.CUSTOMER_NUMBER        
+            ,A.DOWNLOAD_DATE        
+            ,A.DATA_SOURCE        
+            ,C.PRDCODE        
+            ,C.TRXCODE        
+            ,C.CCY        
+            ,''AMORT''        
+            ,''ACT''        
+            ,''N''        
+            ,CASE         
+            WHEN C.FLAG_REVERSE = ''Y''        
+                THEN - 1 * C.AMOUNT        
+            ELSE C.AMOUNT        
+            END        
+            ,CURRENT_TIMESTAMP        
+            ,''EIR LBM GAIN LOSS''        
+            ,A.ACCOUNT_NUMBER        
+            ,A.MASTERID        
+            ,C.FLAG_CF        
+            ,A.BRANCH_CODE        
+            ,C.PRDTYPE        
+            ,''ACCRU''        
+            ,C.CF_ID        
+            ,C.METHOD 
+        FROM ' || V_TABLEINSERT13 || ' A
+        JOIN ' || V_TABLEINSERT14 || ' C
+            ON C.MASTERID = A.MASTERID
+        AND C.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            )';
+    EXECUTE (V_STR_QUERY);        
     
     ---- END
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_SL_JOURNAL_INTM', '');
