@@ -39,3 +39,17 @@ SERVER workflow_ifrs_db_access
 OPTIONS (user 'postgres', password 'iN4q9A4kGadfunmzyPV1yYV');
 
 SELECT dblink_connect('conn_db_link', 'workflow_ifrs_db_access');
+
+-- #3
+CREATE SERVER ifrs_stg
+FOREIGN DATA WRAPPER dblink_fdw
+	OPTIONS (host 'localhost', dbname 'IFRS9_STG');
+
+GRANT USAGE ON FOREIGN SERVER ifrs_stg TO reglaalloy01;
+
+CREATE USER MAPPING
+FOR reglaalloy01
+SERVER ifrs_stg
+OPTIONS (user 'reglaalloy01', password 'ynJlX2nPkXCCrXRdP70k0L7');
+
+SELECT dblink_connect('conn_db_link', 'ifrs_stg');
