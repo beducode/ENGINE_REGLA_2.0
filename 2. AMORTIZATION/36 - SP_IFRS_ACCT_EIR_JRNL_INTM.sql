@@ -1,6 +1,6 @@
----- DROP PROCEDURE SP_IFRS_ACCT_EIR_ACF_ACRU;
+---- DROP PROCEDURE SP_IFRS_ACCT_EIR_JRNL_INTM;
 
-CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_ACF_ACRU(
+CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_JRNL_INTM(
     IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
     IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
     IN P_PRC VARCHAR(1) DEFAULT 'S')
@@ -20,8 +20,13 @@ DECLARE
     V_TABLEINSERT4 VARCHAR(100);
     V_TABLEINSERT5 VARCHAR(100);
     V_TABLEINSERT6 VARCHAR(100);
+    V_TABLEINSERT7 VARCHAR(100);
+    V_TABLEINSERT8 VARCHAR(100);
+    V_TABLEINSERT9 VARCHAR(100);
+    V_TABLEINSERT10 VARCHAR(100);
 
     ---- VARIABLE PROCESS
+    V_PARAM_DISABLE_ACCRU_PREV INT;
     V_ROUND INT;
     V_FUNCROUND INT;
     
@@ -93,6 +98,8 @@ BEGIN
     FROM TBLM_COMMONCODEDETAIL
     WHERE COMMONCODE = 'SCM003';
 
+    V_PARAM_DISABLE_ACCRU_PREV := 0;
+
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
@@ -105,9 +112,10 @@ BEGIN
     -------- ====== BODY ======
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_EIR_JOURNAL_INTM', '');
 
+    --DELETE FIRST 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT1 || ' 
-        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+        WHERE DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         AND SUBSTRING(SOURCEPROCESS, 1, 3) = ''EIR'' ';
     EXECUTE (V_STR_QUERY); 
 
@@ -313,7 +321,7 @@ BEGIN
         ) SELECT 
             FACNO                
             ,CIFNO                
-            ,@V_CURRDATE AS DOWNLOAD_DATE                
+            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE               
             ,DATASOURCE                
             ,PRDCODE                
             ,TRXCODE                
@@ -556,8 +564,9 @@ BEGIN
 
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_JOURNAL_INTM', '8');
 
-    --ACCRU FEE            
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT5
+    --ACCRU FEE  
+    V_STR_QUERY := '';          
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT5 || '';
     EXECUTE (V_STR_QUERY);
  
     V_STR_QUERY := '';
@@ -614,8 +623,9 @@ BEGIN
 
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_JOURNAL_INTM', '9');
 
-    --ACCRU FEE            
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT6
+    --ACCRU FEE 
+    V_STR_QUERY := '';           
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT6 || '';
     EXECUTE (V_STR_QUERY);
  
     V_STR_QUERY := '';
@@ -690,7 +700,7 @@ BEGIN
             ,''ACCRU''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), @V_ROUND, @V_FUNCROUND)                
+            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ',' || V_FUNCROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR ACCRU FEE 1''                
             ,A.ACCTNO                
@@ -752,7 +762,7 @@ BEGIN
             ,''AMORT''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), @V_ROUND, @V_FUNCROUND)                
+            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)),' || V_ROUND || ',' || V_FUNCROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR AMORT FEE 1''                
             ,A.ACCTNO                
@@ -812,7 +822,7 @@ BEGIN
             ,''DEFA0''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(- 1 * A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), @V_ROUND, @V_FUNCROUND)                
+            ,ROUND(- 1 * A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ',' || V_FUNCROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR DEFA0 FEE 1''                
             ,A.ACCTNO                
@@ -841,7 +851,8 @@ BEGIN
 
     --ACCRU COST           
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT5
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT5 || '';
+    EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT5 || ' 
@@ -901,7 +912,8 @@ BEGIN
 
     --ACCRU COST           
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT6
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT6 || '';
+    EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT6 || ' 
@@ -976,9 +988,9 @@ BEGIN
             ,''ACCRU''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), @V_ROUND, @V_FUNCROUND)                
+            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ',' || V_FUNCROUND || ')                
             ,CURRENT_TIMESTAMP                
-            ,'EIR ACCRU COST 1'                
+            ,''EIR ACCRU COST 1''                
             ,A.ACCTNO                
             ,A.MASTERID                
             ,''C''                
@@ -1035,7 +1047,7 @@ BEGIN
             ,''AMORT''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), @V_ROUND, @V_FUNCROUND)                
+            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ',' || V_FUNCROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR AMORT COST 1''                
             ,A.ACCTNO                
@@ -1095,7 +1107,7 @@ BEGIN
             ,''DEFA0''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(- 1 * A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), @V_ROUND, @V_FUNCROUND)                
+            ,ROUND(- 1 * A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ',' || V_FUNCROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR AMORT COST 1''                
             ,A.ACCTNO                
@@ -1130,7 +1142,7 @@ BEGIN
     -- UPDATE STATUS ACCRU PREV FOR EIR STOP REV               
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || IFRS_ACCT_EIR_ACCRU_PREV || ' 
-        SET ' || IFRS_ACCT_EIR_ACCRU_PREV || '.STATUS = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE + 'BLK' 
+        SET ' || IFRS_ACCT_EIR_ACCRU_PREV || '.STATUS = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE + ''BLK'' 
         FROM ' || IFRS_ACCT_EIR_ACCRU_PREV || ' A
         JOIN ' || V_TABLEINSERT7 || ' E ON E.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         AND A.MASTERID = E.MASTERID
@@ -1431,7 +1443,7 @@ BEGIN
         FROM ' || IFRS_ACCT_SWITCH || ' A
         JOIN ' || IFRS_ACCT_EIR_ACCRU_PREV || ' C ON C.MASTERID = A.PREV_MASTERID
         AND C.STATUS = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-        ----AND C.DOWNLOAD_DATE = @V_CURRDATE
+        ----AND C.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         AND C.DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         WHERE A.STATUS = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         AND A.PREV_EIR_ECF = ''Y''
@@ -1741,7 +1753,8 @@ BEGIN
     -- PNL FOR NO COST FEE ECF FOR CLOSED ACCOUNT AND EVENT CHANGE        
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || TMP_NOCF 
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || TMP_NOCF || '';
+    EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || TMP_NOCF || ' (MASTERID)
         SELECT DISTINCT MASTERID
@@ -1755,7 +1768,8 @@ BEGIN
     -- PNL FOR NO COST FEE ECF FOR CLOSED ACCOUNT AND EVENT CHANGE        
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT1 
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT1 || '';
+    EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' (
             FACNO                
@@ -1895,7 +1909,7 @@ BEGIN
     -- BLOCK ACCRU PREV GENERATION ON SL_ECF
 
     IF PARAM_DISABLE_ACCRU_PREV = 0
-    BEGIN 
+    THEN 
         V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' (
                 FACNO                
                 ,CIFNO                
@@ -1955,11 +1969,10 @@ BEGIN
                                     FROM ' || V_TABLEINSERT7 || '                
                                     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         */
-    END                
-    ELSE                
-    BEGIN
-    -- REVERSE ACCRU                  
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' (
+		END;
+    ELSE         
+    	-- REVERSE ACCRU 
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' (
                 FACNO                
                 ,CIFNO                
                 ,DOWNLOAD_DATE                
@@ -2002,7 +2015,7 @@ BEGIN
                 ,''ITRCG''                
                 ,CF_ID
             FROM ' || V_TABLEINSERT1 || '
-            WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
                 AND STATUS = ''ACT''
                 AND JOURNALCODE = ''ACCRU''                
                 AND TRXCODE <> ''BENEFIT''                
@@ -2014,7 +2027,7 @@ BEGIN
                     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
                 ) ';
         EXECUTE (V_STR_QUERY);
-    END
+    END IF;
 
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' (
             FACNO                
