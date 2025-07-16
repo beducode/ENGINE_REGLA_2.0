@@ -166,7 +166,117 @@ BEGIN
 
     -------- ====== PRE SIMULATION TABLE ======
     IF P_PRC = 'S' THEN
-        
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT4 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_ACCT_EIR_CF_ECF WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT5 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT5 || ' AS SELECT * FROM IFRS_ACCT_EIR_CF_ECF1 WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT9 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT9 || ' AS SELECT * FROM IFRS_ACCT_EIR_ECF_NOCF WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT10 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT10 || ' AS SELECT * FROM IFRS_ACCT_EIR_FAILED_GS WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT11 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT11 || ' AS SELECT * FROM IFRS_ACCT_EIR_FAILED_GS3 WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT12 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT12 || ' AS SELECT * FROM IFRS_ACCT_EIR_FAILED_GS4 WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT13 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT13 || ' AS SELECT * FROM IFRS_ACCT_EIR_GAIN_LOSS WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT14 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT14 || ' AS SELECT * FROM IFRS_ACCT_EIR_GS_RESULT WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT15 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT15 || ' AS SELECT * FROM IFRS_ACCT_EIR_GS_RESULT3 WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT16 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT16 || ' AS SELECT * FROM IFRS_ACCT_EIR_GS_RESULT4 WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT18 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT18 || ' AS SELECT * FROM IFRS_ACCT_EIR_STOP_REV WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT21 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT21 || ' AS SELECT * FROM IFRS_EVENT_CHANGES WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT22 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT22 || ' AS SELECT * FROM IFRS_GS_MASTERID WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT24 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT24 || ' AS SELECT * FROM IFRS_PAYM_CORE WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
 
@@ -388,7 +498,7 @@ BEGIN
         ) A 
             ON A.MASTERID = B.MASTERID                
             --20180116 RESONA REQ                          
-        LEFT JOIN ' || 'TEMP_TODAYREV' || ' CFREV 
+        LEFT JOIN ' || 'TMP_TODAYREV' || ' CFREV 
             ON CFREV.MASTERID = B.MASTERID                
         WHERE B.DOWNLOAD_DATE IN (                
             ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE                 
@@ -1133,7 +1243,7 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' A 
-        SET STATUS = TO_CHAR(' || V_CURRDATE || '::DATE, ''YYYYMMDD'')           
+        SET STATUS = TO_CHAR(''' || V_CURRDATE || '''::DATE, ''YYYYMMDD'')           
         WHERE STATUS = ''ACT''
         AND MASTERID IN (                
             SELECT MASTERID                
@@ -1488,7 +1598,7 @@ BEGIN
             AND B.TOTAL_AMT_ACRU = 0            
         WHERE C.MASTERID IN (
             SELECT DISTINCT MASTERID 
-            FROM ' || V_TABLEINSERT27 || ' \
+            FROM ' || V_TABLEINSERT27 || ' 
             WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE  
             AND TRX_CODE = ''PREPAYMENT''
         ) ';
@@ -2093,7 +2203,7 @@ BEGIN
                 ELSE 0                
             END, 0)) AS YCOST_AMT   
         FROM ' || V_TABLEINSERT7 || ' B              
-        JOIN ' || 'TMP_LAST_EIR_CF_PREV_YEST' || ' X 
+        JOIN ' || 'TMP_LAST_EIR_CF_PREV' || ' X 
             ON X.MASTERID = B.MASTERID                
             AND X.DOWNLOAD_DATE = B.DOWNLOAD_DATE                
             AND B.SEQ = X.SEQ                
@@ -2267,9 +2377,9 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT4 || ' A 
-        SET BENEFIT = A.BENEFIT                
-        FROM ' || 'TMP_B3' || ' A                
-        WHERE (A.MASTERID = A.MASTERID) ';
+        SET BENEFIT = B.BENEFIT                
+        FROM ' || 'TMP_B3' || ' B                
+        WHERE (A.MASTERID = B.MASTERID) ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -2753,7 +2863,7 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' A 
-        SET STATUS = TO_CHAR(' || V_CURRDATE || '::DATE, ''YYYYMMDD'') 
+        SET STATUS = TO_CHAR(''' || V_CURRDATE || '''::DATE, ''YYYYMMDD'') 
         WHERE STATUS = ''ACT''                
         AND MASTERID IN (                
             SELECT MASTERID                
@@ -2979,7 +3089,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT6 || ' A 
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT6 || ' C 
         SET AMOUNT = CASE 
             WHEN A.FEE_AMT = 0 AND A.COST_AMT = 0 
             THEN AMOUNT/B.TFEE * A.GAIN_LOSS_FEE_AMT * (AMOUNT/ABS(AMOUNT))        
@@ -2988,14 +3098,14 @@ BEGIN
         FROM ' || V_TABLEINSERT4 || ' A                
         LEFT JOIN ' || 'TEMP_TFC' || ' B 
         ON B.MASTERID = A.MASTERID        
-        WHERE A.MASTERID = A.MASTERID                
-        AND A.ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+        WHERE A.MASTERID = C.MASTERID                
+        AND C.ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         AND COALESCE(A.GAIN_LOSS_FEE_AMT, 0) <> 0                
-        AND A.FLAG_CF = ''F'' ';
+        AND C.FLAG_CF = ''F'' ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT6 || ' A 
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT6 || ' C 
         SET AMOUNT = CASE 
             WHEN A.COST_AMT = 0 AND A.COST_AMT = 0 
             THEN AMOUNT/B.TCOST * A.GAIN_LOSS_COST_AMT * (AMOUNT/ABS(AMOUNT))        
@@ -3004,10 +3114,10 @@ BEGIN
         FROM ' || V_TABLEINSERT4 || ' A                
         LEFT JOIN ' || 'TEMP_TFC' || ' B 
         ON B.MASTERID = A.MASTERID        
-        WHERE A.MASTERID = A.MASTERID                
-        AND A.ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+        WHERE A.MASTERID = C.MASTERID                
+        AND C.ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         AND COALESCE(A.GAIN_LOSS_COST_AMT, 0) <> 0                
-        AND A.FLAG_CF = ''C'' ';
+        AND C.FLAG_CF = ''C'' ';
     EXECUTE (V_STR_QUERY);
 
     ---- END

@@ -15,10 +15,10 @@ DECLARE
     V_STR_QUERY TEXT;
 
     ---- TABLE LIST       
+    V_TABLENAME VARCHAR(100);
     V_TABLEINSERT1 VARCHAR(100);
     V_TABLEINSERT2 VARCHAR(100);
     V_TABLEINSERT3 VARCHAR(100);
-    V_TABLEINSERT4 VARCHAR(100);
     V_TABLEINSERT5 VARCHAR(100);
     V_TABLEINSERT6 VARCHAR(100);
     V_TABLEINSERT7 VARCHAR(100);
@@ -68,18 +68,18 @@ BEGIN
     END IF;
 
     IF P_PRC = 'S' THEN 
+        V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
         V_TABLEINSERT1 := 'IFRS_EIR_ADJUSTMENT_' || P_RUNID || '';
         V_TABLEINSERT2 := 'IFRS_EXCEPTION_DETAILS_' || P_RUNID || '';
         V_TABLEINSERT3 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
-        V_TABLEINSERT4 := 'IFRS_MASTER_ACCOUNT_' || P_RUNID || '';
         V_TABLEINSERT5 := 'IFRS_MASTER_PAYMENT_SETTING_' || P_RUNID || '';
         V_TABLEINSERT6 := 'IFRS_PAYM_SCHD_ALL_' || P_RUNID || '';
         V_TABLEINSERT7 := 'IFRS_PAYM_SCHD_MTM_' || P_RUNID || '';
     ELSE 
+        V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
         V_TABLEINSERT1 := 'IFRS_EIR_ADJUSTMENT';
         V_TABLEINSERT2 := 'IFRS_EXCEPTION_DETAILS';
         V_TABLEINSERT3 := 'IFRS_IMA_AMORT_CURR';
-        V_TABLEINSERT4 := 'IFRS_MASTER_ACCOUNT';
         V_TABLEINSERT5 := 'IFRS_MASTER_PAYMENT_SETTING';
         V_TABLEINSERT6 := 'IFRS_PAYM_SCHD_ALL';
         V_TABLEINSERT7 := 'IFRS_PAYM_SCHD_MTM';
@@ -127,7 +127,21 @@ BEGIN
 
     -------- ====== PRE SIMULATION TABLE ======
     IF P_PRC = 'S' THEN
-        
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT1 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM IFRS_EIR_ADJUSTMENT WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT7 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT7 || ' AS SELECT * FROM IFRS_PAYM_SCHD_MTM WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
 
@@ -193,8 +207,8 @@ BEGIN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT7 || ' A 
             SET 
-                A.PV_CF = (A.PRINCIPAL + A.INTEREST) / POWER((1 + Z.MARKET_RATE / 12 / 100), A.COUNTER)
-                ,A.MARKET_RATE = Z.MARKET_RATE   
+                PV_CF = (A.PRINCIPAL + A.INTEREST) / POWER((1 + Z.MARKET_RATE / 12 / 100), A.COUNTER)
+                ,MARKET_RATE = Z.MARKET_RATE   
             FROM ' || V_TABLEINSERT3 || ' Z 
             WHERE A.MASTERID = Z.MASTERID    
             AND Z.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE  
@@ -302,14 +316,14 @@ BEGIN
             ,PMA.LOAN_START_DATE    
             ,PMA.LOAN_DUE_DATE    
             ,CASE     
-                WHEN ' || V_PARAM_CALC_TO_LASTPAYMENT || ' = 0    
+                WHEN ' || V_PARAM_CALC_TO_LAST_PAYMENT || ' = 0    
                 THEN ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
                 ELSE CASE     
                     WHEN COALESCE(PMA.LAST_PAYMENT_DATE, PMA.LOAN_START_DATE) <= PMA.LOAN_START_DATE    
                     THEN PMA.LOAN_START_DATE    
                     ELSE CASE     
                         WHEN PMA.LAST_PAYMENT_DATE >= COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)    
-                        THEN DATEADD(MONTH, - 1, COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE))    
+                        THEN (COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE) - INTERVAL ''1 MONTH'')    
                         ELSE PMA.LAST_PAYMENT_DATE    
                     END    
                 END    
@@ -317,7 +331,7 @@ BEGIN
             ,PMA.LOAN_DUE_DATE    
             ,CASE     
                 WHEN PMA.NEXT_PAYMENT_DATE >= COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)    
-                    OR CONVERT(VARCHAR(6), PMA.NEXT_PAYMENT_DATE, 112) = CONVERT(VARCHAR(6), COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE), 112)    
+                    OR PMA.NEXT_PAYMENT_DATE = COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)    
                 THEN COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)    
                 ELSE PMA.NEXT_PAYMENT_DATE    
             END AS FIRST_PMT_DATE    
@@ -326,23 +340,23 @@ BEGIN
             ,PMA.PLAFOND    
             ,PMA.INTEREST_RATE    
             ,CASE     
-                WHEN COALESCE(PMA.TENOR, 0) > DATEDIFF(MONTH, PMA.LOAN_START_DATE, PMA.LOAN_DUE_DATE)    
+                WHEN COALESCE(PMA.TENOR, 0) > (EXTRACT(YEAR FROM AGE(PMA.LOAN_DUE_DATE, PMA.LOAN_START_DATE)) * 12 + EXTRACT(MONTH FROM AGE(PMA.LOAN_DUE_DATE, PMA.LOAN_START_DATE)))    
                 THEN COALESCE(PMA.TENOR, 0)    
-                ELSE DATEDIFF(MONTH, PMA.LOAN_START_DATE, PMA.LOAN_DUE_DATE)    
+                ELSE (EXTRACT(YEAR FROM AGE(PMA.LOAN_DUE_DATE, PMA.LOAN_START_DATE)) * 12 + EXTRACT(MONTH FROM AGE(PMA.LOAN_DUE_DATE, PMA.LOAN_START_DATE)))    
             END AS TENOR    
             ,PMA.PAYMENT_TERM    
             ,PMA.PAYMENT_CODE    
             ,PMA.INTEREST_CALCULATION_CODE    
             ,CASE     
                 WHEN PMA.NEXT_PAYMENT_DATE >= COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)    
-                    OR CONVERT(VARCHAR(6), PMA.NEXT_PAYMENT_DATE, 112) = CONVERT(VARCHAR(6), COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE), 112)    
+                    OR PMA.NEXT_PAYMENT_DATE = COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)    
                 THEN COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)    
                 ELSE PMA.NEXT_PAYMENT_DATE    
             END    
             ,0    
             ,''N''    
             ,PMA.INSTALLMENT_GRACE_PERIOD AS GRACE_DATE -- BIBD GRACE PERIOD    
-        FROM ' || V_TABLEINSERT4 || ' AS PMA    
+        FROM ' || V_TABLENAME || ' AS PMA    
         JOIN ' || V_TABLEINSERT3 || ' PMC 
             ON PMA.MASTERID = PMC.MASTERID    
             AND PMA.DOWNLOAD_DATE = PMC.DOWNLOAD_DATE    
@@ -500,7 +514,7 @@ BEGIN
         ON A.MASTERID = PY5.MASTERID    
         AND A.DOWNLOAD_DATE BETWEEN PY5.DATE_START    
         AND PY5.DATE_END    
-        AND DATEDIFF(MONTH, A.DOWNLOAD_DATE, PY5.DATE_START) % PY5.INCREMENTS = 0 ';
+        AND (EXTRACT(YEAR FROM AGE(PY5.DATE_START, A.DOWNLOAD_DATE)) * 12 + EXTRACT(MONTH FROM AGE(PY5.DATE_START, A.DOWNLOAD_DATE))) % PY5.INCREMENTS = 0 ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -619,9 +633,9 @@ BEGIN
                                             THEN PY1.AMOUNT --FIX INTEREST    
                                             ELSE CASE     
                                                 WHEN A.ICC = ''1''    --ACTUAL/360    
-                                                THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                                                THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                                                 WHEN A.ICC = ''2''    --ACTUAL/365    
-                                                THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 365    
+                                                THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 365    
                                                 WHEN A.ICC = ''6''    --30 / 360    
                                                 THEN A.INTEREST_RATE / 100 * A.OSPRN * COALESCE(PY1.INCREMENTS, PY2.INCREMENTS) * 30 / 360    
                                                 ELSE 0    
@@ -637,9 +651,9 @@ BEGIN
                                     ELSE PY4.AMOUNT - (    
                                         ROUND((CASE     
                                             WHEN A.ICC = ''1''    --ACTUAL/360    
-                                            THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                                            THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                                             WHEN A.ICC = ''2''    --ACTUAL/365    
-                                            THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 365    
+                                            THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 365    
                                             WHEN A.ICC = ''6''    --ACTUAL/365    
                                             THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * COALESCE(PY3.INCREMENTS, PY4.INCREMENTS) * 30 / 360    
                                             ELSE 0    
@@ -677,9 +691,9 @@ BEGIN
                                         THEN PY1.AMOUNT --FIX INTEREST    
                                         ELSE CASE     
                                             WHEN A.ICC = ''1''    --ACTUAL/360    
-                                            THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                                            THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                                             WHEN A.ICC = ''2''    --ACTUAL/365    
-                                            THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 365    
+                                            THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 365    
                                             WHEN A.ICC = ''6''    --30/360    
                                             THEN A.INTEREST_RATE / 100 * A.OSPRN * COALESCE(PY1.INCREMENTS, PY2.INCREMENTS) * 30 / 360    
                                             ELSE 0    
@@ -695,9 +709,9 @@ BEGIN
                                 ELSE PY4.AMOUNT - (    
                                     ROUND((CASE     
                                         WHEN A.ICC = ''1''    --ACTUAL/360    
-                                        THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                                        THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                                         WHEN A.ICC = ''2''    --ACTUAL/365    
-                                        THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 365    
+                                        THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 365    
                                         WHEN A.ICC = ''6''    --30/360    
                                         THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * COALESCE(PY3.INCREMENTS, PY4.INCREMENTS) * 30 / 360    
                                         ELSE 0    
@@ -720,18 +734,18 @@ BEGIN
                             WHEN PY1.AMOUNT = 0    
                             THEN CASE     
                                 WHEN A.ICC = ''1''    --ACTUAL/360    
-                                THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                                THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                                 WHEN A.ICC = ''2''    --ACTUAL/365    
-                                THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 365    
+                                THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 365    
                                 WHEN A.ICC = ''6''    --30/360    
                                 THEN CASE
                                     -- ADD YAHYA TO CALCULATE INTEREST IF MIGRATION IN CUTOFF         
                                     WHEN (    
-                                        ' || V_PARAM_CALC_TO_LASTPAYMENT || ' = 0    
+                                        ' || V_PARAM_CALC_TO_LAST_PAYMENT || ' = 0    
                                         AND A.ICC = ''6''    
                                         AND ' || V_COUNTERPAY || ' = 1    
                                         )    
-                                    THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                                    THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                                     ELSE A.INTEREST_RATE / 100 * A.OSPRN * PY1.INCREMENTS * 30 / 360    
                                 END    
                                 ----END ADD YAHYA    
@@ -742,18 +756,18 @@ BEGIN
                         WHEN PY3.COMPONENT_TYPE = ''3''    
                         THEN CASE     
                             WHEN A.ICC = ''1''    --ACTUAL/360    
-                            THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                            THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                             WHEN A.ICC = ''2''    --ACTUAL/365    
-                            THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 365    
+                            THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 365    
                             WHEN A.ICC = ''6''    --30/360    
                             THEN CASE
                                 -- ADD YAHYA TO CALCULATE INTEREST IF MIGRATION IN CUTOFF    
                                 WHEN (    
-                                    ' || V_PARAM_CALC_TO_LASTPAYMENT || ' = 0    
+                                    ' || V_PARAM_CALC_TO_LAST_PAYMENT || ' = 0    
                                     AND A.ICC = ''6''    
                                     AND ' || V_COUNTERPAY || ' = 1    
                                     )    
-                                    THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                                    THEN COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                                 ELSE COALESCE(PY3.AMOUNT, A.INTEREST_RATE) / 100 * A.OSPRN * PY3.INCREMENTS * 30 / 360    
                             END    
                             ----END ADD YAHYA    
@@ -761,16 +775,16 @@ BEGIN
                         END    
                         ELSE CASE     
                             WHEN A.ICC = ''1''    --ACTUAL/360    
-                            THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                            THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                             WHEN A.ICC = ''2''    --ACTUAL/365    
-                            THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 365    
+                            THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 365    
                             WHEN A.ICC = ''6''     --30/360    
                             THEN CASE
                                 -- ADD YAHYA TO CALCULATE INTEREST IF MIGRATION IN CUTOFF    
-                                WHEN ' || V_PARAM_CALC_TO_LASTPAYMENT || ' = 0    
+                                WHEN ' || V_PARAM_CALC_TO_LAST_PAYMENT || ' = 0    
                                     AND A.ICC = ''6''    
                                     AND ' || V_COUNTERPAY || ' = 1    
-                                THEN A.INTEREST_RATE / 100 * A.OSPRN * DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE) / 360    
+                                THEN A.INTEREST_RATE / 100 * A.OSPRN * (A.NEXT_PMTDATE - A.PMTDATE) / 360    
                                 ELSE A.INTEREST_RATE / 100 * A.OSPRN * COALESCE(PY2.INCREMENTS, 1) * 30 / 360    
                             END    
                             ----END ADD YAHYA    
@@ -791,28 +805,28 @@ BEGIN
                         WHEN A.ICC IN (''1'',''2'')    
                         THEN CASE     
                             WHEN PY1.COMPONENT_TYPE = ''1''    
-                            THEN DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE)    
+                            THEN (A.NEXT_PMTDATE - A.PMTDATE)    
                             WHEN PY2.COMPONENT_TYPE = ''2''    
-                            THEN DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE)    
+                            THEN (A.NEXT_PMTDATE - A.PMTDATE)    
                             WHEN PY3.COMPONENT_TYPE = ''3''    
-                            THEN DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE)    
+                            THEN (A.NEXT_PMTDATE - A.PMTDATE)    
                             ELSE 0    
                         END    
                         WHEN A.ICC = ''6''    
                         THEN CASE
                             ---- ADD YAHYA TO CALCULATE I_DAYS IF MIGRATION IN CUTOFF    
                             WHEN (    
-                                ' || V_PARAM_CALC_TO_LASTPAYMENT || ' = 0    
+                                ' || V_PARAM_CALC_TO_LAST_PAYMENT || ' = 0    
                                 AND A.ICC = ''6''    
                                 AND ' || V_COUNTERPAY || ' = 1    
                                 )    
                             THEN CASE     
                                 WHEN PY1.COMPONENT_TYPE = ''1''    
-                                THEN DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE)    
+                                THEN (A.NEXT_PMTDATE - A.PMTDATE)    
                                 WHEN PY2.COMPONENT_TYPE = ''2''    
-                                THEN DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE)    
+                                THEN (A.NEXT_PMTDATE - A.PMTDATE)    
                                 WHEN PY3.COMPONENT_TYPE = ''3''    
-                                THEN DATEDIFF(DAY, A.PMTDATE, A.NEXT_PMTDATE)    
+                                THEN (A.NEXT_PMTDATE - A.PMTDATE)    
                                 ELSE 0    
                             END    
                             ELSE CASE     
@@ -856,105 +870,105 @@ BEGIN
                     WHEN PY1.COMPONENT_TYPE = ''1''    
                     THEN CASE     
                         WHEN PY1.FREQUENCY = ''N''    
-                        THEN EOMONTH(DATEADD(MONTH, (PY1.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START))    
+                        THEN EOMONTH((A.DATE_START + (PY1.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH'')))    
                         ELSE CASE     
                             ---START ADD YAHYA ---     
                             WHEN PY1.DATE_END IS NOT NULL    
                                 AND A.NEXT_PMTDATE = PY1.DATE_END    
                             THEN B.MIN_DATE --- ADD YAHYA    
                             WHEN ISDATE(CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY1.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY1.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY1.PMT_DATE    
                                 )) = 1    
                             THEN CONVERT(DATE, CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY1.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY1.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY1.PMT_DATE    
                                 ))    
-                            ELSE DATEADD(MONTH, (PY1.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START)    
+                            ELSE (A.DATE_START + (PY1.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                             ---END ADD YAHYA----    
                         END    
                     END    
                     WHEN PY2.COMPONENT_TYPE = ''2''    
                     THEN CASE     
                         WHEN PY2.FREQUENCY = ''N''    
-                        THEN EOMONTH(DATEADD(MONTH, (PY2.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START))    
+                        THEN EOMONTH((A.DATE_START + (PY2.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH'')))    
                         ELSE CASE     
                             ---START ADD YAHYA ---     
                             WHEN PY2.DATE_END IS NOT NULL    
                                 AND A.NEXT_PMTDATE = PY2.DATE_END    
                             THEN B.MIN_DATE    
                             WHEN ISDATE(CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY2.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY2.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY2.PMT_DATE    
                                 )) = 1    
                             THEN CONVERT(DATE, CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY2.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY2.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY2.PMT_DATE    
                                 ))    
-                            ELSE DATEADD(MONTH, (PY2.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START)    
+                            ELSE (A.DATE_START + (PY2.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                             ---END ADD YAHYA----    
                         END    
                     END    
                     WHEN PY3.COMPONENT_TYPE = ''3''    
                     THEN CASE     
                         WHEN PY3.FREQUENCY = ''N''    
-                        THEN EOMONTH(DATEADD(MONTH, (PY3.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START))    
+                        THEN EOMONTH((A.DATE_START + (PY3.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH'')))    
                         ELSE CASE     
                             ---START ADD YAHYA ---    
                             WHEN PY3.DATE_END IS NOT NULL    
                                 AND A.NEXT_PMTDATE = PY3.DATE_END    
                             THEN B.MIN_DATE    
                             WHEN ISDATE(CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY3.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY3.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY3.PMT_DATE    
                                 )) = 1    
                             THEN CONVERT(DATE, CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY3.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY3.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY3.PMT_DATE    
                                 ))    
-                            ELSE DATEADD(MONTH, (PY3.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START)    
+                            ELSE (A.DATE_START + (PY3.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                             ---END ADD YAHYA----    
                         END    
                     END    
                     WHEN PY4.COMPONENT_TYPE = ''4''    
                     THEN CASE     
                         WHEN PY4.FREQUENCY = ''N''    
-                        THEN EOMONTH(DATEADD(MONTH, (PY4.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START))    
+                        THEN EOMONTH((A.DATE_START + (PY4.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH'')))    
                         ELSE CASE     
                             ---START ADD YAHYA ---    
                             WHEN PY4.DATE_END IS NOT NULL    
                                 AND A.NEXT_PMTDATE = PY4.DATE_END    
                             THEN B.MIN_DATE    
                             WHEN ISDATE(CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY4.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY4.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY4.PMT_DATE    
                                 )) = 1    
                             THEN CONVERT(DATE, CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY4.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY4.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY4.PMT_DATE    
                                 ))    
-                            ELSE DATEADD(MONTH, (PY4.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START)    
+                            ELSE (A.DATE_START + (PY4.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                             ---END ADD YAHYA----    
                         END    
                     END    
                     WHEN PY0.COMPONENT_TYPE = ''0''    
                     THEN CASE     
                         WHEN PY0.FREQUENCY = ''N''    
-                        THEN EOMONTH(DATEADD(MONTH, (PY0.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START))    
+                        THEN EOMONTH((A.DATE_START + (PY0.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH'')))    
                         ELSE CASE     
                             ---START ADD YAHYA ---    
                             WHEN PY0.DATE_END IS NOT NULL    
                                 AND A.NEXT_PMTDATE = PY0.DATE_END    
                             THEN B.MIN_DATE    
                             WHEN ISDATE(CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY0.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY0.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY0.PMT_DATE    
                                 )) = 1    
                             THEN CONVERT(DATE, CONCAT (    
-                                CONVERT(VARCHAR(6), DATEADD(MONTH, (PY0.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START), 112)    
+                                (A.DATE_START + (PY0.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                                 ,PY0.PMT_DATE    
                                 ))    
-                            ELSE DATEADD(MONTH, (PY0.INCREMENTS * A.NEXT_COUNTER_PAY), A.DATE_START)    
+                            ELSE (A.DATE_START + (PY0.INCREMENTS * A.NEXT_COUNTER_PAY * INTERVAL ''1 MONTH''))    
                             ---END ADD YAHYA----    
                         END    
                     END    
@@ -997,32 +1011,32 @@ BEGIN
                 ON A.MASTERID = PY0.MASTERID    
                 AND A.NEXT_PMTDATE BETWEEN PY0.DATE_START    
                 AND PY0.DATE_END    
-                AND DATEDIFF(MONTH, PY0.DATE_START, A.NEXT_PMTDATE) % PY0.INCREMENTS = 0    
+                AND (EXTRACT(YEAR FROM AGE(A.NEXT_PMTDATE, PY0.DATE_START)) * 12 + EXTRACT(MONTH FROM AGE(A.NEXT_PMTDATE, PY0.DATE_START))) % PY0.INCREMENTS = 0    
             LEFT JOIN ' || 'TMP_PY1' || ' PY1 
                 ON A.MASTERID = PY1.MASTERID    
                 AND A.NEXT_PMTDATE BETWEEN PY1.DATE_START    
                 AND PY1.DATE_END    
-                AND DATEDIFF(MONTH, PY1.DATE_START, A.NEXT_PMTDATE) % PY1.INCREMENTS = 0    
+                AND (EXTRACT(YEAR FROM AGE(A.NEXT_PMTDATE, PY1.DATE_START)) * 12 + EXTRACT(MONTH FROM AGE(A.NEXT_PMTDATE, PY1.DATE_START))) % PY1.INCREMENTS = 0    
             LEFT JOIN ' || 'TMP_PY2' || ' PY2 
                 ON A.MASTERID = PY2.MASTERID    
                 AND A.NEXT_PMTDATE BETWEEN PY2.DATE_START    
                 AND PY2.DATE_END    
-                AND DATEDIFF(MONTH, PY2.DATE_START, A.NEXT_PMTDATE) % PY2.INCREMENTS = 0    
+                AND (EXTRACT(YEAR FROM AGE(A.NEXT_PMTDATE, PY2.DATE_START)) * 12 + EXTRACT(MONTH FROM AGE(A.NEXT_PMTDATE, PY2.DATE_START))) % PY2.INCREMENTS = 0    
             LEFT JOIN ' || 'TMP_PY3' || ' PY3 
                 ON A.MASTERID = PY3.MASTERID    
                 AND A.NEXT_PMTDATE BETWEEN PY3.DATE_START    
                 AND PY3.DATE_END    
-                AND DATEDIFF(MONTH, PY3.DATE_START, A.NEXT_PMTDATE) % PY3.INCREMENTS = 0    
+                AND (EXTRACT(YEAR FROM AGE(A.NEXT_PMTDATE, PY3.DATE_START)) * 12 + EXTRACT(MONTH FROM AGE(A.NEXT_PMTDATE, PY3.DATE_START))) % PY3.INCREMENTS = 0    
             LEFT JOIN ' || 'TMP_PY4' || ' PY4 
                 ON A.MASTERID = PY4.MASTERID    
                 AND A.NEXT_PMTDATE BETWEEN PY4.DATE_START    
                 AND PY4.DATE_END    
-                AND DATEDIFF(MONTH, PY4.DATE_START, A.NEXT_PMTDATE) % PY4.INCREMENTS = 0    
+                AND (EXTRACT(YEAR FROM AGE(A.NEXT_PMTDATE, PY4.DATE_START)) * 12 + EXTRACT(MONTH FROM AGE(A.NEXT_PMTDATE, PY4.DATE_START))) % PY4.INCREMENTS = 0    
             LEFT JOIN ' || 'TMP_PY5' || ' PY5 
                 ON A.MASTERID = PY5.MASTERID    
                 AND A.NEXT_PMTDATE BETWEEN PY5.DATE_START    
                 AND PY5.DATE_END    
-                AND DATEDIFF(MONTH, PY5.DATE_START, A.NEXT_PMTDATE) % PY5.INCREMENTS = 0    
+                AND (EXTRACT(YEAR FROM AGE(A.NEXT_PMTDATE, PY5.DATE_START)) * 12 + EXTRACT(MONTH FROM AGE(A.NEXT_PMTDATE, PY5.DATE_START))) % PY5.INCREMENTS = 0    
             WHERE A.TENOR >= ' || V_COUNTERPAY || ' 
                 AND A.PMTDATE <= A.DATE_END    
                 AND A.OSPRN > 0 ';
@@ -1195,12 +1209,12 @@ BEGIN
             ,''IFRS EXCEPTIONS'' AS PROCESS_ID    
             ,''V-2'' AS EXCEPTION_CODE    
             ,''SCHEDULE : LAST OSPRN SCHEDULE <> 0 '' AS REMARKS    
-        FROM ' || V_TABLEINSERT4 || ' PMA    
+        FROM ' || V_TABLENAME || ' PMA    
         JOIN ' || 'TMP_SCHD' || ' SCH 
         ON PMA.MASTERID = SCH.MASTERID    
         AND PMA.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE     
         --AND PMA.PMT_SCH_STATUS = ''Y''    
-        AND ISNULL(SCH.OSPRN, 0) <> 0 ';
+        AND COALESCE(SCH.OSPRN, 0) <> 0 ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -1234,7 +1248,7 @@ BEGIN
             ,''IFRS EXCEPTIONS'' AS PROCESS_ID    
             ,''V-2'' AS EXCEPTION_CODE    
             ,''PMTDATE : IS NULL'' AS REMARKS    
-        FROM ' || V_TABLEINSERT4 || ' PMA    
+        FROM ' || V_TABLENAME || ' PMA    
         JOIN ' || 'TMP_SCHD' || ' SCH 
         ON PMA.MASTERID = SCH.MASTERID    
         AND PMA.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE  ';
@@ -1277,17 +1291,17 @@ BEGIN
             ,''IFRS EXCEPTIONS'' AS PROCESS_ID    
             ,''V-2'' AS EXCEPTION_CODE    
             ,''PMTDATE : DOUBLE '' AS REMARKS    
-        FROM ' || V_TABLEINSERT4 || ' PMA    
+        FROM ' || V_TABLENAME || ' PMA    
         JOIN ' || 'TMP_SCHD' || ' SCH 
         ON PMA.MASTERID = SCH.MASTERID ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT7 || ' A 
-        SET A.PV_CF = (A.PRINCIPAL + A.INTEREST) / POWER((1 + Z.MARKET_RATE / 12 / 100), A.COUNTER)    
+        SET PV_CF = (A.PRINCIPAL + A.INTEREST) / POWER((1 + Z.MARKET_RATE / 12 / 100), A.COUNTER)    
         FROM ' || V_TABLEINSERT3 || ' Z 
         WHERE A.MASTERID = Z.MASTERID    
-        WHERE Z.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+        AND Z.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -1311,7 +1325,7 @@ BEGIN
             ,FAIR_VALUE_AMT    
             ,TOTAL_PV_CF    
             ,--GANTI NAMA    
-            TOT_ADJUST --- TOTAL_PV_CF - ISNULL(FAIRVALUEAMT, OUTSTANDING)    
+            TOT_ADJUST --- TOTAL_PV_CF - COALESCE(FAIRVALUEAMT, OUTSTANDING)    
         ) SELECT 
             A.DOWNLOAD_DATE    
             ,A.MASTERID    

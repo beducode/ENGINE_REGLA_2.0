@@ -129,22 +129,6 @@ BEGIN
     -------- ====== PRE SIMULATION TABLE ======
     IF P_PRC = 'S' THEN
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT5 || ' ';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT5 || ' AS SELECT * FROM IFRS_PAYM_CORE_SRC WHERE 1=0 ';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT6 || ' ';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT6 || ' AS SELECT * FROM IFRS_PAYM_SCHD WHERE 1=0 ';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT7 || ' ';
         EXECUTE (V_STR_QUERY);
 
