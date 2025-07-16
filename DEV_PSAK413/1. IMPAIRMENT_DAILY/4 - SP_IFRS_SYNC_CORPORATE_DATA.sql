@@ -225,10 +225,7 @@ BEGIN
     ,CREATEDHOST        
     FROM ' || V_TABLEINSERT4 ||'        
     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRMONTH AS VARCHAR(10)) || '''';
-    -- EXECUTE (V_STR_QUERY);
-
-    RAISE NOTICE '---> %', V_STR_QUERY;
-
+    EXECUTE (V_STR_QUERY);
 
     ---------------------------------------------      
     ---- START IFRS_MASTER_LIMIT_CORP_UPLOAD ----      

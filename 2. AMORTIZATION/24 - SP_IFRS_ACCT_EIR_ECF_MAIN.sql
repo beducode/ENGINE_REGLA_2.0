@@ -355,6 +355,10 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_TODAYREV ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_TODAYREV' || ' AS 
         SELECT DISTINCT MASTERID 
         FROM ' || V_TABLEINSERT1 || ' 
@@ -2165,6 +2169,10 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_YEST_UNAMORT';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_YEST_UNAMORT' || ' AS 
         SELECT 
             B.MASTERID                
@@ -3076,6 +3084,10 @@ BEGIN
         JOIN ' || 'TMP_TC' || ' C 
             ON C.MASTERID = A.MASTERID                
         WHERE COALESCE(A.GAIN_LOSS_AMT, 0) <> 0 ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TEMP_TFC';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
