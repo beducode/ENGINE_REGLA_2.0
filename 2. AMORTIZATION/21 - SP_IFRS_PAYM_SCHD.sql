@@ -174,21 +174,9 @@ BEGIN
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || 'IFRS_BATCH_LOG_DETAILS' || ' 
         WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND BATCH_ID_HEADER = ''' || V_LOG_ID || ' 
+        AND BATCH_ID_HEADER = ''' || V_LOG_ID || ''' 
         AND BATCH_NAME = ''PMTSCHD'' ';
     EXECUTE (V_STR_QUERY);
-
-    CALL SP_IFRS_BATCH_LOG_DETAILS(
-        DOWNLOAD_DATE   => V_CURRDATE,
-        BATCH_ID        => 0,
-        BATCH_ID_HEADER => V_LOG_ID,
-        BATCH_NAME      => 'PMTSCHD',
-        PROCESS_NAME    => 'SP_IFRS_PAYMENT_SCHEDULE',
-        START_DATE      => CURRENT_TIMESTAMP,
-        CREATEDBY       => 'IFRS ENGINE',
-        COUNTER         => 0,
-        REMARKS         => 'JUST STARTED'
-    );
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_SCHEDULE_MAIN' || '';
@@ -201,18 +189,6 @@ BEGIN
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'IFRS_PAYM_CORE_SRC' || '';
     EXECUTE (V_STR_QUERY);
-
-    CALL SP_IFRS_BATCH_LOG_DETAILS(
-        DOWNLOAD_DATE   => V_CURRDATE,
-        BATCH_ID        => 1,
-        BATCH_ID_HEADER => V_LOG_ID,
-        BATCH_NAME      => 'PMTSCHD',
-        PROCESS_NAME    => 'SP_IFRS_PAYMENT_SCHEDULE',
-        START_DATE      => CURRENT_TIMESTAMP,
-        CREATEDBY       => 'IFRS ENGINE',
-        COUNTER         => 1,
-        REMARKS         => 'INSERT TMP_SCHEDULE_MAIN'
-    );
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_SCHEDULE_MAIN' || ' 
@@ -250,8 +226,8 @@ BEGIN
             ,PMA.LOAN_START_DATE 
             ,PMA.LOAN_DUE_DATE 
             ,CASE 
-                WHEN '' || V_PARAM_CALC_TO_LAST_PAYMENT || '' = 0 
-                THEN '' || V_CURRDATE || '' 
+                WHEN ' || V_PARAM_CALC_TO_LAST_PAYMENT || ' = 0 
+                THEN ''' || V_CURRDATE || ''' 
                 ELSE CASE 
                     WHEN ECF.MASTERID IS NOT NULL 
                     THEN ECF.LAST_PAYMENT_DATE_ECF
@@ -284,7 +260,7 @@ BEGIN
                     (EXTRACT(YEAR FROM COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)) - EXTRACT(YEAR FROM PMA.LOAN_START_DATE)) * 12 +
                     (EXTRACT(MONTH FROM COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)) - EXTRACT(MONTH FROM PMA.LOAN_START_DATE))
                 ) THEN COALESCE(PMA.TENOR, 0) 
-                ELSE (EXTRACT(YEAR FROM COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)) - EXTRACT(YEAR FROM PMA.LOAN_START_DATE)) * 12 +
+                ELSE ((EXTRACT(YEAR FROM COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)) - EXTRACT(YEAR FROM PMA.LOAN_START_DATE)) * 12 +
                     (EXTRACT(MONTH FROM COALESCE(PMA.LOAN_END_AMORTIZATION, PMA.LOAN_DUE_DATE)) - EXTRACT(MONTH FROM PMA.LOAN_START_DATE))
                 ) + 2
             END AS TENOR 
@@ -329,18 +305,6 @@ BEGIN
             AND PMA.LOAN_DUE_DATE > ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
             AND PMA.AMORT_TYPE = ''EIR'' ';
     EXECUTE (V_STR_QUERY);
-
-    CALL SP_IFRS_BATCH_LOG_DETAILS(
-        DOWNLOAD_DATE   => V_CURRDATE,
-        BATCH_ID        => 1,
-        BATCH_ID_HEADER => V_LOG_ID,
-        BATCH_NAME      => 'PMTSCHD',
-        PROCESS_NAME    => 'SP_IFRS_PAYMENT_SCHEDULE',
-        START_DATE      => CURRENT_TIMESTAMP,
-        CREATEDBY       => 'IFRS ENGINE',
-        COUNTER         => 3,
-        REMARKS         => 'INITIAL PROCESS'
-    );
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_PY0' || '';
@@ -436,18 +400,6 @@ BEGIN
     V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_SCHEDULE_PREV' || '';
     EXECUTE (V_STR_QUERY);
 
-    CALL SP_IFRS_BATCH_LOG_DETAILS(
-        DOWNLOAD_DATE   => V_CURRDATE,
-        BATCH_ID        => 1,
-        BATCH_ID_HEADER => V_LOG_ID,
-        BATCH_NAME      => 'PMTSCHD',
-        PROCESS_NAME    => 'SP_IFRS_PAYMENT_SCHEDULE',
-        START_DATE      => CURRENT_TIMESTAMP,
-        CREATEDBY       => 'IFRS ENGINE',
-        COUNTER         => 4,
-        REMARKS         => 'INSERT TMP_SCHEDULE_CURR'
-    );
-
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_SCHEDULE_CURR' || ' 
         (
@@ -504,18 +456,6 @@ BEGIN
         ) % PY5.INCREMENTS = 0 ';
     EXECUTE (V_STR_QUERY);
 
-    CALL SP_IFRS_BATCH_LOG_DETAILS(
-        DOWNLOAD_DATE   => V_CURRDATE,
-        BATCH_ID        => 1,
-        BATCH_ID_HEADER => V_LOG_ID,
-        BATCH_NAME      => 'PMTSCHD',
-        PROCESS_NAME    => 'SP_IFRS_PAYMENT_SCHEDULE',
-        START_DATE      => CURRENT_TIMESTAMP,
-        CREATEDBY       => 'IFRS ENGINE',
-        COUNTER         => 5,
-        REMARKS         => 'INSERT IFRS_PAYM_SCHD'
-    );
-
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'IFRS_PAYM_SCHD' || ' 
         (
@@ -560,7 +500,7 @@ BEGIN
     WHILE V_COUNTER_PAY <= V_MAX_COUNTERPAY 
     LOOP 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_MIN_MAX_DATE' || ' (
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_MIN_MAX_DATE' || ' (
             MASTERID VARCHAR(100) 
             ,MIN_DATE DATE 
         ) ';
@@ -580,18 +520,6 @@ BEGIN
 
         V_COUNTER_PAY := V_COUNTER_PAY + 1;
         V_NEXT_COUNTER_PAY := V_COUNTER_PAY + 1;
-        
-        CALL SP_IFRS_BATCH_LOG_DETAILS(
-            DOWNLOAD_DATE   => V_CURRDATE,
-            BATCH_ID        => 2,
-            BATCH_ID_HEADER => V_LOG_ID,
-            BATCH_NAME      => 'PMTSCHD',
-            PROCESS_NAME    => 'SP_IFRS_PAYMENT_SCHEDULE',
-            START_DATE      => CURRENT_TIMESTAMP,
-            CREATEDBY       => 'IFRS ENGINE',
-            COUNTER         => V_COUNTER_PAY,
-            REMARKS         => 'PAYMENT SCHEDULE LOOPING'
-        );
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_SCHEDULE_PREV' || '';

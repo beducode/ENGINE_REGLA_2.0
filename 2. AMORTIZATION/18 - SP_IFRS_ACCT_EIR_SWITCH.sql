@@ -306,7 +306,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || V_TMPTABLE1 || ' AS
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TMPTABLE1 || ' AS
         SELECT 
             MASTERID 
             ,DOWNLOAD_DATE 

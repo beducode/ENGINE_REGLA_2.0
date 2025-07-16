@@ -97,7 +97,7 @@ BEGIN
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
 
-    -------- ====== TEMPORARY STG TABLE ======
+    -------- ====== STG TABLE ======
     ---- TODO: REMOVE THIS ONCE THE DB STG ARE CREATED
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE IF NOT EXISTS DM_LIMIT (
@@ -130,7 +130,7 @@ BEGIN
         ,STG_LIMIT_AMT NUMERIC(32, 6) 
     ) ';
     EXECUTE (V_STR_QUERY);
-    ---------- ====== TEMPORARY STG TABLE ======
+    ---------- ====== STG TABLE ======
 
     -------- ====== BODY ======
     V_STR_QUERY := '';
@@ -144,7 +144,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE1 || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TMPTABLE1 || ' AS 
         SELECT YMD, BR_CD, LIMIT_ID 
         FROM DM_LIMIT 
         WHERE YMD = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
@@ -156,7 +156,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE2 || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TMPTABLE2 || ' AS 
         SELECT CIF, CUSTOMER_TYPE, SOURCE_SYSTEM 
         FROM STG_CIF 
         WHERE SOURCE_SYSTEM = ''EQ'' ';
@@ -171,7 +171,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMPORARY TABLE ' || V_TMPTABLE3 || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TMPTABLE3 || ' AS 
         SELECT * FROM STG_N3L_UNDRAWN 
         WHERE YMD = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
