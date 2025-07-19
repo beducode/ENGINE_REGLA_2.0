@@ -1,61 +1,13 @@
 CALL SP_IFRS_IMP_SIMULATION_DATA();
--- #1
-----------------------------------------
----------------------------------------- VINO ----------------------------------------
-CALL SP_IFRS_RESET_AMT_PRC();
-CALL SP_IFRS_SYNC_PRODUCT_PARAM();
-CALL SP_IFRS_SYNC_TRANS_PARAM();
-CALL SP_IFRS_SYNC_JOURNAL_PARAM();
-CALL SP_IFRS_SYNC_UPLOAD_TRAN_DAILY();
-CALL SP_IFRS_AC_SYNC_LIST_VALUE();
-CALL SP_IFRS_INITIAL_UPDATE();
-CALL SP_IFRS_EXEC_RULE();
-----------------------------------------
--- #2
-----------------------------------------
-CALL SP_IFRS_FILL_IMA_AMORT_PREV_CURR();
-CALL SP_IFRS_ACCT_AMORT_RESTRU();
-CALL SP_IFRS_ACCT_CLOSED();
-CALL SP_IFRS_PROCESS_TRAN_DAILY();
-CALL SP_IFRS_COST_FEE_STATUS();
-CALL SP_IFRS_ACCT_COST_FEE_SUMM();
-----------------------------------------
--- #3
-----------------------------------------
-CALL SP_IFRS_ACCT_SWITCH();
-CALL SP_IFRS_ACCT_SL_SWITCH();
-CALL SP_IFRS_ACCT_EIR_SWITCH();
-CALL SP_IFRS_ACCT_EIR_ACF_PMTDT();
-CALL SP_IFRS_ACCT_EIR_ECF_EVENT();
-----------------------------------------
--- #4
-----------------------------------------
-CALL SP_IFRS_PAYM_SCHD();
-CALL SP_IFRS_PAYM_SCHD_SRC();
-CALL SP_IFRS_PAYM_SCHD_MTM();
-CALL SP_IFRS_ACCT_EIR_ECF_MAIN();
-CALL SP_IFRS_PAYM_CORE_PROC_NOP();
-----------------------------------------
--- #5
-----------------------------------------
-CALL SP_IFRS_ACCT_EIR_CF_ECF_GRP();
-CALL SP_IFRS_ACCT_EIR_GS_RANGE();
-CALL SP_IFRS_ACCT_EIR_GS_PROC3();
-CALL SP_IFRS_ACCT_EIR_GS_INSERT4();
-CALL SP_IFRS_ACCT_EIR_ECF_ALIGN4();
-CALL SP_IFRS_ACCT_EIR_GS_INSERT();
-CALL SP_IFRS_ACCT_EIR_ECF_ALIGN();
-CALL SP_IFRS_ACCT_EIR_ECF_MERGE();
-CALL SP_IFRS_STAFF_BENEFIT_SUMM();
-CALL SP_IFRS_ACCT_EIR_ACF_ACRU();
-CALL SP_IFRS_ACCT_EIR_UPD_ACRU();
-CALL SP_IFRS_ACCT_EIR_LAST_ACF();
----------------------------------------- VINO ----------------------------------------
--- CALL SP_IFRS_ACCT_EIR_JRNL_INTM();
--- ----------------------------------------
+---- START AMORTIZATION ENGINE ----
+CALL SP_IFRS_AMT_SYNC_BEFORE_PROCESS();
+CALL SP_IFRS_AMT_PROCESS_TRAN_DAILY();
+CALL SP_IFRS_AMT_ACCT_SWITCH();
+CALL SP_IFRS_AMT_GENERATE_PAYM_SCHD();
+CALL SP_IFRS_AMT_CALC_ACCT_EIR();
 -- -- #6
 -- ----------------------------------------
--- CALL SP_IFRS_LBM_RESET_AMT_PRC();
+CALL SP_IFRS_LBM_RESET_AMT_PRC();
 -- CALL SP_IFRS_LBM_ACCT_EIR_SWITCH();
 -- CALL SP_IFRS_LBM_ACCT_EIR_ACF_PMTDT();
 -- CALL SP_LBM_SYNC_PAYM_CORE();
