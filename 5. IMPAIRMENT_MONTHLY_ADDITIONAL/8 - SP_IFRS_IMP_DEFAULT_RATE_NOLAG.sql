@@ -56,9 +56,9 @@ BEGIN
 
     IF P_PRC = 'S' THEN 
         V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
-        V_TABLEINSERT1 := 'IFRS_IMP_DEFAULT_RATE_NOLAG';
+        V_TABLEINSERT1 := 'IFRS_IMP_DEFAULT_RATE_NOLAG_' || P_RUNID || '';
         V_TABLEINSERT2 := 'IFRS_IMP_DEFAULT_RATE_' || P_RUNID || '';
-        V_TABLEINSERT3 := 'IFRS_PD_SCENARIO_DATA_NOLAG';
+        V_TABLEINSERT3 := 'IFRS_PD_SCENARIO_DATA_NOLAG_' || P_RUNID || '';
     ELSE 
         V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
         V_TABLEINSERT1 := 'IFRS_IMP_DEFAULT_RATE_NOLAG';
@@ -83,6 +83,26 @@ BEGIN
 
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
+
+    -------- ====== PRE SIMULATION TABLE ======
+    IF P_PRC = 'S' THEN 
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT1 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM IFRS_IMP_DEFAULT_RATE_NOLAG WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT2 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT2 || ' AS SELECT * FROM IFRS_IMP_DEFAULT_RATE WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+    END IF;
+    -------- ====== PRE SIMULATION TABLE ======
 
     -------- ====== BODY ======
     V_STR_QUERY := '';
