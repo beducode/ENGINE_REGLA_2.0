@@ -15,6 +15,7 @@ DECLARE
 
     ---- TABLE LIST       
     V_TABLEINSERT VARCHAR(100);
+    V_TABLENAME VARCHAR(100);
     
     ---- CONDITION
     V_RETURNROWS INT;
@@ -60,6 +61,12 @@ BEGIN
     -------- ====== VARIABLE ======
 
     -------- ====== BODY ======
+    IF P_PRC = 'S' THEN 
+        V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
+    ELSE 
+        V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
+    END IF;
+
     CALL SP_IFRS_RESET_AMT_PRC(P_RUNID, V_CURRDATE, P_PRC);
     CALL SP_IFRS_SYNC_PRODUCT_PARAM(P_RUNID, V_CURRDATE, P_PRC);
     CALL SP_IFRS_SYNC_TRANS_PARAM(P_RUNID, V_CURRDATE, P_PRC);
@@ -75,16 +82,16 @@ BEGIN
     ---------- ====== BODY ======
 
     -------- ====== LOG ======
-    V_TABLEDEST = '-';
+    V_TABLEDEST = V_TABLENAME;
     V_COLUMNDEST = '-';
     V_SPNAME = 'SP_IFRS_AMT_SYNC_BEFORE_PROCESS';
-    V_OPERATION = 'SEQUENCE | SP_IFRS_AMT_SYNC_BEFORE_PROCESS';
+    V_OPERATION = 'UPDATE';
     
     CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
     -------- ====== LOG ======
 
     -------- ====== RESULT ======
-    V_QUERYS = '-';
+    V_QUERYS = 'SELECT * FROM ' || V_TABLENAME || '';
     CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
     -------- ====== RESULT ======
 

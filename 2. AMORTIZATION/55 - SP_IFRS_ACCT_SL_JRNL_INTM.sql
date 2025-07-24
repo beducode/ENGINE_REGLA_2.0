@@ -1,6 +1,6 @@
----- DROP PROCEDURE SP_IFRS_ACCT_EIR_SWITCH;
+---- DROP PROCEDURE SP_IFRS_ACCT_SL_JOURNAL_INTM;
 
-CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_SWITCH(
+CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_SL_JOURNAL_INTM(
     IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
     IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
     IN P_PRC VARCHAR(1) DEFAULT 'S')
@@ -20,6 +20,14 @@ DECLARE
     V_TABLEINSERT4 VARCHAR(100);
     V_TABLEINSERT5 VARCHAR(100);
     V_TABLEINSERT6 VARCHAR(100);
+    V_TABLEINSERT7 VARCHAR(100);
+    V_TABLEINSERT8 VARCHAR(100);
+    V_TABLEINSERT9 VARCHAR(100);
+    V_TABLEINSERT10 VARCHAR(100);
+    V_TABLEINSERT11 VARCHAR(100);
+    V_TABLEINSERT12 VARCHAR(100);
+    V_TABLEINSERT13 VARCHAR(100);
+    V_TABLEINSERT14 VARCHAR(100);
     V_TMPTABLE1 VARCHAR(100);
 
     ---- VARIABLE PROCESS
@@ -104,6 +112,16 @@ BEGIN
     -------- ====== VARIABLE ======
 
     -------- ====== BODY ======
+    IF P_PRC = 'S' THEN 
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT11 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT11 || ' AS SELECT * FROM TMP_T5 WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+    END IF;
+
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_SL_JOURNAL_INTM', '');
 
     V_STR_QUERY := V_STR_QUERY || 'DELETE ' || IFRS_ACCT_JOURNAL_INTM || ' A 
@@ -489,8 +507,8 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
 	--JOURNAL SL BARU
-    IF SL_METHOD = ''NO_ECF''
-    BEGIN
+    IF SL_METHOD = 'NO_ECF' THEN
+        V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT11 || '';
         EXECUTE (V_STR_QUERY);
 
@@ -680,8 +698,8 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
 	--JOURNAL SL BARU
-    IF SL_METHOD = ''NO_ECF''
-    BEGIN
+    IF SL_METHOD = 'NO_ECF' THEN
+        V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
             (    
                 FACNO
@@ -841,8 +859,8 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     --JOURNAL SL BARU
-    IF SL_METHOD = ''NO_ECF''
-    BEGIN
+    IF SL_METHOD = 'NO_ECF' THEN
+        V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT11 || '';
         EXECUTE (V_STR_QUERY);
 
@@ -1397,9 +1415,8 @@ BEGIN
     EXECUTE (V_STR_QUERY); 
 
 	----JOURNAL SL SWITCH NO ECF
-    IF SL_METHOD = 'NO_ECF'
-    BEGIN
-
+    IF SL_METHOD = 'NO_ECF' THEN
+        V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
             (    
                 FACNO
@@ -1454,8 +1471,8 @@ BEGIN
                     FROM ' || V_TABLEINSERT5 || '
                     WHERE EFFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
                         AND IFRS_STATUS = ''SWC''
-                )';
-            WHERE FLAG_CF = ''F'';
+                )
+            WHERE FLAG_CF = ''F'' ';
         EXECUTE (V_STR_QUERY);
     
 
@@ -1490,18 +1507,18 @@ BEGIN
                 ,PRD_CODE
                 ,TRX_CODE
                 ,CCY
-                ,'DEFA0'
-                ,'ACT'
-                ,'N'
+                ,''DEFA0''
+                ,''ACT''
+                ,''N''
                 ,UNAMORT_VALUE
                 ,CURRENT_TIMESTAMP
-                ,'SL_SWITCH'
+                ,''SL_SWITCH''
                 ,A.MASTERID
                 ,A.MASTERID
                 ,FLAG_CF
                 ,B.BRANCH_CODE
                 ,B.PRODUCT_TYPE
-                ,'ITRCG_SL'
+                ,''ITRCG_SL''
                 ,ID_SL
             FROM ' || V_TABLEINSERT5 || '
             JOIN ' || V_TABLEINSERT6 || ' B
@@ -1588,8 +1605,8 @@ BEGIN
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'PRINT ' || CAST(GETDATE() AS VARCHAR(50)) || ' START SP_FAC_JOURNAL_INTM SL STOP REV 19';
 
-    IF PARAM_DISABLE_ACCRU_PREV = 0
-    BEGIN 
+    IF PARAM_DISABLE_ACCRU_PREV = 0 THEN
+        V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || '
             (
                 FACNO
@@ -1645,9 +1662,8 @@ BEGIN
                     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
                 )';
         EXECUTE (V_STR_QUERY);
-    END IF
     ELSE
-    BEGIN
+        V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || '
             (
                 FACNO
@@ -1776,7 +1792,7 @@ BEGIN
     ---- END
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_SL_JOURNAL_INTM', '');
 
-    RAISE NOTICE 'SP_IFRS_ACCT_EIR_SWITCH | AFFECTED RECORD : %', V_RETURNROWS2;
+    RAISE NOTICE 'SP_IFRS_ACCT_SL_JOURNAL_INTM | AFFECTED RECORD : %', V_RETURNROWS2;
     ---------- ====== BODY ======
 
     -------- ====== LOG ======

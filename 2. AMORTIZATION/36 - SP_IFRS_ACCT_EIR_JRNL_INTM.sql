@@ -109,8 +109,22 @@ BEGIN
     -------- ====== VARIABLE ======
 
     -------- ====== PRE SIMULATION TABLE ======
-    IF P_PRC = 'S' THEN
-        
+    IF P_PRC = 'S' THEN 
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT5 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT5 || ' AS SELECT * FROM TMP_T5 WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT6 || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT6 || ' AS SELECT * FROM TMP_T6 WHERE 1=0 ';
+        EXECUTE (V_STR_QUERY);
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
 
@@ -451,66 +465,6 @@ BEGIN
     
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_JOURNAL_INTM', '6');
 
-    /* 
-    --HRD DEFA0 COME FROM DIFFERENT TABLE                  
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
-            FACNO                
-            ,CIFNO                
-            ,DOWNLOAD_DATE                
-            ,DATASOURCE      
-            ,PRDCODE                
-            ,TRXCODE                
-            ,CCY                
-            ,JOURNALCODE                
-            ,STATUS                
-            ,REVERSE                
-            ,N_AMOUNT                
-            ,CREATEDDATE                
-            ,SOURCEPROCESS                
-            ,ACCTNO                
-            ,MASTERID                
-            ,FLAG_CF                
-            ,BRANCH                
-            ,PRDTYPE                
-            ,JOURNALCODE2                
-            ,CF_ID   
-        ) SELECT 
-            FACNO                
-            ,CIFNO                
-            ,DOWNLOAD_DATE                
-            ,DATASOURCE                
-            ,PRDCODE                
-            ,TRXCODE                
-            ,CCY                
-            ,''DEFA0''                
-            ,''ACT''                
-            ,''N''                
-            ,CASE                 
-            WHEN FLAG_REVERSE = ''Y''                
-                THEN - 1 * AMOUNT                
-            ELSE AMOUNT                
-            END                
-            ,CURRENT_TIMESTAMP                
-            ,''EIR HRD 1''                
-            ,ACCTNO                
-            ,MASTERID                
-            ,FLAG_CF                
-            ,BRCODE                
-            ,PRDTYPE                
-            ,''ITRCG''                
-            ,CF_ID    
-        FROM ' || V_TABLEINSERT3 || ' 
-        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-            AND STATUS = ''ACT'' 
-            AND SRCPROCESS = ''STAFFLOAN''';
-    EXECUTE (V_STR_QUERY);
-    */
-
-    -- CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_JOURNAL_INTM', '7');
-
     --REVERSE ACCRUAL                  
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
@@ -569,19 +523,6 @@ BEGIN
 
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_JOURNAL_INTM', '8');
 
-    --ACCRU FEE  
-    -- V_STR_QUERY := '';          
-    -- V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT5 || '';
-    -- EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT5 || ' ';
-    EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT5 || ' AS SELECT * FROM TMP_T5 WHERE 1=0 ';
-    EXECUTE (V_STR_QUERY);
- 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT5 || ' 
         (    
@@ -635,19 +576,6 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_JOURNAL_INTM', '9');
-
-    --ACCRU FEE 
-    -- V_STR_QUERY := '';           
-    -- V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT6 || '';
-    -- EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT6 || ' ';
-    EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT6 || ' AS SELECT * FROM TMP_T6 WHERE 1=0 ';
-    EXECUTE (V_STR_QUERY);
  
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT6 || ' 
@@ -962,11 +890,6 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_JOURNAL_INTM', '15');
-
-    --EXECUTE IMMEDIATE 'DROP INDEX TMP_T5_IDX1';                  
-    --EXECUTE IMMEDIATE 'DROP INDEX TMP_T6_IDX1';                  
-    --EXECUTE IMMEDIATE 'CREATE INDEX TMP_T5_IDX1 ON V_TABLEINSERT5(DOWNLOAD_DATE,MASTERID)';                  
-    --EXECUTE IMMEDIATE 'CREATE INDEX TMP_T6_IDX1 ON V_TABLEINSERT6(DOWNLOAD_DATE,MASTERID)';           
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
