@@ -183,7 +183,7 @@ BEGIN
                     ,0 AS AMORT_FEE 
                     ,0 AS AMORT_COST 
                 FROM ' || V_TABLEINSERT1 || ' 
-                WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+                WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
                 AND STATUS IN (''ACT'', ''PNL'') 
                 AND SRCPROCESS NOT IN (''SL_TO_EIR'', ''STOP_REV'') 
                 GROUP BY 

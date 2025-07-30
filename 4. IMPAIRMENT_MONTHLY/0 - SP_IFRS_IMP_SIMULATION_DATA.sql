@@ -67,7 +67,7 @@ BEGIN
     IF P_DOWNLOAD_DATE IS NULL 
     THEN
         SELECT
-            CURRDATE INTO V_CURRDATE
+            CURRDATE, PREVDATE INTO V_CURRDATE, V_PREVDATE
         FROM
             IFRS_PRC_DATE;
     ELSE        
@@ -357,7 +357,7 @@ BEGIN
         ,SEGMENT_FLAG
         ,''' || P_RUNID || ''' AS RUNID       
         FROM    IFRS_MASTER_ACCOUNT                                              
-        WHERE   DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' ';
+        WHERE   DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' OR  DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || ''' ';
         EXECUTE (V_STR_QUERY);
 
         GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
