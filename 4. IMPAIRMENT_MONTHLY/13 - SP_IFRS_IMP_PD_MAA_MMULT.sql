@@ -112,6 +112,8 @@ BEGIN
     
     -------- ====== BODY ======
 
+    RAISE NOTICE '----> %', V_TABLEPDCONFIG;
+
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT4 || ' A
     USING ' || V_TABLEPDCONFIG || ' B WHERE A.PD_RULE_ID = B.PKID
