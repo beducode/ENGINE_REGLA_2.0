@@ -99,7 +99,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE IMA_' || P_RUNID || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE IMA_' || P_RUNID || ' AS 
     SELECT DOWNLOAD_DATE, MASTERID, EIR_SEGMENT, EIR, INTEREST_RATE, LOAN_START_DATE                              
     FROM ' || V_TABLENAME_MON || '                
     WHERE 1 = 2 ';

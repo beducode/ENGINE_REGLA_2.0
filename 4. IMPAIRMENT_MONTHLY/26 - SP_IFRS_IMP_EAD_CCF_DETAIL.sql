@@ -140,7 +140,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE TMP_CCF_RULES_CONFIG_' || P_RUNID || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_CCF_RULES_CONFIG_' || P_RUNID || ' AS 
     SELECT DISTINCT                    
     A.PKID,                    
     A.CCF_RULE_NAME,                    
@@ -515,7 +515,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE MIN12DATECIF_' || P_RUNID || ' AS 
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE MIN12DATECIF_' || P_RUNID || ' AS 
         SELECT               
         A.DOWNLOAD_DATE,              
         MIN(B.DOWNLOAD_DATE) AS MIN_12M_DATE,          
@@ -540,7 +540,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE 12MCIF_' || P_RUNID || ' AS 
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE 12MCIF_' || P_RUNID || ' AS 
         SELECT          
         CCF_RULE_ID,          
         DEFAULT_RULE_ID,          
@@ -743,7 +743,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE MIN12DATEFAC_' || P_RUNID || ' AS 
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE MIN12DATEFAC_' || P_RUNID || ' AS 
         SELECT               
         A.DOWNLOAD_DATE,              
         MIN(B.DOWNLOAD_DATE) AS MIN_12M_DATE,          
@@ -768,7 +768,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE 12MFAC_' || P_RUNID || ' AS 
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE 12MFAC_' || P_RUNID || ' AS 
         SELECT          
         CCF_RULE_ID,          
         DEFAULT_RULE_ID,          
