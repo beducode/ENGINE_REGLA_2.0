@@ -1181,6 +1181,11 @@ BEGIN
                 ,GRACE_DATE 
             FROM ' || 'TMP_SCHEDULE_CURR' || ' ';
         EXECUTE (V_STR_QUERY);
+
+        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+        V_RETURNROWS := 0;
+
     END LOOP;
 
     V_STR_QUERY := '';
@@ -1319,7 +1324,23 @@ BEGIN
         ON PMA.MASTERID = SCH.MASTERID    
         AND PMA.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
+    
+    RAISE NOTICE 'SP_IFRS_PAYM_SCHD | AFFECTED RECORD : %', V_RETURNROWS2;
     ---------- ====== BODY ======
+
+    -------- ====== LOG ======
+    V_TABLEDEST = V_TABLEINSERT7;
+    V_COLUMNDEST = '-';
+    V_SPNAME = 'SP_IFRS_PAYM_SCHD';
+    V_OPERATION = 'INSERT';
+    
+    CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
+    -------- ====== LOG ======
+
+    -------- ====== RESULT ======
+    V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT7 || '';
+    CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
+    -------- ====== RESULT ======
 
 END;
 
