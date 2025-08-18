@@ -78,7 +78,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT || ' AS SELECT * FROM IFRS_TRANSACTION_PARAM WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT || ' AS SELECT * FROM IFRS_LBM_PAYM_CORE_SRC WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
@@ -97,7 +97,7 @@ BEGIN
             SELECT * 
             FROM ' || V_TABLEINSERT1 || ' 
             WHERE (STAFF_LOAN_FLAG = ''Y'' 
-            OR BELOW_MARKET_FLAG = 1)) A
+            OR BELOW_MARKET_FLAG = ''1'')) A
         LEFT JOIN ' || V_TABLEINSERT2 || ' B ON A.MASTERID = B.MASTERID
         ';
     EXECUTE (V_STR_QUERY);

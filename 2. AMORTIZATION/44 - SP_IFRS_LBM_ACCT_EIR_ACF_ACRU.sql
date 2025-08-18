@@ -1,6 +1,6 @@
----- DROP PROCEDURE SP_IFRS_ACCT_EIR_ACF_ACRU;
+---- DROP PROCEDURE SP_IFRS_LBM_ACCT_EIR_ACF_ACRU;
 
-CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_ACF_ACRU(
+CREATE OR REPLACE PROCEDURE SP_IFRS_LBM_ACCT_EIR_ACF_ACRU(
     IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
     IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
     IN P_PRC VARCHAR(1) DEFAULT 'S')
@@ -56,17 +56,17 @@ BEGIN
 
     IF P_PRC = 'S' THEN 
         V_TABLEINSERT1 := 'IFRS_ACCT_CLOSED_' || P_RUNID || '';
-        V_TABLEINSERT2 := 'IFRS_ACCT_EIR_ACF_' || P_RUNID || '';
-        V_TABLEINSERT3 := 'IFRS_ACCT_EIR_COST_FEE_ECF_' || P_RUNID || '';
-        V_TABLEINSERT4 := 'IFRS_ACCT_EIR_COST_FEE_PREV_' || P_RUNID || '';
-        V_TABLEINSERT5 := 'IFRS_ACCT_EIR_ECF_' || P_RUNID || '';
+        V_TABLEINSERT2 := 'IFRS_LBM_ACCT_EIR_ACF_' || P_RUNID || '';
+        V_TABLEINSERT3 := 'IFRS_LBM_ACCT_EIR_COST_FEE_ECF_' || P_RUNID || '';
+        V_TABLEINSERT4 := 'IFRS_LBM_ACCT_EIR_COST_FEE_PREV_' || P_RUNID || '';
+        V_TABLEINSERT5 := 'IFRS_LBM_ACCT_EIR_ECF_' || P_RUNID || '';
         V_TABLEINSERT6 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
     ELSE 
         V_TABLEINSERT1 := 'IFRS_ACCT_CLOSED';
-        V_TABLEINSERT2 := 'IFRS_ACCT_EIR_ACF';
-        V_TABLEINSERT3 := 'IFRS_ACCT_EIR_COST_FEE_ECF';
-        V_TABLEINSERT4 := 'IFRS_ACCT_EIR_COST_FEE_PREV';
-        V_TABLEINSERT5 := 'IFRS_ACCT_EIR_ECF';
+        V_TABLEINSERT2 := 'IFRS_LBM_ACCT_EIR_ACF';
+        V_TABLEINSERT3 := 'IFRS_LBM_ACCT_EIR_COST_FEE_ECF';
+        V_TABLEINSERT4 := 'IFRS_LBM_ACCT_EIR_COST_FEE_PREV';
+        V_TABLEINSERT5 := 'IFRS_LBM_ACCT_EIR_ECF';
         V_TABLEINSERT6 := 'IFRS_IMA_AMORT_CURR';
     END IF;
     
@@ -95,7 +95,7 @@ BEGIN
     -------- ====== PRE SIMULATION TABLE ======
 
     -------- ====== BODY ======
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_EIR_ACF_ACRU', '');
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_LBM_ACCT_EIR_ACF_ACRU', '');
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT2 || ' 
@@ -141,40 +141,40 @@ BEGIN
             ,M.FACILITY_NUMBER    
             ,M.CUSTOMER_NUMBER    
             ,M.DATA_SOURCE    
-            ,CASE     
-                WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1    
-                THEN (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV)    
-                ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ') 
-            END + A.N_COST_UNAMORT_AMT_PREV    
-            ,CASE     
-                WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1    
-                THEN (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV)    
-                ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ') 
-            END + A.N_FEE_UNAMORT_AMT_PREV    
-            ,(C.N_COST_UNAMORT_AMT) - (    
-                CASE     
-                    WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1    
-                    THEN (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV)    
-                    ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ') 
-                END + A.N_COST_UNAMORT_AMT_PREV    
-            )    
-            ,(C.N_FEE_UNAMORT_AMT) - (    
-                CASE     
-                    WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1    
-                    THEN (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV)    
-                    ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ') 
-                END + A.N_FEE_UNAMORT_AMT_PREV    
-            )    
-            ,CASE     
-                WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1    
-                THEN (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV)    
-                ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ') 
-            END - COALESCE(A.SW_ADJ_COST, 0)    
-            ,CASE     
-                WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1    
-                THEN (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV)    
-                ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ') 
-            END - COALESCE(A.SW_ADJ_FEE, 0)    
+            ,CASE 
+                WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1
+                THEN (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV)
+                ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ')
+            END + A.N_COST_UNAMORT_AMT_PREV
+            ,CASE 
+                WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1
+                THEN (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV)
+                ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ')
+            END + A.N_FEE_UNAMORT_AMT_PREV
+            ,(C.N_COST_UNAMORT_AMT) - (
+                CASE 
+                    WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1
+                    THEN (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV)
+                    ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ')
+                END + A.N_COST_UNAMORT_AMT_PREV
+                )
+            ,(C.N_FEE_UNAMORT_AMT) - (
+                CASE 
+                    WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1
+                    THEN (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV)
+                    ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ')
+                END + A.N_FEE_UNAMORT_AMT_PREV
+                )
+            ,CASE 
+                WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1
+                THEN (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV)
+                ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ')
+            END - COALESCE(A.SW_ADJ_COST, 0)
+            ,CASE 
+                WHEN CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) > 1
+                THEN (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV)
+                ELSE ROUND(CAST(CAST(((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREV_PMT_DATE) + 1) AS FLOAT) / CAST(A.I_DAYS2 AS FLOAT) * (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV) AS NUMERIC), ' || V_ROUND || ')
+            END - COALESCE(A.SW_ADJ_FEE, 0)
             ,A.N_COST_AMORT_AMT - COALESCE(A.SW_ADJ_COST, 0) AS ACCRUFULL_COST    
             ,A.N_FEE_AMORT_AMT - COALESCE(A.SW_ADJ_FEE, 0) AS ACCRUFULL_FEE    
             ,A.DOWNLOAD_DATE    
@@ -361,11 +361,11 @@ BEGIN
         WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         AND (    
             (    
-                A.N_UNAMORT_FEE <= 0    
-                AND A.FLAG_AL IN (''A'', ''O'')    
+                A.N_UNAMORT_FEE < 0    
+                AND A.FLAG_AL = ''A''
             )    
             OR (    
-                A.N_UNAMORT_FEE >= 0    
+                A.N_UNAMORT_FEE > 0    
                 AND A.FLAG_AL = ''L''    
             )    
         ) ';
@@ -495,11 +495,11 @@ BEGIN
         WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         AND (    
             (    
-                A.N_UNAMORT_COST >= 0    
-                AND A.FLAG_AL IN (''A'', ''O'')    
+                A.N_UNAMORT_COST > 0    
+                AND A.FLAG_AL = ''A'' 
             )    
             OR (    
-                A.N_UNAMORT_COST <= 0    
+                A.N_UNAMORT_COST < 0    
                 AND A.FLAG_AL = ''L''    
             )    
         ) ';
@@ -510,15 +510,15 @@ BEGIN
     V_RETURNROWS := 0;
 
     ---- END
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_EIR_ACF_ACRU', '');
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_LBM_ACCT_EIR_ACF_ACRU', '');
 
-    RAISE NOTICE 'SP_IFRS_ACCT_EIR_ACF_ACRU | AFFECTED RECORD : %', V_RETURNROWS2;
+    RAISE NOTICE 'SP_IFRS_LBM_ACCT_EIR_ACF_ACRU | AFFECTED RECORD : %', V_RETURNROWS2;
     ---------- ====== BODY ======
 
     -------- ====== LOG ======
     V_TABLEDEST = V_TABLEINSERT4;
     V_COLUMNDEST = '-';
-    V_SPNAME = 'SP_IFRS_ACCT_EIR_ACF_ACRU';
+    V_SPNAME = 'SP_IFRS_LBM_ACCT_EIR_ACF_ACRU';
     V_OPERATION = 'INSERT';
     
     CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);

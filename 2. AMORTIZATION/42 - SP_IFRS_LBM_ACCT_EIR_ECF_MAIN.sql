@@ -1,7 +1,7 @@
----- DROP PROCEDURE SP_IFRS_ACCT_EIR_ECF_MAIN;
+---- DROP PROCEDURE SP_IFRS_LBM_ACCT_EIR_ECF_MAIN;
 
-CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_ECF_MAIN(
-    IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_XXXX',
+CREATE OR REPLACE PROCEDURE SP_IFRS_LBM_ACCT_EIR_ECF_MAIN(
+    IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
     IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
     IN P_PRC VARCHAR(1) DEFAULT 'S')
 LANGUAGE PLPGSQL AS $$
@@ -83,58 +83,58 @@ BEGIN
 
     IF P_PRC = 'S' THEN 
         V_TABLEINSERT1 := 'IFRS_ACCT_COST_FEE_' || P_RUNID || '';
-        V_TABLEINSERT2 := 'IFRS_ACCT_EIR_ACCRU_PREV_' || P_RUNID || '';
-        V_TABLEINSERT3 := 'IFRS_ACCT_EIR_ACF_' || P_RUNID || '';
-        V_TABLEINSERT4 := 'IFRS_ACCT_EIR_CF_ECF_' || P_RUNID || '';
-        V_TABLEINSERT5 := 'IFRS_ACCT_EIR_CF_ECF1_' || P_RUNID || '';
-        V_TABLEINSERT6 := 'IFRS_ACCT_EIR_COST_FEE_ECF_' || P_RUNID || '';
-        V_TABLEINSERT7 := 'IFRS_ACCT_EIR_COST_FEE_PREV_' || P_RUNID || '';
-        V_TABLEINSERT8 := 'IFRS_ACCT_EIR_ECF_' || P_RUNID || '';
-        V_TABLEINSERT9 := 'IFRS_ACCT_EIR_ECF_NOCF_' || P_RUNID || '';
-        V_TABLEINSERT10 := 'IFRS_ACCT_EIR_FAILED_GS_' || P_RUNID || '';
-        V_TABLEINSERT11 := 'IFRS_ACCT_EIR_FAILED_GS3_' || P_RUNID || '';
-        V_TABLEINSERT12 := 'IFRS_ACCT_EIR_FAILED_GS4_' || P_RUNID || '';
-        V_TABLEINSERT13 := 'IFRS_ACCT_EIR_GAIN_LOSS_' || P_RUNID || '';
-        V_TABLEINSERT14 := 'IFRS_ACCT_EIR_GS_RESULT_' || P_RUNID || '';
-        V_TABLEINSERT15 := 'IFRS_ACCT_EIR_GS_RESULT3_' || P_RUNID || '';
-        V_TABLEINSERT16 := 'IFRS_ACCT_EIR_GS_RESULT4_' || P_RUNID || '';
-        V_TABLEINSERT17 := 'IFRS_ACCT_EIR_PAYM_' || P_RUNID || '';
-        V_TABLEINSERT18 := 'IFRS_ACCT_EIR_STOP_REV_' || P_RUNID || '';
+        V_TABLEINSERT2 := 'IFRS_LBM_ACCT_EIR_ACCRU_PREV_' || P_RUNID || '';
+        V_TABLEINSERT3 := 'IFRS_LBM_ACCT_EIR_ACF_' || P_RUNID || '';
+        V_TABLEINSERT4 := 'IFRS_LBM_ACCT_EIR_CF_ECF_' || P_RUNID || '';
+        V_TABLEINSERT5 := 'IFRS_LBM_ACCT_EIR_CF_ECF1_' || P_RUNID || '';
+        V_TABLEINSERT6 := 'IFRS_LBM_ACCT_EIR_COST_FEE_ECF_' || P_RUNID || '';
+        V_TABLEINSERT7 := 'IFRS_LBM_ACCT_EIR_COST_FEE_PREV_' || P_RUNID || '';
+        V_TABLEINSERT8 := 'IFRS_LBM_ACCT_EIR_ECF_' || P_RUNID || '';
+        V_TABLEINSERT9 := 'IFRS_LBM_ACCT_EIR_ECF_NOCF_' || P_RUNID || '';
+        V_TABLEINSERT10 := 'IFRS_LBM_ACCT_EIR_FAILED_GS_' || P_RUNID || '';
+        V_TABLEINSERT11 := 'IFRS_LBM_ACCT_EIR_FAILED_GS3_' || P_RUNID || '';
+        V_TABLEINSERT12 := 'IFRS_LBM_ACCT_EIR_FAILED_GS4_' || P_RUNID || '';
+        V_TABLEINSERT13 := 'IFRS_LBM_ACCT_EIR_GAIN_LOSS_' || P_RUNID || '';
+        V_TABLEINSERT14 := 'IFRS_LBM_ACCT_EIR_GS_RESULT_' || P_RUNID || '';
+        V_TABLEINSERT15 := 'IFRS_LBM_ACCT_EIR_GS_RESULT3_' || P_RUNID || '';
+        V_TABLEINSERT16 := 'IFRS_LBM_ACCT_EIR_GS_RESULT4_' || P_RUNID || '';
+        V_TABLEINSERT17 := 'IFRS_LBM_ACCT_EIR_PAYM_' || P_RUNID || '';
+        V_TABLEINSERT18 := 'IFRS_LBM_ACCT_EIR_STOP_REV_' || P_RUNID || '';
         V_TABLEINSERT19 := 'IFRS_ACCT_JOURNAL_INTM_' || P_RUNID || '';
         V_TABLEINSERT20 := 'IFRS_ACCT_SWITCH_' || P_RUNID || '';
-        V_TABLEINSERT21 := 'IFRS_EVENT_CHANGES_' || P_RUNID || '';
-        V_TABLEINSERT22 := 'IFRS_GS_MASTERID_' || P_RUNID || '';
+        V_TABLEINSERT21 := 'IFRS_LBM_EVENT_CHANGES_' || P_RUNID || '';
+        V_TABLEINSERT22 := 'IFRS_LBM_GS_MASTERID_' || P_RUNID || '';
         V_TABLEINSERT23 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
-        V_TABLEINSERT24 := 'IFRS_PAYM_CORE_' || P_RUNID || '';
-        V_TABLEINSERT25 := 'IFRS_PAYM_CORE_SRC_' || P_RUNID || '';
+        V_TABLEINSERT24 := 'IFRS_LBM_PAYM_CORE_' || P_RUNID || '';
+        V_TABLEINSERT25 := 'IFRS_LBM_PAYM_CORE_SRC_' || P_RUNID || '';
         V_TABLEINSERT26 := 'IFRS_PRODUCT_PARAM_' || P_RUNID || '';
         V_TABLEINSERT27 := 'IFRS_TRANSACTION_DAILY_' || P_RUNID || '';
     ELSE 
         V_TABLEINSERT1 := 'IFRS_ACCT_COST_FEE';
-        V_TABLEINSERT2 := 'IFRS_ACCT_EIR_ACCRU_PREV';
-        V_TABLEINSERT3 := 'IFRS_ACCT_EIR_ACF';
-        V_TABLEINSERT4 := 'IFRS_ACCT_EIR_CF_ECF';
-        V_TABLEINSERT5 := 'IFRS_ACCT_EIR_CF_ECF1';
-        V_TABLEINSERT6 := 'IFRS_ACCT_EIR_COST_FEE_ECF';
-        V_TABLEINSERT7 := 'IFRS_ACCT_EIR_COST_FEE_PREV';
-        V_TABLEINSERT8 := 'IFRS_ACCT_EIR_ECF';
-        V_TABLEINSERT9 := 'IFRS_ACCT_EIR_ECF_NOCF';
-        V_TABLEINSERT10 := 'IFRS_ACCT_EIR_FAILED_GS';
-        V_TABLEINSERT11 := 'IFRS_ACCT_EIR_FAILED_GS3';
-        V_TABLEINSERT12 := 'IFRS_ACCT_EIR_FAILED_GS4';
-        V_TABLEINSERT13 := 'IFRS_ACCT_EIR_GAIN_LOSS';
-        V_TABLEINSERT14 := 'IFRS_ACCT_EIR_GS_RESULT';
-        V_TABLEINSERT15 := 'IFRS_ACCT_EIR_GS_RESULT3';
-        V_TABLEINSERT16 := 'IFRS_ACCT_EIR_GS_RESULT4';
-        V_TABLEINSERT17 := 'IFRS_ACCT_EIR_PAYM';
-        V_TABLEINSERT18 := 'IFRS_ACCT_EIR_STOP_REV';
+        V_TABLEINSERT2 := 'IFRS_LBM_ACCT_EIR_ACCRU_PREV';
+        V_TABLEINSERT3 := 'IFRS_LBM_ACCT_EIR_ACF';
+        V_TABLEINSERT4 := 'IFRS_LBM_ACCT_EIR_CF_ECF';
+        V_TABLEINSERT5 := 'IFRS_LBM_ACCT_EIR_CF_ECF1';
+        V_TABLEINSERT6 := 'IFRS_LBM_ACCT_EIR_COST_FEE_ECF';
+        V_TABLEINSERT7 := 'IFRS_LBM_ACCT_EIR_COST_FEE_PREV';
+        V_TABLEINSERT8 := 'IFRS_LBM_ACCT_EIR_ECF';
+        V_TABLEINSERT9 := 'IFRS_LBM_ACCT_EIR_ECF_NOCF';
+        V_TABLEINSERT10 := 'IFRS_LBM_ACCT_EIR_FAILED_GS';
+        V_TABLEINSERT11 := 'IFRS_LBM_ACCT_EIR_FAILED_GS3';
+        V_TABLEINSERT12 := 'IFRS_LBM_ACCT_EIR_FAILED_GS4';
+        V_TABLEINSERT13 := 'IFRS_LBM_ACCT_EIR_GAIN_LOSS';
+        V_TABLEINSERT14 := 'IFRS_LBM_ACCT_EIR_GS_RESULT';
+        V_TABLEINSERT15 := 'IFRS_LBM_ACCT_EIR_GS_RESULT3';
+        V_TABLEINSERT16 := 'IFRS_LBM_ACCT_EIR_GS_RESULT4';
+        V_TABLEINSERT17 := 'IFRS_LBM_ACCT_EIR_PAYM';
+        V_TABLEINSERT18 := 'IFRS_LBM_ACCT_EIR_STOP_REV';
         V_TABLEINSERT19 := 'IFRS_ACCT_JOURNAL_INTM';
         V_TABLEINSERT20 := 'IFRS_ACCT_SWITCH';
-        V_TABLEINSERT21 := 'IFRS_EVENT_CHANGES';
-        V_TABLEINSERT22 := 'IFRS_GS_MASTERID';
+        V_TABLEINSERT21 := 'IFRS_LBM_EVENT_CHANGES';
+        V_TABLEINSERT22 := 'IFRS_LBM_GS_MASTERID';
         V_TABLEINSERT23 := 'IFRS_IMA_AMORT_CURR';
-        V_TABLEINSERT24 := 'IFRS_PAYM_CORE';
-        V_TABLEINSERT25 := 'IFRS_PAYM_CORE_SRC';
+        V_TABLEINSERT24 := 'IFRS_LBM_PAYM_CORE';
+        V_TABLEINSERT25 := 'IFRS_LBM_PAYM_CORE_SRC';
         V_TABLEINSERT26 := 'IFRS_PRODUCT_PARAM';
         V_TABLEINSERT27 := 'IFRS_TRANSACTION_DAILY';
     END IF;
@@ -171,7 +171,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_ACCT_EIR_CF_ECF WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_CF_ECF WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -179,7 +179,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT5 || ' AS SELECT * FROM IFRS_ACCT_EIR_CF_ECF1 WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT5 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_CF_ECF1 WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -187,7 +187,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT9 || ' AS SELECT * FROM IFRS_ACCT_EIR_ECF_NOCF WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT9 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_ECF_NOCF WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -195,7 +195,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT10 || ' AS SELECT * FROM IFRS_ACCT_EIR_FAILED_GS WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT10 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_FAILED_GS WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -203,7 +203,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT11 || ' AS SELECT * FROM IFRS_ACCT_EIR_FAILED_GS3 WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT11 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_FAILED_GS3 WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -211,7 +211,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT12 || ' AS SELECT * FROM IFRS_ACCT_EIR_FAILED_GS4 WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT12 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_FAILED_GS4 WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -219,7 +219,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT13 || ' AS SELECT * FROM IFRS_ACCT_EIR_GAIN_LOSS WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT13 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_GAIN_LOSS WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -227,7 +227,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT14 || ' AS SELECT * FROM IFRS_ACCT_EIR_GS_RESULT WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT14 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_GS_RESULT WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -235,7 +235,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT15 || ' AS SELECT * FROM IFRS_ACCT_EIR_GS_RESULT3 WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT15 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_GS_RESULT3 WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -243,7 +243,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT16 || ' AS SELECT * FROM IFRS_ACCT_EIR_GS_RESULT4 WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT16 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_GS_RESULT4 WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -251,7 +251,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT17 || ' AS SELECT * FROM IFRS_ACCT_EIR_PAYM WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT17 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_PAYM WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -259,7 +259,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT18 || ' AS SELECT * FROM IFRS_ACCT_EIR_STOP_REV WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT18 || ' AS SELECT * FROM IFRS_LBM_ACCT_EIR_STOP_REV WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -267,7 +267,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT21 || ' AS SELECT * FROM IFRS_EVENT_CHANGES WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT21 || ' AS SELECT * FROM IFRS_LBM_EVENT_CHANGES WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -275,7 +275,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT22 || ' AS SELECT * FROM IFRS_GS_MASTERID WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT22 || ' AS SELECT * FROM IFRS_LBM_GS_MASTERID WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
@@ -291,13 +291,13 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT24 || ' AS SELECT * FROM IFRS_PAYM_CORE WHERE 1=0 ';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT24 || ' AS SELECT * FROM IFRS_LBM_PAYM_CORE WHERE 1=0 ';
         EXECUTE (V_STR_QUERY);
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
 
     -------- ====== BODY ======
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_EIR_ECF_MAIN', '');
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_LBM_ACCT_EIR_ECF_MAIN', '');
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT2 || ' 
@@ -506,7 +506,7 @@ BEGIN
                 ELSE 0                
             END, 0)) AS COST_AMT                
         FROM ' || V_TABLEINSERT7 || ' B 
-        JOIN ' || 'TMP_LAST_EIR_CF_PREV' || ' X 
+        JOIN ' || 'VW_LBM_LAST_EIR_CF_PREV' || ' X 
             ON X.MASTERID = B.MASTERID                
             AND X.DOWNLOAD_DATE = B.DOWNLOAD_DATE                
             AND B.SEQ = X.SEQ                
@@ -640,6 +640,7 @@ BEGIN
             ) ';
         EXECUTE (V_STR_QUERY);
 
+        /* 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT4 || ' A 
             SET FEE_AMT = FEE_AMT + B.N_AMOUNT                
@@ -692,19 +693,20 @@ BEGIN
                     AND FLAG_CF = ''C''           
                 GROUP BY MASTERID               
             ) B                
-            WHERE (B.MASTERID = IFRS_ACCT_EIR_CF_ECF.MASTERID)                
+            WHERE (B.MASTERID = IFRS_LBM_ACCT_EIR_CF_ECF.MASTERID)                
             --20180404 ADD FILTER                      
-            AND IFRS_ACCT_EIR_CF_ECF.MASTERID IN (                
+            AND IFRS_LBM_ACCT_EIR_CF_ECF.MASTERID IN (                
                 SELECT MASTERID                
                 FROM ' || 'TMP_T3' || ' 
             )                
             --20160407 SL STOP REV                          
-            AND IFRS_ACCT_EIR_CF_ECF.MASTERID NOT IN (                
+            AND IFRS_LBM_ACCT_EIR_CF_ECF.MASTERID NOT IN (                
                 SELECT MASTERID                
                 FROM ' || V_TABLEINSERT18 || ' 
                 WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE                 
             ) ';
         EXECUTE (V_STR_QUERY);
+        */
     END IF;
 
     V_STR_QUERY := '';
@@ -789,15 +791,7 @@ BEGIN
             ,B.N_EFF_INT_RATE                
             ,B.ENDAMORTDATE                
         FROM ' || V_TABLEINSERT8 || ' B                
-        WHERE (
-            B.AMORTSTOPDATE IS NULL             
-            OR B.MASTERID IN (
-                SELECT DISTINCT MASTERID 
-                FROM ' || V_TABLEINSERT27 || ' 
-                WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-                AND TRX_CODE = ''PREPAYMENT''
-            )
-        ) 
+        WHERE B.AMORTSTOPDATE IS NULL  
         AND B.PMT_DATE = B.PREV_PMT_DATE ';
     EXECUTE (V_STR_QUERY);
 
@@ -822,7 +816,7 @@ BEGIN
         AND MASTERID NOT IN (                
         SELECT MASTERID                
         FROM ' || V_TABLEINSERT21 || '
-        WHERE EVENT_ID IN (0,1,2,3,5)             
+        WHERE EVENT_ID IN (0,1,2,3)             
             AND EFFECTIVE_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         ) ';
     EXECUTE (V_STR_QUERY);
@@ -881,7 +875,7 @@ BEGIN
             ,B.DOWNLOAD_DATE                
             ,B.SEQ                
             ,P.CURRDATE                
-        FROM ' || 'TMP_LAST_EIR_CF_PREV' || ' B 
+        FROM ' || 'VW_LBM_LAST_EIR_CF_PREV' || ' B 
         CROSS JOIN IFRS_PRC_DATE_AMORT P 
         WHERE B.MASTERID IN (                
             SELECT MASTERID                
@@ -939,20 +933,14 @@ BEGIN
             ,B.DOWNLOAD_DATE                
             ,B.SEQ                
             ,P.PREVDATE                
-        FROM ' || 'TMP_LAST_EIR_CF_PREV' || ' B 
+        FROM ' || 'VW_LBM_LAST_EIR_CF_PREV' || ' B 
         CROSS JOIN IFRS_PRC_DATE_AMORT P 
         WHERE B.MASTERID IN (                
             SELECT MASTERID                
             FROM ' || V_TABLEINSERT4 || '
             WHERE TOTAL_AMT = 0                
             OR TOTAL_AMT_ACRU = 0                
-        )                
-        AND MASTERID NOT IN (
-            SELECT DISTINCT MASTERID 
-            FROM ' || V_TABLEINSERT27 || '
-            WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-            AND TRX_CODE = ''PREPAYMENT''
-        )    -- BTPN ';
+        ) ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -1308,8 +1296,7 @@ BEGIN
                         SELECT DISTINCT MASTERID                
                         FROM ' || V_TABLEINSERT21 || ' 
                         WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE              
-                        --AND EVENT_ID = 4          
-                        AND EVENT_ID IN  (''4'',''6'') -- ADDED PREPAYMENT FOR EXPCTED LIFE BTPN               
+                        AND EVENT_ID = 4          
                     )                
                 )                
             )                
@@ -1381,7 +1368,7 @@ BEGIN
             ) ';
         EXECUTE (V_STR_QUERY);
 
-        CALL SP_IFRS_PAYM_CORE_PROC_NOP(P_RUNID, V_CURRDATE, P_PRC);
+        CALL SP_IFRS_LBM_PAYM_CORE_PROC_NOP(P_RUNID, V_CURRDATE, P_PRC);
 
         V_X := V_X + V_X_INC;
     END LOOP;
@@ -1390,9 +1377,7 @@ BEGIN
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT17 || ' A 
         SET NPV_RATE = B.NPV_RATE
         FROM ' || V_TABLEINSERT4 || ' B 
-        WHERE B.TOTAL_AMT = 0                
-        AND B.TOTAL_AMT_ACRU = 0                
-        AND B.STAFFLOAN = 1                
+        WHERE B.STAFFLOAN = 1                
         AND A.MASTERID = B.MASTERID 
         AND COALESCE(B.NPV_RATE, 0) > 0 ';
     EXECUTE (V_STR_QUERY);
@@ -1472,6 +1457,7 @@ BEGIN
         WHERE B.MASTERID = A.MASTERID ';
     EXECUTE (V_STR_QUERY);
 
+    /*
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT6 || ' 
         (                
@@ -1552,77 +1538,7 @@ BEGIN
                 AND CF_ID_REV IS NOT NULL                
             ) ';
     EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT6 || ' 
-        (                
-            DOWNLOAD_DATE                
-            ,ECFDATE                
-            ,MASTERID                
-            ,BRCODE                
-            ,CIFNO                
-            ,FACNO                
-            ,ACCTNO                
-            ,DATASOURCE                
-            ,CCY                
-            ,PRDCODE                
-            ,TRXCODE                
-            ,FLAG_CF                
-            ,FLAG_REVERSE                
-            ,METHOD                
-            ,STATUS                
-            ,SRCPROCESS                
-            ,AMOUNT                
-            ,CREATEDDATE                
-            ,CREATEDBY                
-            ,SEQ                
-            ,AMOUNT_ORG                
-            ,ORG_CCY                
-            ,ORG_CCY_EXRATE                
-            ,PRDTYPE                
-            ,CF_ID                
-        ) SELECT
-            C.DOWNLOAD_DATE                
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE  ECFDATE                
-            ,C.MASTERID                
-            ,C.BRCODE                
-            ,C.CIFNO                
-            ,C.FACNO                
-            ,C.ACCTNO                
-            ,C.DATASOURCE                
-            ,C.CCY                
-            ,C.PRDCODE                
-            ,C.TRXCODE                
-            ,C.FLAG_CF                
-            ,C.FLAG_REVERSE                
-            ,C.METHOD                
-            ,C.STATUS                
-            ,C.SRCPROCESS                
-            ,C.AMOUNT_ORG                
-            ,CURRENT_TIMESTAMP CREATEDDATE                
-            ,''EIR_ECF_MAIN'' CREATEDBY                
-            ,'''' SEQ             
-            ,C.AMOUNT_ORG                
-            ,C.ORG_CCY                
-            ,C.ORG_CCY_EXRATE                
-            ,C.PRDTYPE                
-            ,C.CF_ID                
-        FROM ' || V_TABLEINSERT7 || ' C                
-        JOIN ' || 'TMP_LAST_EIR_CF_PREV' || ' X 
-            ON X.MASTERID = C.MASTERID 
-            AND X.DOWNLOAD_DATE = C.DOWNLOAD_DATE                
-            AND C.SEQ = X.SEQ             
-        JOIN ' || V_TABLEINSERT4 || ' B 
-            ON B.MASTERID = C.MASTERID                
-            AND B.TOTAL_AMT = 0                
-            AND B.TOTAL_AMT_ACRU = 0            
-        WHERE C.MASTERID IN (
-            SELECT DISTINCT MASTERID 
-            FROM ' || V_TABLEINSERT27 || ' 
-            WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE  
-            AND TRX_CODE = ''PREPAYMENT''
-        ) ';
-    EXECUTE (V_STR_QUERY);
+    */
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT6 || ' 
@@ -1679,7 +1595,7 @@ BEGIN
             ,C.PRDTYPE                
             ,C.CF_ID                
         FROM ' || V_TABLEINSERT7 || ' C                
-        JOIN ' || 'TMP_LAST_EIR_CF_PREV' || ' X 
+        JOIN ' || 'VW_LBM_LAST_EIR_CF_PREV' || ' X 
             ON X.MASTERID = C.MASTERID                
             AND X.DOWNLOAD_DATE = C.DOWNLOAD_DATE                
             AND C.SEQ = X.SEQ                
@@ -1699,6 +1615,7 @@ BEGIN
             ,''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
         )                
         AND C.STATUS = ''ACT''                
+        AND C.TRXCODE = ''BENEFIT''  
         --20160407 EIR STOP REV                          
         AND A.MASTERID IS NULL                
         --20180116 EXCLUDE CF REV AND ITS PAIR                          
@@ -2039,7 +1956,41 @@ BEGIN
         EXECUTE (V_STR_QUERY);
     END IF;
 
-    CALL SP_IFRS_ACCT_EIR_CF_ECF_GRP(P_RUNID, V_CURRDATE, P_PRC);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T1' || '';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T2' || '';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_T1' || ' (MASTERID) 
+         SELECT DISTINCT MASTERID 
+         FROM ' || 'V_TABLEINSERT6' || ' 
+         WHERE ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+         AND CREATEDBY = ''EIR_SWITCH'' ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_T2' || ' (MASTERID)
+        SELECT DISTINCT MASTERID 
+        FROM ' || 'V_TABLEINSERT6' || ' 
+        WHERE ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+        AND CREATEDBY != ''EIR_SWITCH'' ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || 'V_TABLEINSERT6' || ' A 
+        SET STATUS = TO_CHAR(''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, ''YYYYMMDD'')  
+        WHERE ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE  
+        AND MASTERID IN (SELECT MASTERID FROM ' || 'TMP_T1' || ')  
+        AND MASTERID IN (SELECT MASTERID FROM ' || 'TMP_T2' || ')  
+        AND CREATEDBY = ''EIR_SWITCH''  
+        AND STATUS = ''ACT'' ';
+    EXECUTE (V_STR_QUERY);
+
+    CALL SP_IFRS_LBM_ACCT_EIR_CF_ECF_GRP(P_RUNID, V_CURRDATE, P_PRC);
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT10 || ' 
@@ -2097,7 +2048,7 @@ BEGIN
                 SELECT DISTINCT MASTERID                
                 FROM ' || V_TABLEINSERT21 || '
                 WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-                AND EVENT_ID IN (''4'', ''6'') -- BTPN                
+                AND EVENT_ID = ''4'' 
             )                
         ) ';
     EXECUTE (V_STR_QUERY);
@@ -2128,10 +2079,7 @@ BEGIN
             AND MASTERID IN (                
                 SELECT MASTERID                
                 FROM ' || V_TABLEINSERT5 || '
-                WHERE (                
-                    STAFFLOAN = 1                
-                    AND PREV_EIR IS NULL                
-                )                
+                WHERE STAFFLOAN = 1                
                 OR GAIN_LOSS_CALC = ''Y'' --20180226 PREPAYMENT                          
             )          
         ) A                
@@ -2153,9 +2101,9 @@ BEGIN
     LOOP 
         V_ID2 := V_X + V_X_INC - 1;
 
-        CALL SP_IFRS_ACCT_EIR_GS_RANGE(P_RUNID, V_CURRDATE, P_PRC, P_ID1 => V_X, P_ID2 => V_ID2);
+        CALL SP_IFRS_LBM_ACCT_EIR_GS_RANGE(P_RUNID, V_CURRDATE, P_PRC, P_ID1 => V_X, P_ID2 => V_ID2);
 
-        CALL SP_IFRS_ACCT_EIR_GS_PROC3(P_RUNID, V_CURRDATE, P_PRC);
+        CALL SP_IFRS_LBM_ACCT_EIR_GS_PROC3(P_RUNID, V_CURRDATE, P_PRC);
 
         V_X := V_X + V_X_INC;
     END LOOP;
@@ -2184,6 +2132,7 @@ BEGIN
         ) ';
     EXECUTE (V_STR_QUERY);
 
+    /*
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_YEST_UNAMORT';
     EXECUTE (V_STR_QUERY);
@@ -2227,7 +2176,7 @@ BEGIN
                 ELSE 0                
             END, 0)) AS YCOST_AMT   
         FROM ' || V_TABLEINSERT7 || ' B              
-        JOIN ' || 'TMP_LAST_EIR_CF_PREV' || ' X 
+        JOIN ' || 'VW_LBM_LAST_EIR_CF_PREV' || ' X 
             ON X.MASTERID = B.MASTERID                
             AND X.DOWNLOAD_DATE = B.DOWNLOAD_DATE                
             AND B.SEQ = X.SEQ                
@@ -2270,6 +2219,7 @@ BEGIN
         )                
         GROUP BY B.MASTERID ';
     EXECUTE (V_STR_QUERY);
+    */
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT5 || ' A 
@@ -2280,8 +2230,6 @@ BEGIN
                 THEN ROUND(B.GLOSS, ' || V_ROUND || ')                
                 WHEN FEE_AMT = 0 AND COST_AMT <> 0                
                 THEN 0                
-                WHEN FEE_AMT = 0 AND COST_AMT = 0 THEN --20190122 btpn : assume f/c composition from yesterday cost fee prev          
-                ROUND(B.GLOSS * YFEE_AMT / (YFEE_AMT+YCOST_AMT), ' || V_ROUND || ')          
                 ELSE ROUND(B.GLOSS * FEE_AMT / TOTAL_AMT, ' || V_ROUND || ')                
             END                
             ,GAIN_LOSS_COST_AMT = CASE                 
@@ -2289,13 +2237,9 @@ BEGIN
                 THEN ROUND(B.GLOSS, ' || V_ROUND || ')                
                 WHEN FEE_AMT <> 0 AND COST_AMT = 0                
                 THEN 0                
-                WHEN FEE_AMT = 0 AND COST_AMT = 0 THEN --20190122 btpn : assume f/c composition from yesterday cost fee prev          
-                ROUND(B.GLOSS, ' || V_ROUND || ') - ROUND(B.GLOSS * YFEE_AMT / (YFEE_AMT+YCOST_AMT), ' || V_ROUND || ')          
                 ELSE ROUND(B.GLOSS, ' || V_ROUND || ') - ROUND(B.GLOSS * FEE_AMT / TOTAL_AMT, ' || V_ROUND || ')                
             END                
         FROM ' || V_TABLEINSERT15 || ' B                
-        LEFT JOIN ' || 'TMP_YEST_UNAMORT' || ' C 
-        ON B.MASTERID = B.MASTERID 
         WHERE (                
             B.MASTERID = A.MASTERID 
             AND B.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
@@ -2313,8 +2257,6 @@ BEGIN
                 THEN ROUND(B.GLOSS, ' || V_ROUND || ') 
                 WHEN FEE_AMT = 0 AND COST_AMT <> 0                
                 THEN 0                
-                WHEN FEE_AMT = 0 and COST_AMT = 0 THEN --20190122 btpn : assume f/c composition from yesterday cost fee prev          
-                ROUND(B.GLOSS * YFEE_AMT / (YFEE_AMT+YCOST_AMT), ' || V_ROUND || ')          
                 ELSE ROUND(B.GLOSS * FEE_AMT / TOTAL_AMT, ' || V_ROUND || ') 
             END                
             ,GAIN_LOSS_COST_AMT = CASE                 
@@ -2322,13 +2264,9 @@ BEGIN
                 THEN ROUND(B.GLOSS, ' || V_ROUND || ') 
                 WHEN FEE_AMT <> 0 AND COST_AMT = 0                
                 THEN 0                
-                WHEN FEE_AMT = 0 and COST_AMT = 0 THEN --20190122 btpn : assume f/c composition from yesterday cost fee prev          
-                ROUND(B.GLOSS, ' || V_ROUND || ') - ROUND(B.GLOSS * YFEE_AMT / (YFEE_AMT+YCOST_AMT), ' || V_ROUND || ')          
                 ELSE ROUND(B.GLOSS, ' || V_ROUND || ') - ROUND(B.GLOSS * FEE_AMT / TOTAL_AMT, ' || V_ROUND || ') 
             END                
         FROM ' || V_TABLEINSERT15 || ' B                
-        LEFT JOIN ' || 'TMP_YEST_UNAMORT' || ' C 
-        ON B.MASTERID=B.MASTERID          
         WHERE (                
             B.MASTERID = A.MASTERID                
             AND B.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE           
@@ -2407,6 +2345,17 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || 'V_TABLEINSERT6' || ' A 
+        SET 
+            STATUS = ''REV''  
+            ,FLAG_REVERSE = ''Y''  
+        FROM ' || V_TABLEINSERT4 || ' B 
+        WHERE B.MASTERID = A.MASTERID  --ADD JOIN TO IFRS_LBM_ACCT_EIR_CF_ECF
+        AND A.ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+        AND A.STATUS = ''ACT'' ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT6 || ' 
         (                
             DOWNLOAD_DATE                
@@ -2457,7 +2406,7 @@ BEGIN
             ,''STAFFLOAN''                
             ,A.BENEFIT                
             ,CURRENT_TIMESTAMP CREATEDDATE                
-            ,''EIR_ECF_MAIN'' CREATEDBY                
+            ,''EIR_ECF_MAIN_TT'' CREATEDBY                
             ,'''' SEQ                
             ,A.BENEFIT                
             ,M.CURRENCY                
@@ -2466,10 +2415,10 @@ BEGIN
             ,0 AS CF_ID                
         FROM ' || 'TMP_B3' || ' A                
         JOIN ' || V_TABLEINSERT23 || ' M 
-        ON M.MASTERID = A.MASTERID                
+            ON M.MASTERID = A.MASTERID                
+            AND M.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         JOIN ' || V_TABLEINSERT4 || ' C 
-        ON C.MASTERID = A.MASTERID                
-        AND C.PREV_EIR IS NULL -- NO PREV ECF THEN INSERT ';
+            ON C.MASTERID = A.MASTERID  ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
@@ -2537,22 +2486,22 @@ BEGIN
     LOOP 
         V_ID2 = V_X + V_X_INC - 1;
 
-        CALL SP_IFRS_ACCT_EIR_GS_RANGE(P_RUNID, V_CURRDATE, P_PRC, P_ID1 => V_X, P_ID2 => V_ID2);
+        CALL SP_IFRS_LBM_ACCT_EIR_GS_RANGE(P_RUNID, V_CURRDATE, P_PRC, P_ID1 => V_X, P_ID2 => V_ID2);
 
-        CALL SP_IFRS_ACCT_EIR_GS_ALL(P_RUNID, V_CURRDATE, P_PRC);
+        CALL SP_IFRS_LBM_ACCT_EIR_GS_ALL(P_RUNID, V_CURRDATE, P_PRC);
 
         V_X := V_X + V_X_INC;
     END LOOP;
 
-    CALL SP_IFRS_ACCT_EIR_GS_INSERT4(P_RUNID, V_CURRDATE, P_PRC);
+    CALL SP_IFRS_LBM_ACCT_EIR_GS_INSERT4(P_RUNID, V_CURRDATE, P_PRC);
 
-    CALL SP_IFRS_ACCT_EIR_ECF_ALIGN4(P_RUNID, V_CURRDATE, P_PRC);
+    CALL SP_IFRS_LBM_ACCT_EIR_ECF_ALIGN4(P_RUNID, V_CURRDATE, P_PRC);
 
-    CALL SP_IFRS_ACCT_EIR_GS_INSERT(P_RUNID, V_CURRDATE, P_PRC);
+    CALL SP_IFRS_LBM_ACCT_EIR_GS_INSERT(P_RUNID, V_CURRDATE, P_PRC);
 
-    CALL SP_IFRS_ACCT_EIR_ECF_ALIGN(P_RUNID, V_CURRDATE, P_PRC);
+    CALL SP_IFRS_LBM_ACCT_EIR_ECF_ALIGN(P_RUNID, V_CURRDATE, P_PRC);
 
-    CALL SP_IFRS_ACCT_EIR_ECF_MERGE(P_RUNID, V_CURRDATE, P_PRC);
+    CALL SP_IFRS_LBM_ACCT_EIR_ECF_MERGE(P_RUNID, V_CURRDATE, P_PRC);
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T1' || '';
@@ -3102,6 +3051,7 @@ BEGIN
         WHERE COALESCE(A.GAIN_LOSS_AMT, 0) <> 0 ';
     EXECUTE (V_STR_QUERY);
 
+    /*
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TEMP_TFC';
     EXECUTE (V_STR_QUERY);
@@ -3111,21 +3061,16 @@ BEGIN
         SELECT MASTERID        
         ,SUM(CASE WHEN FLAG_CF = ''F'' THEN AMOUNT ELSE 0 END) AS TFEE        
         ,SUM(CASE WHEN FLAG_CF = ''C'' THEN AMOUNT ELSE 0 END) AS TCOST        
-        FROM ' || V_TABLEINSERT6 || ' 
+        FROM ' || 'V_TABLEINSERT6' || ' 
         WHERE ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         GROUP BY MASTERID ';
     EXECUTE (V_STR_QUERY);
+    */
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT6 || ' C 
-        SET AMOUNT = CASE 
-            WHEN A.FEE_AMT = 0 AND A.COST_AMT = 0 
-            THEN AMOUNT/B.TFEE * A.GAIN_LOSS_FEE_AMT * (AMOUNT/ABS(AMOUNT))        
-            ELSE ((A.FEE_AMT + A.GAIN_LOSS_FEE_AMT) / A.FEE_AMT) * AMOUNT                
-        END        
+        SET AMOUNT = ((A.FEE_AMT + A.GAIN_LOSS_FEE_AMT) / A.FEE_AMT) * AMOUNT                 
         FROM ' || V_TABLEINSERT4 || ' A                
-        LEFT JOIN ' || 'TEMP_TFC' || ' B 
-        ON B.MASTERID = A.MASTERID        
         WHERE A.MASTERID = C.MASTERID                
         AND C.ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         AND COALESCE(A.GAIN_LOSS_FEE_AMT, 0) <> 0                
@@ -3134,14 +3079,8 @@ BEGIN
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT6 || ' C 
-        SET AMOUNT = CASE 
-            WHEN A.COST_AMT = 0 AND A.COST_AMT = 0 
-            THEN AMOUNT/B.TCOST * A.GAIN_LOSS_COST_AMT * (AMOUNT/ABS(AMOUNT))        
-            ELSE ((A.COST_AMT + A.GAIN_LOSS_COST_AMT) / A.COST_AMT) * AMOUNT                
-        END        
+        SET AMOUNT = ((A.COST_AMT + A.GAIN_LOSS_COST_AMT) / A.COST_AMT) * AMOUNT                
         FROM ' || V_TABLEINSERT4 || ' A                
-        LEFT JOIN ' || 'TEMP_TFC' || ' B 
-        ON B.MASTERID = A.MASTERID        
         WHERE A.MASTERID = C.MASTERID                
         AND C.ECFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
         AND COALESCE(A.GAIN_LOSS_COST_AMT, 0) <> 0                
@@ -3149,15 +3088,15 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     ---- END
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_EIR_ECF_MAIN', '');
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_LBM_ACCT_EIR_ECF_MAIN', '');
 
-    RAISE NOTICE 'SP_IFRS_ACCT_EIR_ECF_MAIN | AFFECTED RECORD : %', V_RETURNROWS2;
+    RAISE NOTICE 'SP_IFRS_LBM_ACCT_EIR_ECF_MAIN | AFFECTED RECORD : %', V_RETURNROWS2;
     ---------- ====== BODY ======
 
     -------- ====== LOG ======
     V_TABLEDEST = V_TABLEINSERT4;
     V_COLUMNDEST = '-';
-    V_SPNAME = 'SP_IFRS_ACCT_EIR_ECF_MAIN';
+    V_SPNAME = 'SP_IFRS_LBM_ACCT_EIR_ECF_MAIN';
     V_OPERATION = 'INSERT';
     
     CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
