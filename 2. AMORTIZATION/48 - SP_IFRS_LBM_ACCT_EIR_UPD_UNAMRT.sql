@@ -1,6 +1,6 @@
----- DROP PROCEDURE SP_IFRS_SYNC_TRANS_PARAM;
+---- DROP PROCEDURE SP_IFRS_LBM_ACCT_EIR_UPD_UNAMRT;
 
-CREATE OR REPLACE PROCEDURE SP_IFRS_SYNC_TRANS_PARAM(
+CREATE OR REPLACE PROCEDURE SP_IFRS_LBM_ACCT_EIR_UPD_UNAMRT(
     IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
     IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
     IN P_PRC VARCHAR(1) DEFAULT 'S')
@@ -14,7 +14,23 @@ DECLARE
     V_STR_QUERY TEXT;
 
     ---- TABLE LIST       
-    V_TABLEINSERT VARCHAR(100);
+    V_TABLENAME VARCHAR(100);
+    V_TABLEINSERT1 VARCHAR(100);
+    V_TABLEINSERT2 VARCHAR(100);
+    V_TABLEINSERT3 VARCHAR(100);
+    V_TABLEINSERT4 VARCHAR(100);
+    V_TABLEINSERT5 VARCHAR(100);
+    V_TABLEINSERT6 VARCHAR(100);
+    V_TABLEINSERT7 VARCHAR(100);
+    V_TABLEINSERT8 VARCHAR(100);
+    V_TABLEINSERT9 VARCHAR(100);
+    V_TABLEINSERT10 VARCHAR(100);
+    V_TABLEINSERT11 VARCHAR(100);
+    V_TABLEINSERT12 VARCHAR(100);
+
+    ---- VARIABLE PROCESS
+    V_PARAM_DISABLE_ACCRU_PREV INT;
+    V_ROUND INT;
     
     ---- CONDITION
     V_RETURNROWS INT;
@@ -46,9 +62,17 @@ BEGIN
     END IF;
 
     IF P_PRC = 'S' THEN 
-        V_TABLEINSERT := 'IFRS_TRANSACTION_PARAM_' || P_RUNID || '';
+        V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
+        V_TABLEINSERT1 := 'IFRS_LBM_ACCT_EIR_ACF_' || P_RUNID || '';
+        V_TABLEINSERT2 := 'IFRS_LBM_ACCT_EIR_ECF_' || P_RUNID || '';
+        V_TABLEINSERT3 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
+        V_TABLEINSERT4 := 'IFRS_ACCT_EIR_ECF_' || P_RUNID || '';
     ELSE 
-        V_TABLEINSERT := 'IFRS_TRANSACTION_PARAM';
+        V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
+        V_TABLEINSERT1 := 'IFRS_LBM_ACCT_EIR_ACF';
+        V_TABLEINSERT2 := 'IFRS_LBM_ACCT_EIR_ECF';
+        V_TABLEINSERT3 := 'IFRS_IMA_AMORT_CURR';
+        V_TABLEINSERT4 := 'IFRS_ACCT_EIR_ECF';
     END IF;
     
     IF P_DOWNLOAD_DATE IS NULL 
@@ -61,94 +85,136 @@ BEGIN
         V_CURRDATE := P_DOWNLOAD_DATE;
         V_PREVDATE := V_CURRDATE - INTERVAL '1 DAY';
     END IF;
-    
+
+    SELECT CAST(VALUE1 AS INT) INTO V_ROUND
+    FROM TBLM_COMMONCODEDETAIL
+    WHERE COMMONCODE = 'SCM003';
+
+    V_PARAM_DISABLE_ACCRU_PREV := 0;
+
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
     -------- ====== PRE SIMULATION TABLE ======
-    IF P_PRC = 'S' THEN
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT || ' ';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT || ' AS SELECT * FROM IFRS_TRANSACTION_PARAM WHERE 1=0 ';
-        EXECUTE (V_STR_QUERY);
+    IF P_PRC = 'S' THEN 
     END IF;
     -------- ====== PRE SIMULATION TABLE ======
 
     -------- ====== BODY ======
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_EIR_UPD_UNAMORT', '');
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_LBM_ACCT_EIR_UPD_UNAMRT', '');
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT || ' ';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_B1' || '';
     EXECUTE (V_STR_QUERY);
-    
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', V_SP_NAME, 'INSERT TRANS PARAM');
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT || ' 
-        ( 
-            DATA_SOURCE 
-            ,PRD_TYPE 
-            ,PRD_CODE 
-            ,TRX_CODE 
-            ,CCY 
-            ,IFRS_TXN_CLASS 
-            ,AMORTIZATION_FLAG 
-            ,AMORT_TYPE 
-            ,GL_CODE 
-            ,TENOR_TYPE 
-            ,TENOR_AMORTIZATION 
-            ,SL_EXP_LIFE 
-            ,FEE_MAT_TYPE 
-            ,FEE_MAT_AMT 
-            ,COST_MAT_TYPE 
-            ,COST_MAT_AMT 
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_B1' || ' (MASTERID) 
+        SELECT DISTINCT MASTERID    
+        FROM ' || V_TABLEINSERT2 || ' 
+        WHERE AMORTSTOPDATE IS NULL ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_P1' || '';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_P1' || ' (ID) 
+        SELECT MAX(ID) ID    
+        FROM ' || V_TABLEINSERT1 || ' 
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE    
+        AND MASTERID IN (    
+            SELECT MASTERID    
+            FROM ' || 'TMP_B1' || ' 
+        ) 
+        GROUP BY MASTERID ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_U1' || '';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_U1' || ' 
+        (    
+            DOWNLOAD_DATE    
+            ,MASTERID    
+            ,N_UNAMORT_FEE    
+            ,N_UNAMORT_COST    
+            ,ECFDATE    
+            ,ACCTNO    
+            ,ENDAMORTDATE    
         ) SELECT 
-            DATA_SOURCE 
-            ,PRD_TYPE 
-            ,PRD_CODE 
-            ,TRX_CODE 
-            ,CCY 
-            ,IFRS_TXN_CLASS 
-            ,CASE WHEN AMORTIZATION_FLAG = 1 THEN ''Y'' ELSE ''N'' END AS AMORTIZATION_FLAG 
-            ,AMORT_TYPE 
-            ,GL_CODE 
-            ,TENOR_TYPE 
-            ,TENOR_AMORTIZATION 
-            ,SL_EXP_LIFE 
-            ,ORG_FEE_MAT_TYPE 
-            ,ORG_FEE_MAT_AMT 
-            ,TXN_COST_MAT_TYPE 
-            ,TXN_COST_MAT_AMT 
-        FROM IFRS_MASTER_TRANS_PARAM 
-        WHERE INST_CLS_VALUE IN (''A'', ''O'') 
-        AND IS_DELETE = 0 ';
+            B.DOWNLOAD_DATE    
+            ,B.MASTERID    
+            ,B.N_UNAMORT_FEE    
+            ,B.N_UNAMORT_COST    
+            ,B.ECFDATE    
+            ,B.ACCTNO    
+            ,E.ENDAMORTDATE    
+        FROM ' || V_TABLEINSERT1 || ' B    
+        JOIN ' || 'TMP_P1' || ' C 
+            ON C.ID = B.ID    
+        LEFT JOIN ' || V_TABLEINSERT2 || ' E 
+            ON E.MASTERID = B.MASTERID    
+            AND E.PREV_PMT_DATE = E.PMT_DATE    
+            AND E.DOWNLOAD_DATE = B.ECFDATE ';
     EXECUTE (V_STR_QUERY);
 
-    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
-    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
-    V_RETURNROWS := 0;
-    
-    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', V_SP_NAME, '');
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT3 || ' A 
+        SET    
+            --UNAMORT_AMT_TOTAL = X.N_UNAMORT_FEE + X.N_UNAMORT_COST,    
+            UNAMORT_BENEFIT = X.N_UNAMORT_FEE + X.N_UNAMORT_COST   
+            --,UNAMORT_FEE_AMT = UNAMORT_FEE_AMT + X.N_UNAMORT_FEE    
+            --,UNAMORT_COST_AMT = X.N_UNAMORT_COST    
+            --,FAIR_VALUE_AMOUNT = A.OUTSTANDING + X.N_UNAMORT_FEE + X.N_UNAMORT_COST    
+            --,FAIR_VALUE_AMOUNT = A.OUTSTANDING_JF + X.N_UNAMORT_FEE + X.N_UNAMORT_COST --20160510     
+            --,LOAN_START_AMORTIZATION = X.ECFDATE    
+            --,LOAN_END_AMORTIZATION = X.ENDAMORTDATE    
+            --,AMORT_TYPE = ''EIR''    
+        FROM ' || 'TMP_U1' || ' X    
+        WHERE X.MASTERID = A.MASTERID    
+        AND X.ACCTNO = A.ACCOUNT_NUMBER ';
+    EXECUTE (V_STR_QUERY);
 
-    RAISE NOTICE 'SP_IFRS_SYNC_TRANS_PARAM | AFFECTED RECORD : %', V_RETURNROWS2;
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' A 
+         SET    
+            --UNAMORT_AMT_TOTAL = B.UNAMORT_AMT_TOTAL,    
+            UNAMORT_BENEFIT = B.UNAMORT_BENEFIT    
+            --,UNAMORT_FEE_AMT = B.UNAMORT_FEE_AMT    
+            --,UNAMORT_COST_AMT = B.UNAMORT_COST_AMT    
+            --,FAIR_VALUE_AMOUNT = B.FAIR_VALUE_AMOUNT    
+            --,LOAN_START_AMORTIZATION = B.LOAN_START_AMORTIZATION    
+            --,LOAN_END_AMORTIZATION = B.LOAN_END_AMORTIZATION    
+            --,AMORT_TYPE = B.AMORT_TYPE    
+        FROM ' || V_TABLEINSERT3 || ' B    
+        WHERE A.MASTERID = B.MASTERID    
+            AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE    
+            AND A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER    
+            AND B.AMORT_TYPE = ''EIR'' ';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLENAME || ' A 
+        SET EIR = B.N_EFF_INT_RATE    
+        FROM (    
+            SELECT 
+                MASTERID    
+                ,MAX(N_EFF_INT_RATE) N_EFF_INT_RATE    
+            FROM ' || V_TABLEINSERT4 || ' 
+            WHERE AMORTSTOPDATE IS NULL    
+            AND PREV_PMT_DATE = PMT_DATE    
+            GROUP BY MASTERID    
+        ) B    
+        WHERE A.MASTERID = B.MASTERID    
+        AND A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
+    EXECUTE (V_STR_QUERY);
+
+    ---- END
+    CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_LBM_ACCT_EIR_UPD_UNAMRT', '');
     ---------- ====== BODY ======
-
-    -------- ====== LOG ======
-    V_TABLEDEST = V_TABLEINSERT;
-    V_COLUMNDEST = '-';
-    V_SPNAME = 'SP_IFRS_SYNC_TRANS_PARAM';
-    V_OPERATION = 'INSERT';
-    
-    CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
-    -------- ====== LOG ======
-
-    -------- ====== RESULT ======
-    V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT || '';
-    CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
-    -------- ====== RESULT ======
 
 END;
 
