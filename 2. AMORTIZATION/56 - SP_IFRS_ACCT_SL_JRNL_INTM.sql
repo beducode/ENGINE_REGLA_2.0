@@ -1,6 +1,6 @@
----- DROP PROCEDURE SP_IFRS_ACCT_SL_JOURNAL_INTM;
+---- DROP PROCEDURE SP_IFRS_ACCT_SL_JRNL_INTM;
 
-CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_SL_JOURNAL_INTM(
+CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_SL_JRNL_INTM(
     IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
     IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
     IN P_PRC VARCHAR(1) DEFAULT 'S')
@@ -14,6 +14,7 @@ DECLARE
     V_STR_QUERY TEXT;
 
     ---- TABLE LIST       
+    V_TABLENAME VARCHAR(100);
     V_TABLEINSERT1 VARCHAR(100);
     V_TABLEINSERT2 VARCHAR(100);
     V_TABLEINSERT3 VARCHAR(100);
@@ -26,12 +27,11 @@ DECLARE
     V_TABLEINSERT10 VARCHAR(100);
     V_TABLEINSERT11 VARCHAR(100);
     V_TABLEINSERT12 VARCHAR(100);
-    V_TABLEINSERT13 VARCHAR(100);
-    V_TABLEINSERT14 VARCHAR(100);
-    V_TMPTABLE1 VARCHAR(100);
 
     ---- VARIABLE PROCESS
-    V_NUM INT;
+    V_PARAM_DISABLE_ACCRU_PREV INT;
+    V_SL_METHOD VARCHAR(40);
+    V_ROUND INT;
     
     ---- CONDITION
     V_RETURNROWS INT;
@@ -62,39 +62,28 @@ BEGIN
         P_RUNID := 'S_00000_0000';
     END IF;
 
-
     IF P_PRC = 'S' THEN 
-        V_TABLEINSERT1 := 'IFRS_ACCT_JOURNAL_INTM_' || P_RUNID || '';
-        V_TABLEINSERT2 := 'IFRS_ACCT_COST_FEE_' || P_RUNID || '';
-        V_TABLEINSERT3 := 'IFRS_ACCT_SL_COST_FEE_ECF_' || P_RUNID || '';
-        V_TABLEINSERT4 := 'IFRS_ACCT_SL_COST_FEE_PREV_' || P_RUNID || '';
-        V_TABLEINSERT5 := 'IFRS_ACF_SL_MSTR_' || P_RUNID || '';
-        V_TABLEINSERT6 := 'IFRS_MASTER_ACCOUNT_' || P_RUNID || '';
-        V_TABLEINSERT7 := 'IFRS_ACCT_SL_ACF_' || P_RUNID || '';
-        V_TABLEINSERT8 := 'IFRS_ACCT_SL_ACCRU_PREV_' || P_RUNID || '';
-        V_TABLEINSERT9 := 'IFRS_ACCT_SWITCH_' || P_RUNID || '';
-        V_TABLEINSERT10 := 'IFRS_ACCT_SL_STOP_REV_' || P_RUNID || '';
-        V_TABLEINSERT11 := 'TMP_T5_' || P_RUNID || '';
-        V_TABLEINSERT12 := 'TMP_T6_' || P_RUNID || '';
-        V_TABLEINSERT13 := 'IFRS_IMA_AMORT_CURR_' || P_RUNID || '';
-        V_TABLEINSERT14 := 'IFRS_LBM_ACCT_EIR_GAIN_LOSS_' || P_RUNID || '';
-        V_TMPTABLE1 := 'TMP_LAST_EIR_CF_PREV_' || P_RUNID || '';
+        V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
+        V_TABLEINSERT1 := 'IFRS_ACCT_COST_FEE_' || P_RUNID || '';
+        V_TABLEINSERT2 := 'IFRS_ACCT_JOURNAL_INTM_' || P_RUNID || '';
+        V_TABLEINSERT3 := 'IFRS_ACCT_SL_ACCRU_PREV_' || P_RUNID || '';
+        V_TABLEINSERT4 := 'IFRS_ACCT_SL_ACF_' || P_RUNID || '';
+        V_TABLEINSERT5 := 'IFRS_ACCT_SL_COST_FEE_ECF_' || P_RUNID || '';
+        V_TABLEINSERT6 := 'IFRS_ACCT_SL_COST_FEE_PREV_' || P_RUNID || '';
+        V_TABLEINSERT7 := 'IFRS_ACCT_SL_STOP_REV_' || P_RUNID || '';
+        V_TABLEINSERT8 := 'IFRS_ACCT_SWITCH_' || P_RUNID || '';
+        V_TABLEINSERT9 := 'IFRS_ACF_SL_MSTR_' || P_RUNID || '';
     ELSE 
-        V_TABLEINSERT1 := 'IFRS_ACCT_JOURNAL_INTM';
-        V_TABLEINSERT2 := 'IFRS_ACCT_COST_FEE';
-        V_TABLEINSERT3 := 'IFRS_ACCT_SL_COST_FEE_ECF';
-        V_TABLEINSERT4 := 'IFRS_ACCT_SL_COST_FEE_PREV';
-        V_TABLEINSERT5 := 'IFRS_ACF_SL_MSTR';
-        V_TABLEINSERT6 := 'IFRS_MASTER_ACCOUNT';
-        V_TABLEINSERT7 := 'IFRS_ACCT_SL_ACF';
-        V_TABLEINSERT8 := 'IFRS_ACCT_SL_ACCRU_PREV';
-        V_TABLEINSERT9 := 'IFRS_ACCT_SWITCH';
-        V_TABLEINSERT10 := 'IFRS_ACCT_SL_STOP_REV';
-        V_TABLEINSERT11 := 'TMP_T5';
-        V_TABLEINSERT12 := 'TMP_T6';
-        V_TABLEINSERT13 := 'IFRS_IMA_AMORT_CURR';
-        V_TABLEINSERT14 := 'IFRS_LBM_ACCT_EIR_GAIN_LOSS';
-        V_TMPTABLE1 := 'TMP_LAST_EIR_CF_PREV';
+        V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
+        V_TABLEINSERT1 := 'IFRS_ACCT_COST_FEE';
+        V_TABLEINSERT2 := 'IFRS_ACCT_JOURNAL_INTM';
+        V_TABLEINSERT3 := 'IFRS_ACCT_SL_ACCRU_PREV';
+        V_TABLEINSERT4 := 'IFRS_ACCT_SL_ACF';
+        V_TABLEINSERT5 := 'IFRS_ACCT_SL_COST_FEE_ECF';
+        V_TABLEINSERT6 := 'IFRS_ACCT_SL_COST_FEE_PREV';
+        V_TABLEINSERT7 := 'IFRS_ACCT_SL_STOP_REV';
+        V_TABLEINSERT8 := 'IFRS_ACCT_SWITCH';
+        V_TABLEINSERT9 := 'IFRS_ACF_SL_MSTR';
     END IF;
     
     IF P_DOWNLOAD_DATE IS NULL 
@@ -107,84 +96,39 @@ BEGIN
         V_CURRDATE := P_DOWNLOAD_DATE;
         V_PREVDATE := V_CURRDATE - INTERVAL '1 DAY';
     END IF;
-    
+
+    SELECT VALUE1 INTO V_SL_METHOD
+    FROM TBLM_COMMONCODEDETAIL
+    WHERE COMMONCODE = 'SL_METHOD';
+
+    IF V_SL_METHOD IS NULL OR V_SL_METHOD NOT IN ('ECF', 'NO_ECF') THEN 
+        V_SL_METHOD := 'ECF';
+    END IF;
+
+    V_PARAM_DISABLE_ACCRU_PREV := 0;
+
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
-    -------- ====== BODY ======
+    -------- ====== PRE SIMULATION TABLE ======
     IF P_PRC = 'S' THEN 
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT11 || ' ';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT11 || ' AS SELECT * FROM TMP_T5 WHERE 1=0 ';
-        EXECUTE (V_STR_QUERY);
+    
     END IF;
+    -------- ====== PRE SIMULATION TABLE ======
 
+    -------- ====== BODY ======
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_ACCT_SL_JOURNAL_INTM', '');
 
-    V_STR_QUERY := V_STR_QUERY || 'DELETE ' || IFRS_ACCT_JOURNAL_INTM || ' A 
-       WHERE A.DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-       AND SOURCEPROCESS LIKE ''SL%''';
+	--DELETE FIRST
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT2 || ' 
+        WHERE DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+		AND SOURCEPROCESS LIKE ''SL%'' ';
     EXECUTE (V_STR_QUERY);
 
+    -- PNL = DEFA0 + AMORT OF NEW COST FEE TODAY
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' (
-        FACNO
-		,CIFNO
-		,DOWNLOAD_DATE
-		,DATASOURCE
-		,PRDCODE
-		,TRXCODE
-		,CCY
-		,JOURNALCODE
-		,STATUS
-		,REVERSE
-		,N_AMOUNT
-		,CREATEDDATE
-		,SOURCEPROCESS
-		,ACCTNO
-		,MASTERID
-		,FLAG_CF
-		,BRANCH
-		,IS_PNL
-		,PRDTYPE
-		,JOURNALCODE2
-		,CF_ID
-        )
-        SELECT FACNO
-        ,CIFNO
-        ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
-        ,DATASOURCE
-        ,PRDCODE
-        ,TRXCODE
-        ,CCY
-        ,''DEFA0''
-        ,''ACT''
-        ,''N''
-        ,CASE
-            WHEN FLAG_REVERSE = ''Y'' THEN -1 * N_AMOUNT
-            ELSE N_AMOUNT
-            END
-        ,CREATEDDATE
-        , ''SL PNL 1''
-        ,ACCTNO
-        ,MASTERID
-        ,FLAG_CF
-        ,BRCODE
-        ,''Y'' IS_PNL
-        ,PRDTYPE
-        ,''ITRCG_SL''
-        ,CF_ID
-        FROM ' || IFRS_ACCT_COST_FEE || '
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND STATUS = ''PNL''
-            AND METHOD = ''SL''';
-    EXECUTE (V_STR_QUERY);
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
         (
             FACNO
             ,CIFNO
@@ -206,11 +150,71 @@ BEGIN
             ,IS_PNL
             ,PRDTYPE
             ,JOURNALCODE2
-            ,CF_ID 
+            ,CF_ID
         ) SELECT 
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,DOWNLOAD_DATE
+            ,DATASOURCE
+            ,PRD_CODE
+            ,TRX_CODE
+            ,CCY
+            ,''DEFA0''
+            ,''ACT''
+            ,''N''
+            ,CASE 
+                WHEN FLAG_REVERSE = ''Y''
+                THEN - 1 * AMOUNT
+                ELSE AMOUNT
+            END
+            ,CURRENT_TIMESTAMP
+            ,''SL PNL 1''
+            ,ACCTNO
+            ,MASTERID
+            ,FLAG_CF
+            ,BRCODE
+            ,''Y'' IS_PNL
+            ,PRD_TYPE --,''ITRCG''
+            ,''ITRCG_SL''
+            ,CF_ID
+        FROM ' || V_TABLEINSERT1 || ' 
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            AND STATUS = ''PNL''
+            AND METHOD = ''SL'' ';
+    EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
+            FACNO
+            ,CIFNO
+            ,DOWNLOAD_DATE
+            ,DATASOURCE
+            ,PRDCODE
+            ,TRXCODE
+            ,CCY
+            ,JOURNALCODE
+            ,STATUS
+            ,REVERSE
+            ,N_AMOUNT
+            ,CREATEDDATE
+            ,SOURCEPROCESS
+            ,ACCTNO
+            ,MASTERID
+            ,FLAG_CF
+            ,BRANCH
+            ,IS_PNL
+            ,PRDTYPE
+            ,JOURNALCODE2
+            ,CF_ID
+        ) SELECT 
+            FACNO
+            ,CIFNO
+            ,DOWNLOAD_DATE
             ,DATASOURCE
             ,PRD_CODE
             ,TRX_CODE
@@ -218,13 +222,11 @@ BEGIN
             ,''AMORT''
             ,''ACT''
             ,''N''
-            ,- 1 * (
-                CASE 
-                    WHEN FLAG_REVERSE = ''Y''
-                        THEN - 1 * AMOUNT
-                    ELSE AMOUNT
-                    END
-                )
+            ,- 1 * (CASE 
+                WHEN FLAG_REVERSE = ''Y''
+                THEN - 1 * AMOUNT
+                ELSE AMOUNT
+            END)
             ,CURRENT_TIMESTAMP
             ,''SL PNL 2''
             ,ACCTNO
@@ -235,18 +237,23 @@ BEGIN
             ,PRD_TYPE
             ,''ACCRU_SL''
             ,CF_ID
-        FROM ' || V_TABLEINSERT2 || '
+        FROM ' || V_TABLEINSERT1 || ' 
         WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
             AND STATUS = ''PNL''
-            AND METHOD = ''SL''';
+            AND METHOD = ''SL'' ';
     EXECUTE (V_STR_QUERY);
 
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+	-- PNL = AMORT OF UNAMORT BY CURRDATE
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,DOWNLOAD_DATE
             ,DATASOURCE
             ,PRDCODE
             ,TRXCODE
@@ -264,11 +271,10 @@ BEGIN
             ,PRDTYPE
             ,JOURNALCODE2
             ,CF_ID
-            ) 
         ) SELECT 
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,DOWNLOAD_DATE
             ,DATASOURCE
             ,PRDCODE
             ,TRXCODE
@@ -276,13 +282,11 @@ BEGIN
             ,''AMORT''
             ,''ACT''
             ,''N''
-            ,- 1 * (
-                CASE 
-                    WHEN FLAG_REVERSE = ''Y''
-                        THEN - 1 * AMOUNT
-                    ELSE AMOUNT
-                    END
-                )
+            ,- 1 * (CASE 
+                WHEN FLAG_REVERSE = ''Y''
+                THEN - 1 * AMOUNT
+                ELSE AMOUNT
+            END)
             ,CURRENT_TIMESTAMP
             ,''SL PNL 3''
             ,ACCTNO
@@ -291,19 +295,23 @@ BEGIN
             ,BRCODE
             ,PRDTYPE
             ,''ACRRU_SL''
-            ,CF_ID 
-        FROM ' || V_TABLEINSERT4 || '
+            ,CF_ID
+        FROM ' || V_TABLEINSERT6 || ' 
         WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND STATUS = ''PNL''';
+            AND STATUS = ''PNL'' ';
     EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	-- PNL2 = AMORT OF UNAMORT BY PREVDATE
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,DOWNLOAD_DATE
             ,DATASOURCE
             ,PRDCODE
             ,TRXCODE
@@ -321,11 +329,10 @@ BEGIN
             ,PRDTYPE
             ,JOURNALCODE2
             ,CF_ID
-            ) 
         ) SELECT 
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,DOWNLOAD_DATE
             ,DATASOURCE
             ,PRDCODE
             ,TRXCODE
@@ -333,13 +340,11 @@ BEGIN
             ,''AMORT''
             ,''ACT''
             ,''N''
-            ,- 1 * (
-                CASE 
-                    WHEN FLAG_REVERSE = ''Y''
-                        THEN - 1 * AMOUNT
-                    ELSE AMOUNT
-                    END
-                )
+            ,- 1 * (CASE 
+                WHEN FLAG_REVERSE = ''Y''
+                THEN - 1 * AMOUNT
+                ELSE AMOUNT
+            END)
             ,CURRENT_TIMESTAMP
             ,''SL PNL 3''
             ,ACCTNO
@@ -347,20 +352,24 @@ BEGIN
             ,FLAG_CF
             ,BRCODE
             ,PRDTYPE
-            ,''ACRRU_SL''
-            ,CF_ID 
-        FROM ' || V_TABLEINSERT4 || '
-        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND STATUS = ''PNL2''';
+            ,''ACCRU_SL''
+            ,CF_ID
+        FROM ' || V_TABLEINSERT6 || ' 
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
+            AND STATUS = ''PNL2'' ';
     EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	--DEFA0 NORMAL AMORTIZED COST/FEE
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,DOWNLOAD_DATE
             ,DATASOURCE
             ,PRDCODE
             ,TRXCODE
@@ -378,47 +387,50 @@ BEGIN
             ,PRDTYPE
             ,JOURNALCODE2
             ,CF_ID
-            ) 
         ) SELECT 
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,DOWNLOAD_DATE
             ,DATASOURCE
-            ,PRDCODE
-            ,TRXCODE
+            ,PRD_CODE
+            ,TRX_CODE
             ,CCY
             ,''DEFA0''
             ,''ACT''
             ,''N''
-            ,- 1 * (
-                CASE 
-                    WHEN FLAG_REVERSE = ''Y''
-                        THEN - 1 * AMOUNT
-                    ELSE AMOUNT
-                    END
-                )
+            ,CASE 
+                WHEN FLAG_REVERSE = ''Y''
+                THEN - 1 * AMOUNT
+                ELSE AMOUNT
+            END
             ,CURRENT_TIMESTAMP
             ,''SL ACT 1''
             ,ACCTNO
             ,MASTERID
             ,FLAG_CF
             ,BRCODE
-            ,PRDTYPE
-            ,''ITRCG_SL''
-            ,CF_ID 
-        FROM ' || V_TABLEINSERT2 || '
+            ,PRD_TYPE
+            ,
+            --''ITRCG'',
+            ''ITRCG_SL''
+            ,CF_ID
+        FROM ' || V_TABLEINSERT1 || ' 
         WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
             AND STATUS = ''ACT''
-            AND STATUS = ''SL''';
+            AND METHOD = ''SL'' ';
     EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	--REVERSE ACCRUAL
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,DOWNLOAD_DATE
             ,DATASOURCE
             ,PRDCODE
             ,TRXCODE
@@ -436,11 +448,10 @@ BEGIN
             ,PRDTYPE
             ,JOURNALCODE2
             ,CF_ID
-            ) 
         ) SELECT 
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
             ,DATASOURCE
             ,PRDCODE
             ,TRXCODE
@@ -454,25 +465,33 @@ BEGIN
             ,ACCTNO
             ,MASTERID
             ,FLAG_CF
-            ,BRCODE
+            ,BRANCH
             ,PRDTYPE
             ,JOURNALCODE
-            ,CF_ID 
-        FROM ' || V_TABLEINSERT1 || '
+            ,CF_ID
+        FROM ' || V_TABLEINSERT2 || ' 
         WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
             AND STATUS = ''ACT''
             AND JOURNALCODE = ''ACCRU_SL''
             AND REVERSE = ''N''
-            AND SUBSTRING(SOURCEPROCESS, 1, 2) = ''SL''';
+            AND LEFT(SOURCEPROCESS, 2) = ''SL'' ';
     EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	--ACCRU FEE
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT11 || ' 
-        (    
-            FACNO
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T5' || '';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_T5' || ' 
+		(
+			FACNO
 			,CIFNO
-			,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+			,DOWNLOAD_DATE
 			,DATASOURCE
 			,PRDCODE
 			,TRXCODE
@@ -483,41 +502,40 @@ BEGIN
 			,BRCODE
 			,PRDTYPE
 			,CF_ID
-            ) 
         ) SELECT 
             FACNO
-            ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS ECFDATE
-            ,DATASOURCE
+			,CIFNO
+			,ECFDATE
+			,DATASOURCE
 			,PRDCODE
 			,TRXCODE
 			,CCY
 			,CASE 
 				WHEN FLAG_REVERSE = ''Y''
-					THEN - 1 * AMOUNT
+                THEN - 1 * AMOUNT
 				ELSE AMOUNT
-				END AS N_AMOUNT
+            END AS N_AMOUNT
 			,ACCTNO
 			,MASTERID
 			,BRCODE
 			,PRDTYPE
-			,CF_ID 
-        FROM ' || V_TABLEINSERT3 || '
-        WHERE FLAG_CS = ''F''';
+			,CF_ID
+		FROM ' || V_TABLEINSERT5 || ' 
+		WHERE FLAG_CF = ''F'' ';
     EXECUTE (V_STR_QUERY);
-
+	
 	--JOURNAL SL BARU
-    IF SL_METHOD = 'NO_ECF' THEN
+	IF V_SL_METHOD = 'NO_ECF' THEN
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT11 || '';
+        V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T5' || '';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-            (    
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_T5' || ' 
+            (
                 FACNO
                 ,CIFNO
-                ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE 
+                ,DOWNLOAD_DATE
                 ,DATASOURCE
                 ,PRDCODE
                 ,TRXCODE
@@ -527,11 +545,11 @@ BEGIN
                 ,MASTERID
                 ,BRCODE
                 ,PRDTYPE
-                ,CF_ID 
+                ,CF_ID
             ) SELECT 
                 FACNO
                 ,CIFNO
-                ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS EFFDATE 
+                ,EFFDATE
                 ,A.DATA_SOURCE
                 ,PRD_CODE
                 ,TRX_CODE
@@ -542,23 +560,23 @@ BEGIN
                 ,BRCODE
                 ,B.PRODUCT_TYPE
                 ,ID_SL
-            FROM ' || V_TABLEINSERT5 || ' A
-            JOIN ' || V_TABLEINSERT6 || ' B 
+            FROM ' || V_TABLEINSERT9 || ' A
+            JOIN ' || V_TABLENAME || ' B 
                 ON A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER
                 AND A.EFFDATE = B.DOWNLOAD_DATE
             WHERE FLAG_CF = ''F''
-                AND IFRS_STATUS = ''ACT''';
-            EXECUTE (V_STR_QUERY);
-    END IF;
+                AND IFRS_STATUS = ''ACT'' ';
+        EXECUTE (V_STR_QUERY);
+	END IF;
 
 	--JOURNAL SL BARU
-
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT12 || '';
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T6' || '';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT12 || '
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_T6' || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -567,16 +585,16 @@ BEGIN
             ,ACCTNO
             ,MASTERID
             ,BRCODE
-        ) SELECT 
+        ) SELECT
             FACNO
             ,CIFNO
-            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE 
+            ,DOWNLOAD_DATE
             ,DATASOURCE
-    		,SUM(N_AMOUNT) AS SUM_AMT
+            ,SUM(N_AMOUNT) AS SUM_AMT
             ,ACCTNO
             ,MASTERID
             ,BRCODE
-        FROM ' || V_TABLEINSERT11 || ' D
+        FROM ' || 'TMP_T5' || ' D
         GROUP BY 
             FACNO
             ,CIFNO
@@ -584,12 +602,12 @@ BEGIN
             ,DATASOURCE
             ,ACCTNO
             ,MASTERID
-            ,BRCODE';
+            ,BRCODE ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -609,7 +627,7 @@ BEGIN
             ,BRANCH
             ,PRDTYPE
             ,JOURNALCODE2
-            ,CF_ID 
+            ,CF_ID
         ) SELECT 
             A.FACNO
             ,A.CIFNO
@@ -630,21 +648,26 @@ BEGIN
             ,B.BRCODE
             ,B.PRDTYPE
             ,''ACCRU_SL''
-            ,B.CF_ID 
-        FROM ' || V_TABLEINSERT7 || ' A 
-        JOIN ' || V_TABLEINSERT11 || ' B
-            ON B.MASTERID = A.PREV_MASTERID 
-        JOIN ' || V_TABLEINSERT12 || ' C
+            ,B.CF_ID
+        FROM ' || V_TABLEINSERT4 || ' A
+        JOIN ' || 'TMP_T5' || ' B 
+            ON B.DOWNLOAD_DATE = A.ECFDATE
+            AND B.MASTERID = A.MASTERID
+        JOIN ' || 'TMP_T6' || ' C 
             ON C.MASTERID = A.MASTERID
-		    AND A.ECFDATE = C.DOWNLOAD_DATE
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-            AND A.DO_AMORT = ''N''';
+            AND A.ECFDATE = C.DOWNLOAD_DATE
+        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            AND A.DO_AMORT = ''N'' ';
     EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	--AMORT FEE
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -664,7 +687,7 @@ BEGIN
             ,BRANCH
             ,PRDTYPE
             ,JOURNALCODE2
-            ,CF_ID 
+            ,CF_ID
         ) SELECT 
             A.FACNO
             ,A.CIFNO
@@ -685,23 +708,27 @@ BEGIN
             ,B.BRCODE
             ,B.PRDTYPE
             ,''ACCRU_SL''
-            ,B.CF_ID 
-        FROM ' || V_TABLEINSERT7 || ' A 
-        JOIN ' || V_TABLEINSERT11 || ' B
-            ON B.DOWNLOAD_DATE = A.ECFDATE 
+            ,B.CF_ID
+        FROM ' || V_TABLEINSERT4 || ' A
+        JOIN ' || 'TMP_T5' || ' B 
+            ON B.DOWNLOAD_DATE = A.ECFDATE
             AND B.MASTERID = A.MASTERID
-        JOIN ' || V_TABLEINSERT12 || ' C
+        JOIN ' || 'TMP_T6' || ' C 
             ON C.MASTERID = A.MASTERID
-		    AND A.ECFDATE = C.DOWNLOAD_DATE
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-            AND A.DO_AMORT = ''Y''';
+            AND A.ECFDATE = C.DOWNLOAD_DATE
+        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            AND A.DO_AMORT = ''Y'' ';
     EXECUTE (V_STR_QUERY);
 
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
 	--JOURNAL SL BARU
-    IF SL_METHOD = 'NO_ECF' THEN
+	IF V_SL_METHOD = 'NO_ECF' THEN 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-            (    
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+            (
                 FACNO
                 ,CIFNO
                 ,DOWNLOAD_DATE
@@ -721,7 +748,7 @@ BEGIN
                 ,BRANCH
                 ,PRDTYPE
                 ,JOURNALCODE2
-                ,CF_ID 
+                ,CF_ID
             ) SELECT 
                 A.FACNO
                 ,A.CIFNO
@@ -742,23 +769,27 @@ BEGIN
                 ,B.BRCODE
                 ,B.PRDTYPE
                 ,''ACCRU_SL''
-                ,B.CF_ID 
-            FROM ' || V_TABLEINSERT5 || ' A 
-            JOIN ' || V_TABLEINSERT11 || ' B
-                ON B.DOWNLOAD_DATE = A.ECFDATE 
+                ,B.CF_ID
+            FROM ' || V_TABLEINSERT9 || ' A
+            JOIN ' || 'TMP_T5' || ' B 
+                ON B.DOWNLOAD_DATE = A.EFFDATE
                 AND B.MASTERID = A.MASTERID
-            JOIN ' || V_TABLEINSERT12 || ' C
+            JOIN ' || 'TMP_T6' || ' C 
                 ON C.MASTERID = A.MASTERID
-                AND A.ECFDATE = C.DOWNLOAD_DATE
-            WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-                AND A.IFRS_STATUS = ''ACT''';
+                AND A.EFFDATE = C.DOWNLOAD_DATE
+            WHERE A.EFFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+                AND A.IFRS_STATUS = ''ACT'' ';
         EXECUTE (V_STR_QUERY);
-    END IF;
+
+        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+        V_RETURNROWS := 0;
+	END IF;
 
 	--DEFA0 FEE STOP REV AT PMTDATE 20160619
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -778,7 +809,7 @@ BEGIN
             ,BRANCH
             ,PRDTYPE
             ,JOURNALCODE2
-            ,CF_ID 
+            ,CF_ID
         ) SELECT 
             A.FACNO
             ,A.CIFNO
@@ -799,31 +830,37 @@ BEGIN
             ,B.BRCODE
             ,B.PRDTYPE
             ,''ITRCG_SL''
-            ,B.CF_ID 
-        FROM ' || V_TABLEINSERT7 || ' A 
-        JOIN ' || V_TABLEINSERT11 || ' B
-            ON B.DOWNLOAD_DATE = A.ECFDATE 
+            ,B.CF_ID
+        FROM ' || V_TABLEINSERT4 || ' A
+        JOIN ' || 'TMP_T5' || ' B 
+            ON B.DOWNLOAD_DATE = A.ECFDATE
             AND B.MASTERID = A.MASTERID
-        JOIN ' || V_TABLEINSERT12 || ' C
+        JOIN ' || 'TMP_T6' || ' C 
             ON C.MASTERID = A.MASTERID
-		    AND A.ECFDATE = C.DOWNLOAD_DATE
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
+            AND A.ECFDATE = C.DOWNLOAD_DATE
+        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
             AND A.DO_AMORT = ''Y''
+            -- ONLY FOR STOP REV
             AND A.MASTERID IN (
-                SELECT MASTERID 
-                FROM ' || V_TABLEINSERT3 || '
+                SELECT MASTERID
+                FROM ' || V_TABLEINSERT7 || ' 
                 WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            )';
+            ) ';
     EXECUTE (V_STR_QUERY);
 
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
 	--ACCRU COST
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT11 || '';
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T5' || '';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT11 || ' 
-        (    
-            FACNO
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_T5' || ' 
+        (
+			FACNO
 			,CIFNO
 			,DOWNLOAD_DATE
 			,DATASOURCE
@@ -835,7 +872,7 @@ BEGIN
 			,MASTERID
 			,BRCODE
 			,PRDTYPE
-			,CF_ID 
+			,CF_ID
         ) SELECT 
             FACNO
 			,CIFNO
@@ -846,26 +883,27 @@ BEGIN
 			,CCY
 			,CASE 
 				WHEN FLAG_REVERSE = ''Y''
-					THEN - 1 * AMOUNT
+                THEN - 1 * AMOUNT
 				ELSE AMOUNT
-				END AS N_AMOUNT
+            END AS N_AMOUNT
 			,ACCTNO
 			,MASTERID
 			,BRCODE
 			,PRDTYPE
-			,CF_ID 
-        FROM ' || V_TABLEINSERT3 || ' 
-        WHERE FLAG_CS = ''F''';
+			,CF_ID
+		FROM ' || V_TABLEINSERT5 || ' 
+		WHERE FLAG_CF = ''C'' ';
     EXECUTE (V_STR_QUERY);
 
-    --JOURNAL SL BARU
-    IF SL_METHOD = 'NO_ECF' THEN
+	--JOURNAL SL BARU
+	IF V_SL_METHOD = 'NO_ECF' THEN 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT11 || '';
+        V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T5' || '';
         EXECUTE (V_STR_QUERY);
 
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT11 || ' 
-            (    
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_T5' || ' 
+            (
                 FACNO
                 ,CIFNO
                 ,DOWNLOAD_DATE
@@ -878,8 +916,8 @@ BEGIN
                 ,MASTERID
                 ,BRCODE
                 ,PRDTYPE
-                ,CF_ID 
-            ) SELECT 
+                ,CF_ID
+            ) SELECT
                 FACNO
                 ,CIFNO
                 ,EFFDATE
@@ -893,20 +931,21 @@ BEGIN
                 ,BRCODE
                 ,B.PRODUCT_TYPE
                 ,ID_SL
-            FROM ' || V_TABLEINSERT5 || ' A 
-            JOIN ' || V_TABLEINSERT6 || ' B
+            FROM ' || V_TABLEINSERT9 || ' A
+            JOIN ' || V_TABLENAME || ' B 
                 ON A.MASTERID = B.MASTERID
-			    AND A.EFFDATE = B.DOWNLOAD_DATE
-            WHERE FLAG_CF = ''F''';
+                AND A.EFFDATE = B.DOWNLOAD_DATE
+            WHERE FLAG_CF = ''C'' ';
         EXECUTE (V_STR_QUERY);
-    END IF;
+	END IF;
 
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT12 || '';
-    EXECUTE (V_STR_QUERY);
-        
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT12 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_T6' || '';
+    EXECUTE (V_STR_QUERY);
+
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_T6' || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -924,7 +963,7 @@ BEGIN
             ,ACCTNO
             ,MASTERID
             ,BRCODE
-        FROM ' || V_TABLEINSERT11 || ' D
+        FROM ' || 'TMP_T5' || ' D
         GROUP BY 
             FACNO
             ,CIFNO
@@ -932,12 +971,12 @@ BEGIN
             ,DATASOURCE
             ,ACCTNO
             ,MASTERID
-            ,BRCODE';
-    EXECUTE (V_STR_QUERY); 
-        
+            ,BRCODE ';
+    EXECUTE (V_STR_QUERY);
+
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -979,21 +1018,25 @@ BEGIN
             ,B.PRDTYPE
             ,''ACCRU_SL''
             ,B.CF_ID
-        FROM ' || V_TABLEINSERT7 || ' A
-        JOIN ' || V_TABLEINSERT11 || ' B
+        FROM ' || V_TABLEINSERT4 || ' A
+        JOIN ' || 'TMP_T5' || ' B 
             ON B.DOWNLOAD_DATE = A.ECFDATE
             AND B.MASTERID = A.MASTERID
-        JOIN ' || V_TABLEINSERT12 || ' C
+        JOIN ' || 'TMP_T6' || ' C 
             ON C.MASTERID = A.MASTERID
             AND A.ECFDATE = C.DOWNLOAD_DATE
         WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND A.DO_AMORT = ''N''';
-    EXECUTE (V_STR_QUERY); 
+            AND A.DO_AMORT = ''N'' ';
+    EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	--AMORT COST
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -1035,21 +1078,25 @@ BEGIN
             ,B.PRDTYPE
             ,''ACCRU_SL''
             ,B.CF_ID
-        FROM ' || V_TABLEINSERT7 || ' A
-        JOIN ' || V_TABLEINSERT11 || ' B
+        FROM ' || V_TABLEINSERT4 || ' A
+        JOIN ' || 'TMP_T5' || ' B 
             ON B.DOWNLOAD_DATE = A.ECFDATE
             AND B.MASTERID = A.MASTERID
-        JOIN ' || V_TABLEINSERT12 || ' C
+        JOIN ' || 'TMP_T6' || ' C 
             ON C.MASTERID = A.MASTERID
             AND A.ECFDATE = C.DOWNLOAD_DATE
         WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND A.DO_AMORT = ''Y''';
+            AND A.DO_AMORT = ''Y'' ';
     EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	--STOP REV DEFA0 COST 20160619
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -1091,43 +1138,47 @@ BEGIN
             ,B.PRDTYPE
             ,''ITRCG_SL''
             ,B.CF_ID
-        FROM ' || V_TABLEINSERT7 || ' A
-        JOIN ' || V_TABLEINSERT11 || ' B
+        FROM ' || V_TABLEINSERT4 || ' A
+        JOIN ' || 'TMP_T5' || ' B 
             ON B.DOWNLOAD_DATE = A.ECFDATE
             AND B.MASTERID = A.MASTERID
-        JOIN ' || V_TABLEINSERT12 || ' C
+        JOIN ' || 'TMP_T6' || ' C 
             ON C.MASTERID = A.MASTERID
             AND A.ECFDATE = C.DOWNLOAD_DATE
         WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
             AND A.DO_AMORT = ''Y''
             -- STOP REV
             AND A.MASTERID IN (
-                SELECT MASTERID 
-                FROM ' || V_TABLEINSERT3 || '
+                SELECT MASTERID
+                FROM ' || V_TABLEINSERT7 || ' 
                 WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            )';
-    EXECUTE (V_STR_QUERY); 
+            ) ';
+    EXECUTE (V_STR_QUERY);
 
-    -- 20160407 DANIEL S : SET BLK BEFORE ACCRU PREV CODE
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+	-- 20160407 DANIEL S : SET BLK BEFORE ACCRU PREV CODE
 	-- UPDATE STATUS ACCRU PREV FOR SL STOP REV
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT8 || '
-        SET ' || V_TABLEINSERT8 || '.STATUS = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE + ''BLK''
-        FROM ' || V_TABLEINSERT8 || ' A
-        JOIN ' || V_TABLEINSERT10 || ' E
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT3 || ' A 
+        SET STATUS = TO_CHAR(''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, ''YYYYMMDD'') || ''BLK''
+        FROM ' || V_TABLEINSERT4 || ' B
+        JOIN ' || V_TABLEINSERT7 || ' E 
             ON E.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND E.MASTERID = A.MASTERID
-        JOIN ' || V_TABLEINSERT8 || ' C
-            ON C.MASTERID = A.MASTERID
+            AND E.MASTERID = B.MASTERID
+        JOIN ' || V_TABLEINSERT3 || ' C 
+            ON C.MASTERID = B.MASTERID
             AND C.STATUS = ''ACT''
             AND C.DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE';
+        WHERE B.DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
 
 	--SL ACCRU PREV
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -1161,9 +1212,9 @@ BEGIN
             ,''N''
             ,CASE 
                 WHEN C.FLAG_REVERSE = ''Y''
-                    THEN - 1 * C.AMOUNT
+                THEN - 1 * C.AMOUNT
                 ELSE C.AMOUNT
-                END
+            END
             ,CURRENT_TIMESTAMP
             ,''SL ACCRU PREV''
             ,A.ACCTNO
@@ -1173,19 +1224,91 @@ BEGIN
             ,C.PRDTYPE
             ,''ACCRU_SL''
             ,C.CF_ID
-        FROM ' || V_TABLEINSERT7 || ' A
-        JOIN ' || V_TABLEINSERT8 || ' C
+        FROM ' || V_TABLEINSERT4 || ' A
+        JOIN ' || V_TABLEINSERT3 || ' C 
             ON C.MASTERID = A.MASTERID
             AND C.STATUS = ''ACT''
             AND C.DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND A.DO_AMORT = ''N''';
-    EXECUTE (V_STR_QUERY); 
+            AND A.DO_AMORT = ''N'' ';
+    EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+	--SL AMORT PREV
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
+            FACNO
+            ,CIFNO
+            ,DOWNLOAD_DATE
+            ,DATASOURCE
+            ,PRDCODE
+            ,TRXCODE
+            ,CCY
+            ,JOURNALCODE
+            ,STATUS
+            ,REVERSE
+            ,N_AMOUNT
+            ,CREATEDDATE
+            ,SOURCEPROCESS
+            ,ACCTNO
+            ,MASTERID
+            ,FLAG_CF
+            ,BRANCH
+            ,PRDTYPE
+            ,JOURNALCODE2
+            ,CF_ID
+        ) SELECT 
+            A.FACNO
+            ,A.CIFNO
+            ,A.DOWNLOAD_DATE
+            ,A.DATASOURCE
+            ,C.PRDCODE
+            ,C.TRXCODE
+            ,C.CCY
+            ,''AMORT''
+            ,''ACT''
+            ,''N''
+            ,CASE 
+                WHEN C.FLAG_REVERSE = ''Y''
+                    THEN - 1 * C.AMOUNT
+                ELSE C.AMOUNT
+                END
+            ,CURRENT_TIMESTAMP
+            ,''SL AMORT PREV''
+            ,A.ACCTNO
+            ,A.MASTERID
+            ,C.FLAG_CF
+            ,A.BRANCH
+            ,C.PRDTYPE
+            ,''ACCRU_SL''
+            ,C.CF_ID
+        FROM ' || V_TABLEINSERT4 || ' A
+        JOIN ' || V_TABLEINSERT3 || ' C 
+            ON C.MASTERID = A.MASTERID
+            AND C.STATUS = TO_CHAR(''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, ''YYYYMMDD'')
+            AND C.DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            AND A.DO_AMORT = ''Y''
+            --20180808 MUST NOT INCLUDE SWITCH ACCT
+            AND A.MASTERID NOT IN (
+                SELECT PREV_MASTERID
+                FROM ' || V_TABLEINSERT8 || ' 
+                WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            ) ';
+    EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	--SL SWITCH AMORT OF ACCRU PREV
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -1220,9 +1343,9 @@ BEGIN
             ,''N''
             ,CASE 
                 WHEN C.FLAG_REVERSE = ''Y''
-                    THEN - 1 * C.AMOUNT
+                THEN - 1 * C.AMOUNT
                 ELSE C.AMOUNT
-                END
+            END
             ,CURRENT_TIMESTAMP
             ,''SL ACRU SW''
             ,A.PREV_ACCTNO
@@ -1233,20 +1356,24 @@ BEGIN
             ,--20180808 USE PREV PRD TYPE
             ''ACCRU_SL''
             ,C.CF_ID
-        FROM ' || V_TABLEINSERT9 || ' A
-        JOIN ' || V_TABLEINSERT8 || ' C
+        FROM ' || V_TABLEINSERT8 || ' A
+        JOIN ' || V_TABLEINSERT3 || ' C 
             ON C.MASTERID = A.PREV_MASTERID
-            AND C.STATUS = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND C.DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            AND C.STATUS = TO_CHAR(''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE, ''YYYYMMDD'')
+            --AND C.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            AND C.DOWNLOAD_DATE <= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE --20180411 MUST EMIT INTM FOR ACCRU PREV <= @CURRDATE WITH OLD BRANCH
         WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND A.PREV_SL_ECF = ''Y''
-            ';
-    EXECUTE (V_STR_QUERY); 
+            AND A.PREV_SL_ECF = ''Y'' ';
+    EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	-- REV = DEFA0 REV OF UNAMORT BY CURRDATE
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -1278,13 +1405,11 @@ BEGIN
             ,''DEFA0''
             ,''ACT''
             ,''Y''
-            ,1 * (
-                CASE 
-                    WHEN FLAG_REVERSE = ''Y''
-                        THEN - 1 * AMOUNT
-                    ELSE AMOUNT
-                    END
-                )
+            ,1 * (CASE 
+                WHEN FLAG_REVERSE = ''Y''
+                THEN - 1 * AMOUNT
+                ELSE AMOUNT
+            END)
             ,CURRENT_TIMESTAMP
             ,''SL_REV_SWITCH'' 
             ,ACCTNO
@@ -1294,16 +1419,20 @@ BEGIN
             ,PRDTYPE
             ,''ITRCG_SL''
             ,CF_ID
-        FROM ' || V_TABLEINSERT4 || ' A
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            AND STATUS = ''REV'' AND CREATEDBY = ''SL_SWITCH''
-            ';
-    EXECUTE (V_STR_QUERY); 
+        FROM ' || V_TABLEINSERT6 || ' 
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            AND STATUS = ''REV'' 
+            AND CREATEDBY = ''SL_SWITCH'' ';
+    EXECUTE (V_STR_QUERY);
 
-	-- REV = DEFA0 REV OF UNAMORT BY CURRDATE
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+	-- REV2 = REV DEFA0 OF UNAMORT BY PREVDATE
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -1335,13 +1464,11 @@ BEGIN
             ,''DEFA0''
             ,''ACT''
             ,''Y''
-            ,1 * (
-                CASE 
-                    WHEN FLAG_REVERSE = ''Y''
-                        THEN - 1 * AMOUNT
-                    ELSE AMOUNT
-                    END
-                )
+            ,1 * (CASE 
+                WHEN FLAG_REVERSE = ''Y''
+                THEN - 1 * AMOUNT
+                ELSE AMOUNT
+            END)
             ,CURRENT_TIMESTAMP
             ,''SL_REV_SWITCH'' 
             ,ACCTNO
@@ -1351,16 +1478,20 @@ BEGIN
             ,PRDTYPE
             ,''ITRCG_SL''
             ,CF_ID
-        FROM ' || V_TABLEINSERT4 || '
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
-            AND STATUS = ''REV2'' AND CREATEDBY = ''SL_SWITCH''
-            ';
-    EXECUTE (V_STR_QUERY); 
+        FROM ' || V_TABLEINSERT6 || ' 
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
+            AND STATUS = ''REV2''  
+            AND CREATEDBY = ''SL_SWITCH'' ';
+    EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	-- DEFA0 FOR NEW ACCT OF SL SWITCH
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -1392,15 +1523,13 @@ BEGIN
             ,''DEFA0''
             ,''ACT''
             ,''N''
-            ,1 * (
-                CASE 
-                    WHEN FLAG_REVERSE = ''Y''
-                        THEN - 1 * AMOUNT
-                    ELSE AMOUNT
-                    END
-                )
+            ,1 * (CASE 
+                WHEN FLAG_REVERSE = ''Y''
+                THEN - 1 * AMOUNT
+                ELSE AMOUNT
+            END)
             ,CURRENT_TIMESTAMP
-            ,''SL_SWITCH'' 
+            ,''SL_SWITCH''
             ,ACCTNO
             ,MASTERID
             ,FLAG_CF
@@ -1408,17 +1537,21 @@ BEGIN
             ,PRDTYPE
             ,''ITRCG_SL''
             ,CF_ID
-        FROM ' || V_TABLEINSERT4 || '
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
-            AND STATUS = ''ACT'' AND SEQ = ''0''
-            ';
-    EXECUTE (V_STR_QUERY); 
+        FROM ' || V_TABLEINSERT6 || ' 
+        WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
+            AND STATUS = ''ACT''
+            AND SEQ = ''0'' ';
+    EXECUTE (V_STR_QUERY);
+
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
 	----JOURNAL SL SWITCH NO ECF
-    IF SL_METHOD = 'NO_ECF' THEN
+	IF V_SL_METHOD = 'NO_ECF' THEN 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-            (    
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+            (
                 FACNO
                 ,CIFNO
                 ,DOWNLOAD_DATE
@@ -1460,25 +1593,27 @@ BEGIN
                 ,B.PRODUCT_TYPE
                 ,''ITRCG_SL''
                 ,ID_SL
-            FROM ' || V_TABLEINSERT5 || ' A 
-            JOIN ' || V_TABLEINSERT6 || ' B
+            FROM ' || V_TABLEINSERT9 || ' A
+            JOIN ' || V_TABLENAME || ' B 
                 ON A.MASTERID = B.MASTERID
-			    AND A.EFFDATE = B.DOWNLOAD_DATE
-            WHERE EFFDATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
-                AND A.IFRS_STATUS = ''ACT'' 
+                AND A.EFFDATE = B.DOWNLOAD_DATE
+            WHERE EFFDATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
+                AND IFRS_STATUS = ''ACT''
                 AND A.MASTERID IN (
-                    SELECT MASTERID 
-                    FROM ' || V_TABLEINSERT5 || '
+                    SELECT DISTINCT MASTERID
+                    FROM ' || V_TABLEINSERT9 || ' 
                     WHERE EFFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
                         AND IFRS_STATUS = ''SWC''
-                )
-            WHERE FLAG_CF = ''F'' ';
+                ) ';
         EXECUTE (V_STR_QUERY);
-    
+
+        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+        V_RETURNROWS := 0;
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-            (    
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+            (
                 FACNO
                 ,CIFNO
                 ,DOWNLOAD_DATE
@@ -1520,28 +1655,32 @@ BEGIN
                 ,B.PRODUCT_TYPE
                 ,''ITRCG_SL''
                 ,ID_SL
-            FROM ' || V_TABLEINSERT5 || '
-            JOIN ' || V_TABLEINSERT6 || ' B
+            FROM ' || V_TABLEINSERT9 || ' A
+            JOIN ' || V_TABLENAME || ' B 
                 ON A.MASTERID = B.MASTERID
-            WHERE EFFDATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE 
+            WHERE EFFDATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
                 AND B.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-                AND A.IFRS_STATUS = ''ACT''
+                AND IFRS_STATUS = ''ACT''
                 AND A.MASTERID IN (
-                    SELECT DISTINCT MASTERID 
-                    FROM ' || V_TABLEINSERT5 || '
+                    SELECT DISTINCT MASTERID
+                    FROM ' || V_TABLEINSERT9 || ' 
                     WHERE EFFDATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
                         AND IFRS_STATUS = ''SWC''
-                )';
+                ) ';
         EXECUTE (V_STR_QUERY);
-    END IF; 
+
+        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+        V_RETURNROWS := 0;
+	END IF;
 
 	-- 20160407 SL STOP REVERSE
 	-- BEFORE SL ACF RUN
 	-- REVERSE UNAMORTIZED AND AMORT ACCRU IF EXIST
 	-- UNAMORTIZED MAY BE USED BY OTHER PROCESS
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' 
-        (    
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
+        (
             FACNO
             ,CIFNO
             ,DOWNLOAD_DATE
@@ -1565,7 +1704,7 @@ BEGIN
         ) SELECT 
             A.FACNO
             ,A.CIFNO
-            ,''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
+            ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE
             ,A.DATASOURCE
             ,A.PRDCODE
             ,A.TRXCODE
@@ -1575,9 +1714,9 @@ BEGIN
             ,''Y''
             ,CASE 
                 WHEN FLAG_REVERSE = ''Y''
-                    THEN - 1 * AMOUNT
+                THEN - 1 * AMOUNT
                 ELSE AMOUNT
-                END
+            END
             ,CURRENT_TIMESTAMP
             ,''SL STOP REV 1''
             ,A.ACCTNO
@@ -1587,27 +1726,27 @@ BEGIN
             ,A.PRDTYPE
             ,''ITRCG_SL''
             ,A.CF_ID
-        FROM ' || V_TABLEINSERT4 || ' A
-	    JOIN VW_LAST_SL_CF_PREV_YEST|  C 
+        FROM ' || V_TABLEINSERT6 || ' A -- 20130722 ADD JOIN COND TO PICK LATEST CF PREV
+        JOIN ' || 'VW_LAST_SL_CF_PREV' || ' C 
             ON C.MASTERID = A.MASTERID
             AND C.DOWNLOAD_DATE = A.DOWNLOAD_DATE
-		    AND ISNULL(C.SEQ, '''') = ISNULL(A.SEQ, '''')
-        JOIN ' || V_TABLEINSERT10 || ' b
+            AND COALESCE(C.SEQ, '''') = COALESCE(A.SEQ, '''')
+        JOIN ' || V_TABLEINSERT7 || ' B 
             ON B.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
             AND B.MASTERID = A.MASTERID
         WHERE A.DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
-            AND A.STATUS = ''ACT''
-            )';
-    EXECUTE (V_STR_QUERY); 
+            AND A.STATUS = ''ACT'' ';
+    EXECUTE (V_STR_QUERY);
 
-    -- 20160407 AMORT YESTERDAY ACCRU
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
+
+	-- 20160407 AMORT YESTERDAY ACCRU
 	-- BLOCK ACCRU PREV GENERATION ON SL_ECF
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'PRINT ' || CAST(GETDATE() AS VARCHAR(50)) || ' START SP_FAC_JOURNAL_INTM SL STOP REV 19';
-
-    IF PARAM_DISABLE_ACCRU_PREV = 0 THEN
+	IF V_PARAM_DISABLE_ACCRU_PREV = 0 THEN 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || '
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
             (
                 FACNO
                 ,CIFNO
@@ -1646,25 +1785,29 @@ BEGIN
                 ,ACCTNO
                 ,MASTERID
                 ,FLAG_CF
-                ,BRCODE
+                ,BRANCH
                 ,PRDTYPE
                 ,''ACCRU_SL''
                 ,CF_ID
-            FROM ' || V_TABLEINSERT1 || ' 
+            FROM ' || V_TABLEINSERT2 || '
             WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
                 AND STATUS = ''ACT''
                 AND JOURNALCODE = ''ACCRU_SL''
                 AND REVERSE = ''N''
-                AND SUBSTRING(SOURCEPROCESS, 1, 2) = ''SL''
+                AND LEFT(SOURCEPROCESS, 2) = ''SL''
                 AND MASTERID IN (
-                    SELECT MASTERID 
-                    FROM ' || V_TABLEINSERT10 || '
+                    SELECT MASTERID
+                    FROM ' || V_TABLEINSERT7 || '
                     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-                )';
+                ) ';
         EXECUTE (V_STR_QUERY);
-    ELSE
+
+        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+        V_RETURNROWS := 0;
+    ELSE 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || '
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT2 || ' 
             (
                 FACNO
                 ,CIFNO
@@ -1686,8 +1829,7 @@ BEGIN
                 ,PRDTYPE
                 ,JOURNALCODE2
                 ,CF_ID
-            ) SELECT 
-                FACNO
+            ) SELECT FACNO
                 ,CIFNO
                 ,''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
                 ,DATASOURCE
@@ -1697,115 +1839,52 @@ BEGIN
                 ,''DEFA0''
                 ,STATUS
                 ,''Y''
-                ,-1 * N_AMOUNT
+                ,- 1 * N_AMOUNT
                 ,CURRENT_TIMESTAMP
                 ,''SL STOP REV 2''
                 ,ACCTNO
                 ,MASTERID
                 ,FLAG_CF
-                ,BRCODE
+                ,BRANCH
                 ,PRDTYPE
                 ,''ITRCG_SL''
                 ,CF_ID
-            FROM ' || V_TABLEINSERT1 || ' 
+            FROM ' || V_TABLEINSERT2 || ' 
             WHERE DOWNLOAD_DATE = ''' || CAST(V_PREVDATE AS VARCHAR(10)) || '''::DATE
                 AND STATUS = ''ACT''
                 AND JOURNALCODE = ''ACCRU_SL''
                 AND REVERSE = ''N''
-                AND SUBSTRING(SOURCEPROCESS, 1, 2) = ''SL''
+                AND LEFT(SOURCEPROCESS, 2) = ''SL''
                 AND MASTERID IN (
-                    SELECT MASTERID 
-                    FROM ' || V_TABLEINSERT10 || '
+                    SELECT MASTERID
+                    FROM ' || V_TABLEINSERT7 || ' 
                     WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-                )';
-        EXECUTE (V_STR_QUERY);    
-    END IF;
+                )
+         ';
+        EXECUTE (V_STR_QUERY);
 
-     /*          
-    -- INTM REVERSE DATA          
-    UPDATE IFRS_ACCT_JOURNAL_INTM          
-    SET N_AMOUNT_IDR = IFRS_ACCT_JOURNAL_INTM.N_AMOUNT * ISNULL (RATE_AMOUNT, 1)          
-    FROM PSAK_MASTER_EXCHANGE_RATE_CURR B          
-    WHERE  IFRS_ACCT_JOURNAL_INTM.CCY = B.CURRENCY          
-    AND IFRS_ACCT_JOURNAL_INTM.DOWNLOAD_DATE = @V_CURRDATE           
-    AND IFRS_ACCT_JOURNAL_INTM.REVERSE = 'Y'          
-    */        
-    --20180226 GAIN LOSS PARTIAL PAYMENT   
-    
-    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || '
-        (
-            FACNO        
-            ,CIFNO        
-            ,DOWNLOAD_DATE        
-            ,DATASOURCE        
-            ,PRDCODE      
-            ,TRXCODE        
-            ,CCY        
-            ,JOURNALCODE        
-            ,[STATUS]        
-            ,[REVERSE]        
-            ,N_AMOUNT        
-            ,CREATEDDATE        
-            ,SOURCEPROCESS        
-            ,ACCTNO        
-            ,MASTERID        
-            ,FLAG_CF        
-            ,BRANCH        
-            ,PRDTYPE        
-            ,JOURNALCODE2        
-            ,CF_ID        
-            ,METHOD 
-        ) SELECT 
-            A.FACILITY_NUMBER        
-            ,A.CUSTOMER_NUMBER        
-            ,A.DOWNLOAD_DATE        
-            ,A.DATA_SOURCE        
-            ,C.PRDCODE        
-            ,C.TRXCODE        
-            ,C.CCY        
-            ,''AMORT''        
-            ,''ACT''        
-            ,''N''        
-            ,CASE         
-            WHEN C.FLAG_REVERSE = ''Y''        
-                THEN - 1 * C.AMOUNT        
-            ELSE C.AMOUNT        
-            END        
-            ,CURRENT_TIMESTAMP        
-            ,''EIR LBM GAIN LOSS''        
-            ,A.ACCOUNT_NUMBER        
-            ,A.MASTERID        
-            ,C.FLAG_CF        
-            ,A.BRANCH_CODE        
-            ,C.PRDTYPE        
-            ,''ACCRU''        
-            ,C.CF_ID        
-            ,C.METHOD 
-        FROM ' || V_TABLEINSERT13 || ' A
-        JOIN ' || V_TABLEINSERT14 || ' C
-            ON C.MASTERID = A.MASTERID
-        AND C.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-        WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            )';
-    EXECUTE (V_STR_QUERY);        
-    
+        GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+        V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+        V_RETURNROWS := 0;
+	END IF;
+
     ---- END
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_SL_JOURNAL_INTM', '');
 
-    RAISE NOTICE 'SP_IFRS_ACCT_SL_JOURNAL_INTM | AFFECTED RECORD : %', V_RETURNROWS2;
+    RAISE NOTICE 'SP_IFRS_ACCT_SL_JRNL_INTM | AFFECTED RECORD : %', V_RETURNROWS2;
     ---------- ====== BODY ======
 
     -------- ====== LOG ======
-    V_TABLEDEST = V_TABLEINSERT6;
+    V_TABLEDEST = V_TABLEINSERT2;
     V_COLUMNDEST = '-';
-    V_SPNAME = 'SP_IFRS_ACCT_SL_JOURNAL_INTM';
+    V_SPNAME = 'SP_IFRS_ACCT_SL_JRNL_INTM';
     V_OPERATION = 'INSERT';
     
     CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
     -------- ====== LOG ======
 
     -------- ====== RESULT ======
-    V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT6 || '';
+    V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT2 || '';
     CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
     -------- ====== RESULT ======
 
