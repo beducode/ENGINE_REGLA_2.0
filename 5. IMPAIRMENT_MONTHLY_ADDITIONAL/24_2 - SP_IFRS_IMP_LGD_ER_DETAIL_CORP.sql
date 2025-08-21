@@ -106,7 +106,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_LGD' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_LGD' || ' AS 
         SELECT  
             ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE AS DOWNLOAD_DATE  
             ,DEFAULT_DATE  

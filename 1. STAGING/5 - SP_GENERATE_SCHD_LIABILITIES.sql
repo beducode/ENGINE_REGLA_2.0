@@ -27,6 +27,7 @@ DECLARE
     V_COLUMNDEST VARCHAR(100);
     V_SPNAME VARCHAR(100);
     V_OPERATION VARCHAR(100);
+    V_COUNT INT;
 
     ---- RESULT
     V_QUERYS TEXT;
@@ -114,9 +115,9 @@ BEGIN
     EXECUTE (V_STR_QUERY);
     --END EXCEPTION DOUBLE SOURCE 
 
-    -- INSERT STG_DELTA_LOAN_SCHEDULE to Temporary Table
+    -- INSERT STG_DELTA_LOAN_SCHEDULE TO TEMPTABLE
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'SELECT 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT2 || ' AS SELECT 
             BUSS_DATE,            
             BRANCH,            
             LTRIM(RTRIM(DEAL_TYPE)) AS DEAL_TYPE,            
@@ -128,24 +129,22 @@ BEGIN
             CASE WHEN MOVE_TYPE = ''I'' THEN ISNULL(AMOUNT_PAY, 0) END AS INTEREST,            
             0 AS OSPRN,            
             STATUS
-        INTO #' || V_TABLEINSERT2 || '
         FROM ' || V_TABLEINSERT1 || ' WITH(NOLOCK)
         WHERE MOVE_TYPE IN (''P'', ''I'')
         AND MOVE_SUBTYPE IN ('',''M'')
         AND BUSS_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE --AND SCHEDULE_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-        ORDER BY SCHEDULE_DATE
-    ';
+        ORDER BY SCHEDULE_DATE';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'SELECT @COUNT := COUNT(1) FROM #' || V_TABLEINSERT2 || '';
-    EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(1) FROM ' || V_TABLEINSERT2 || '';
+    EXECUTE (V_STR_QUERY) INTO V_COUNT;
 
     -- Checking IF #SCHD Have Result, Then Go To Next Step      
     -- If no result then Stop
 
-    IF (@COUNT > 0)
-    BEGIN
+    IF V_COUNT > 0
+    THEN
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'SELECT * INTO #' || V_TABLEINSERT3 || '

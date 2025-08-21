@@ -116,7 +116,7 @@ BEGIN
         USING ' || V_TABLEINSERT3 || ' 
         WHERE DOWNLOAD_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     
-    --TEMP  
+    --CREATE TEMPTABLE  
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || 'TMP_JRNL1' || '';
     EXECUTE (V_STR_QUERY);

@@ -104,7 +104,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_LGD' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_LGD' || ' AS 
         SELECT * FROM ' || V_TABLEINSERT1 || ' WHERE 1 = 2 ';
     EXECUTE (V_STR_QUERY);
 

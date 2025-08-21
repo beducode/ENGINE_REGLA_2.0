@@ -226,7 +226,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_IFRS_ACCT_STOP_REV' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_IFRS_ACCT_STOP_REV' || ' AS 
         SELECT * 
         FROM (    
             SELECT MASTERID    
@@ -247,7 +247,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_TODAYREV' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_TODAYREV' || ' AS 
         SELECT DISTINCT MASTERID    
         FROM ' || V_TABLEINSERT1 || ' 
         WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE    
@@ -1940,7 +1940,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_M0' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_M0' || ' AS 
         SELECT DISTINCT MASTERID    
         FROM ' || V_TABLEINSERT9 || '     
         WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
@@ -1952,7 +1952,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_MX' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_MX' || ' AS 
         SELECT DISTINCT A.MASTERID    
         FROM ' || 'TMP_M0' || ' A    
         JOIN ' || V_TABLEINSERT9 || ' B 
@@ -1973,7 +1973,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_M' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_M' || ' AS 
         SELECT DISTINCT A.MASTERID    
         FROM ' || 'TMP_MX' || ' A    
         LEFT JOIN ' || 'TMP_IFRS_ACCT_STOP_REV' || ' REV 
@@ -1994,7 +1994,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_M2' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_M2' || ' AS 
         SELECT DISTINCT MASTERID    
         FROM ' || V_TABLEINSERT5 || ' 
         WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE    
@@ -2006,7 +2006,7 @@ BEGIN
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_ACRU' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_ACRU' || ' AS 
         SELECT MASTERID    
         FROM ' || 'TMP_M' || ' 
         WHERE MASTERID NOT IN (    
@@ -2022,7 +2022,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_ACRU2' || ' AS 
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_ACRU2' || ' AS 
             SELECT MAX(ID) AS ID    
             FROM ' || V_TABLEINSERT5 || ' 
             WHERE MASTERID IN (    
@@ -2045,7 +2045,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_TF' || ' AS 
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_TF' || ' AS 
             SELECT 
                 SUM(A.N_AMOUNT) AS SUM_AMT    
                 ,A.DOWNLOAD_DATE    
@@ -2079,7 +2079,7 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TEMP TABLE ' || 'TMP_TC' || ' AS 
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_TC' || ' AS 
             SELECT 
                 SUM(A.N_AMOUNT) AS SUM_AMT    
                 ,A.DOWNLOAD_DATE    
