@@ -63,9 +63,9 @@ BEGIN
     -------- ====== BODY ======
 
     IF P_PRC = 'S' THEN 
-        V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
+        V_TABLENAME := 'IFRS_ACCT_AMORT_RESTRU_' || P_RUNID || '';
     ELSE 
-        V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
+        V_TABLENAME := 'IFRS_ACCT_AMORT_RESTRU';
     END IF;
 
     CALL SP_IFRS_FILL_IMA_AMORT_PREV_CURR(P_RUNID, V_CURRDATE, P_PRC);

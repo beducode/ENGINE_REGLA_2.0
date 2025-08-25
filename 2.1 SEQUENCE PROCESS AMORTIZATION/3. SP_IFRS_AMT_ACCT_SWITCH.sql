@@ -63,9 +63,9 @@ BEGIN
     -------- ====== BODY ======
 
     IF P_PRC = 'S' THEN 
-        V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
+        V_TABLENAME := 'IFRS_EVENT_CHANGES_' || P_RUNID || '';
     ELSE 
-        V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
+        V_TABLENAME := 'IFRS_EVENT_CHANGES';
     END IF;
 
     CALL SP_IFRS_ACCT_SWITCH(P_RUNID, V_CURRDATE, P_PRC);

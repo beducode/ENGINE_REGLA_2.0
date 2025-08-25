@@ -62,9 +62,9 @@ BEGIN
 
     -------- ====== BODY ======
     IF P_PRC = 'S' THEN 
-        V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';
+        V_TABLEINSERT := 'IFRS_JOURNAL_PARAM_' || P_RUNID || '';
     ELSE 
-        V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
+        V_TABLEINSERT := 'IFRS_JOURNAL_PARAM';
     END IF;
 
     CALL SP_IFRS_RESET_AMT_PRC(P_RUNID, V_CURRDATE, P_PRC);
