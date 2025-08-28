@@ -63,6 +63,7 @@ BEGIN
     -------- RECORD RUN_ID --------
     CALL SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, PG_BACKEND_PID(), CURRENT_DATE);
     -------- RECORD RUN_ID --------
+
     -------- ====== BODY ======
     IF P_PRC = 'S' THEN 
         V_TABLENAME := 'TMP_IMA_' || P_RUNID || '';

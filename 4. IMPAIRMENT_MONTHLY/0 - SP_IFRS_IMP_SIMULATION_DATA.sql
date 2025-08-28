@@ -85,6 +85,10 @@ BEGIN
     CALL SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, PG_BACKEND_PID(), CURRENT_DATE);
     -------- RECORD RUN_ID --------
 
+    -------- RECORD RUN_ID --------
+    CALL SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, PG_BACKEND_PID(), CURRENT_DATE);
+    -------- RECORD RUN_ID --------
+
     ------ CLEAN HISTORY --------
     FOR V_STEPID IN
 		-------- GROUP STEP ID --------

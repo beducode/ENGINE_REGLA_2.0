@@ -83,6 +83,10 @@ BEGIN
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
+    -------- RECORD RUN_ID --------
+    CALL SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, PG_BACKEND_PID(), CURRENT_DATE);
+    -------- RECORD RUN_ID --------
+
     -------- ====== BODY ======
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'START', 'SP_IFRS_COST_FEE_STATUS', '');
 
