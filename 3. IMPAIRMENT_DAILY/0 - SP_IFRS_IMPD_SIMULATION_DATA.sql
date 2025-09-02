@@ -82,6 +82,10 @@ BEGIN
     -------- ====== VARIABLE ======
 
     -------- RECORD RUN_ID --------
+    CALL SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, PG_BACKEND_PID(), CURRENT_DATE);
+    -------- RECORD RUN_ID --------
+
+    -------- RECORD RUN_ID --------
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_RUNNING_LOGS WHERE RUN_ID = ''' || P_RUNID || ''' AND DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
     EXECUTE (V_STR_QUERY);
