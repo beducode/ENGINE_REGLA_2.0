@@ -60,11 +60,15 @@ BEGIN
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
 
+    -------- RECORD RUN_ID --------
+    CALL SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, PG_BACKEND_PID(), CURRENT_DATE);
+    -------- RECORD RUN_ID --------
+
     -------- ====== BODY ======
     IF P_PRC = 'S' THEN 
-        V_TABLEINSERT := 'IFRS_JOURNAL_PARAM_' || P_RUNID || '';
+        V_TABLENAME := 'IFRS_JOURNAL_PARAM_' || P_RUNID || '';
     ELSE 
-        V_TABLEINSERT := 'IFRS_JOURNAL_PARAM';
+        V_TABLENAME := 'IFRS_JOURNAL_PARAM';
     END IF;
 
     CALL SP_IFRS_RESET_AMT_PRC(P_RUNID, V_CURRDATE, P_PRC);
