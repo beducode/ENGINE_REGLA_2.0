@@ -1,0 +1,73 @@
+DO
+$$
+DECLARE
+	V_TABLE_DDL   TEXT;
+	COLUMN_RECORD RECORD;
+	P_TABLE_NAME VARCHAR;
+BEGIN
+P_TABLE_NAME := 'ifrs_master_account';
+
+FOR COLUMN_RECORD IN 
+        SELECT 
+            B.NSPNAME AS SCHEMA_NAME,
+            B.RELNAME AS TABLE_NAME,
+            A.ATTNAME AS COLUMN_NAME,
+            PG_CATALOG.FORMAT_TYPE(A.ATTTYPID, A.ATTTYPMOD) AS COLUMN_TYPE,
+            CASE WHEN 
+                (SELECT SUBSTRING(PG_CATALOG.PG_GET_EXPR(D.ADBIN, D.ADRELID) FOR 128)
+                 FROM PG_CATALOG.PG_ATTRDEF D
+                 WHERE D.ADRELID = A.ATTRELID AND D.ADNUM = A.ATTNUM AND A.ATTHASDEF) IS NOT NULL THEN
+                'DEFAULT '|| (SELECT SUBSTRING(PG_CATALOG.PG_GET_EXPR(D.ADBIN, D.ADRELID) FOR 128)
+                              FROM PG_CATALOG.PG_ATTRDEF D
+                              WHERE D.ADRELID = A.ATTRELID AND D.ADNUM = A.ATTNUM AND A.ATTHASDEF)
+            ELSE
+                ''
+            END AS COLUMN_DEFAULT_VALUE,
+            CASE WHEN A.ATTNOTNULL = TRUE THEN 
+                'NOT NULL'
+            ELSE
+                'NULL'
+            END AS COLUMN_NOT_NULL,
+            A.ATTNUM AS ATTNUM,
+            E.MAX_ATTNUM AS MAX_ATTNUM
+        FROM 
+            PG_CATALOG.PG_ATTRIBUTE A
+            INNER JOIN 
+             (SELECT C.OID,
+                N.NSPNAME,
+                C.RELNAME
+              FROM PG_CATALOG.PG_CLASS C
+                   LEFT JOIN PG_CATALOG.PG_NAMESPACE N ON N.OID = C.RELNAMESPACE
+              WHERE C.RELNAME ~ ('^('||P_TABLE_NAME||')$')
+                AND PG_CATALOG.PG_TABLE_IS_VISIBLE(C.OID)
+              ORDER BY 2, 3) B
+            ON A.ATTRELID = B.OID
+            INNER JOIN 
+             (SELECT 
+                  A.ATTRELID,
+                  MAX(A.ATTNUM) AS MAX_ATTNUM
+              FROM PG_CATALOG.PG_ATTRIBUTE A
+              WHERE A.ATTNUM > 0 
+                AND NOT A.ATTISDROPPED
+              GROUP BY A.ATTRELID) E
+            ON A.ATTRELID=E.ATTRELID
+        WHERE A.ATTNUM > 0 
+          AND NOT A.ATTISDROPPED
+        ORDER BY A.ATTNUM
+    LOOP
+        IF COLUMN_RECORD.ATTNUM = 1 THEN
+            V_TABLE_DDL:='CREATE TABLE '||COLUMN_RECORD.SCHEMA_NAME||'.'||COLUMN_RECORD.TABLE_NAME||' (';
+        ELSE
+            V_TABLE_DDL:=V_TABLE_DDL||',';
+        END IF;
+
+        IF COLUMN_RECORD.ATTNUM <= COLUMN_RECORD.MAX_ATTNUM THEN
+            V_TABLE_DDL:=V_TABLE_DDL||CHR(10)||
+                     '    '||COLUMN_RECORD.COLUMN_NAME||' '||COLUMN_RECORD.COLUMN_TYPE||' '||COLUMN_RECORD.COLUMN_DEFAULT_VALUE||' '||COLUMN_RECORD.COLUMN_NOT_NULL;
+        END IF;
+    END LOOP;
+
+    V_TABLE_DDL:=V_TABLE_DDL||');';
+    RAISE NOTICE ' %', V_TABLE_DDL;
+END;
+$$;

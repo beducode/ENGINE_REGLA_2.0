@@ -14,6 +14,7 @@ DECLARE
     V_CURRDATE DATE;
     V_LASTYEAR DATE;
     V_LASTYEARNEXTMONTH DATE;
+    V_STARTDATEOFYEAR DATE;
 
     ---- QUERY   
     V_STR_QUERY TEXT;
@@ -117,6 +118,7 @@ BEGIN
     V_PREVMONTH := F_EOMONTH(V_CURRDATE, 1, 'M', 'PREV');
     V_LASTYEAR := F_EOMONTH(V_CURRDATE, 1, 'Y', 'PREV');
     V_LASTYEARNEXTMONTH := F_EOMONTH(V_LASTYEAR, 1, 'M', 'NEXT');
+    V_STARTDATEOFYEAR := (DATE_PART('YEAR', V_CURRDATE) || '-01-01')::DATE;
     
     V_RETURNROWS2 := 0;
     -------- ====== VARIABLE ======
@@ -563,8 +565,7 @@ BEGIN
     ----------------------------------      
     ---- START IFRS_SYNC_TREASURY ----      
     ----------------------------------
-    CALL SP_IFRS_SYNC_TREASURY(P_RUNID, NULL, P_PRC);
-
+    CALL SP_IFRS_SYNC_TREASURY(P_RUNID, V_CURRDATE, P_PRC);
 
     --------------------------------      
     ---- START SYNC ASSET CLASS CORP ----      
