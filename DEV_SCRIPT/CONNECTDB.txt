@@ -1,0 +1,26 @@
+#AlloyDB DEV
+Host: alloy.dev.regla.cloud
+Port: 8433
+Private IP: 10.1.1.151
+U: reglaalloy01
+P: ynJlX2nPkXCCrXRdP70k0L7
+
+#Postgres DEV
+Host: postgre.dev.regla.cloud
+Port: 5432
+Private IP: 10.1.1.152
+U: postgres
+P: iN4q9A4kGadfunmzyPV1yYV
+
+#Demo
+Host: alloy.demo.regla.cloud
+Port: 8433
+Private IP: 10.1.1.151
+U: reglaalloy01
+P: ynJlX2nPkXCCrXRdP70k0L7
+
+#Archiving
+Host: postgre-archive.dev.regla.cloud
+Port: 8432
+U: postgres
+P: iHRqwlfC7BfqB34YE0hvNb0
