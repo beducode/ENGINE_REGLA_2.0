@@ -23,8 +23,8 @@ SELECT B.pkid
 , B.end_date
 , B.sequence
 , B.connection_key
-, REPLACE(A.sql_conditions,B.table_source || '.','') as table_condition_result
-, REGEXP_REPLACE(REPLACE(A.sql_conditions,B.table_source || '.',''), $$([^']|^)'(?!')$$, $$\1''$$ ,'g') as table_condition
+, reverse_operators(REPLACE(A.sql_conditions,B.table_source || '.','')) as table_condition_result
+, reverse_operators(REGEXP_REPLACE(REPLACE(A.sql_conditions,B.table_source || '.',''), $$([^']|^)'(?!')$$, $$\1''$$ ,'g')) as table_condition
 FROM "DataRetentionPolicy" A
 INNER JOIN CTE_RET B ON A.pkid = B.pkid
 ORDER BY B.sequence ASC;
