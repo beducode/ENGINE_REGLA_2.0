@@ -116,7 +116,7 @@ BEGIN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEDEST || ' ';
         V_STR_QUERY := V_STR_QUERY || 'SELECT * FROM dblink(''' || V_SERVERLINK || ''',';
-        V_STR_QUERY := V_STR_QUERY || '''select * from ' || V_TABLESOURCE || ' where ';
+        V_STR_QUERY := V_STR_QUERY || '''SELECT * FROM ' || V_TABLESOURCE || ' WHERE ' ;
         V_STR_QUERY := V_STR_QUERY || '' || V_TABLE_CONDITION || ''') ';
         V_STR_QUERY := V_STR_QUERY || 'as table_source(';
         FOR COLUMN_RECORD IN 
@@ -151,7 +151,7 @@ BEGIN
             END IF;
         END LOOP;
         V_STR_QUERY := V_STR_QUERY || ')';
-        ------ RAISE NOTICE '%', V_STR_QUERY;
+        -- RAISE NOTICE '%', V_STR_QUERY;
         EXECUTE (V_STR_QUERY);
         ------------------ END GET DATA FROM SOURCE TABLE ------------------
 
@@ -161,14 +161,14 @@ BEGIN
         V_RETURNROWS := 0;
         ----- END GET RECORD AFFECTED -----
 
-        ------------------ START DELETE FROM SOURCE ------------------
+        ---------------- START DELETE FROM SOURCE ------------------
         V_STR_QUERY := '';
         V_STR_QUERY := 'SELECT * FROM dblink(''' || V_SERVERLINK || ''',';
-        V_STR_QUERY := V_STR_QUERY || '''delete from ' || V_TABLESOURCE || ' where ';
+        V_STR_QUERY := V_STR_QUERY || '''DELETE FROM ' || V_TABLESOURCE || ' WHERE ';
         V_STR_QUERY := V_STR_QUERY || '' || V_TABLE_CONDITION || ''') as row(result text); ';
         ------ RAISE NOTICE '%', V_STR_QUERY;
         EXECUTE (V_STR_QUERY);
-        ------------------ END DELETE FROM SOURCE ------------------
+        ---------------- END DELETE FROM SOURCE ------------------
 
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ARCHIVING_LOGS (RETENTION_ID, TABLE_SOURCE, TABLE_DEST, SEQUENCE_ID, AFFECTED_RECORD, OPERATION_TYPE) ';
