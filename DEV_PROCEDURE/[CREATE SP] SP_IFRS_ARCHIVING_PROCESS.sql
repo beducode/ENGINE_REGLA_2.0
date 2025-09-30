@@ -35,6 +35,8 @@ DECLARE
     V_CURRDATE DATE;
     V_SP_NAME VARCHAR(100);
     V_QUERYS TEXT;
+    V_CHECKEXISTS INT;
+    V_GETRECORD INT;
     V_COLUMNDEST VARCHAR(100);
     V_OPERATION VARCHAR(100);
     STACK TEXT; 
@@ -112,47 +114,61 @@ BEGIN
         EXECUTE (V_STR_QUERY);
         ----- END CONNECT DBLINK -----
 
-        ------------------ START GET DATA FROM SOURCE TABLE ------------------
+        ------------------ START CHECK TABLE DESTINATION EXISTS ------------------
+        EXECUTE 'SELECT COUNT(*) FROM IFRS_MASTER_ACCOUNT_ACV WHERE ' || V_TABLE_CONDITION_RESULT || '' INTO V_CHECKEXISTS;
+        ------------------ END CHECK TABLE DESTINATION EXISTS ------------------
+
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEDEST || ' ';
-        V_STR_QUERY := V_STR_QUERY || 'SELECT * FROM dblink(''' || V_SERVERLINK || ''',';
-        V_STR_QUERY := V_STR_QUERY || '''SELECT * FROM ' || V_TABLESOURCE || ' WHERE ' ;
-        V_STR_QUERY := V_STR_QUERY || '' || V_TABLE_CONDITION || ''') ';
-        V_STR_QUERY := V_STR_QUERY || 'as table_source(';
-        FOR COLUMN_RECORD IN 
-        SELECT a.attname AS column_name,
-        pg_catalog.format_type(a.atttypid, a.atttypmod) AS column_type,
-        a.attnum as attnum, e.max_attnum as max_attnum FROM pg_catalog.pg_attribute a
-        INNER JOIN 
-        (SELECT c.oid, n.nspname, c.relname
-        FROM pg_catalog.pg_class c
-        LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-        WHERE c.relname ~ ('^('|| V_TABLEDEST ||')$')
-        AND pg_catalog.pg_table_is_visible(c.oid)
-        ORDER BY 2, 3) b
-        ON a.attrelid = b.oid
-        INNER JOIN 
-        (SELECT a.attrelid,
-        MAX(a.attnum) as max_attnum
-        FROM pg_catalog.pg_attribute a
-        WHERE a.attnum > 0 
-        AND NOT a.attisdropped
-        GROUP BY a.attrelid) e
-        ON a.attrelid=e.attrelid
-        WHERE a.attnum > 0 
-        AND NOT a.attisdropped
-        ORDER BY a.attnum
-        LOOP
-            IF column_record.attnum < column_record.max_attnum THEN
-                V_STR_QUERY := V_STR_QUERY || '' || COLUMN_RECORD.COLUMN_NAME || ' ' || COLUMN_RECORD.COLUMN_TYPE || '';
-                V_STR_QUERY := V_STR_QUERY || ',';
-            ELSE
-                V_STR_QUERY := V_STR_QUERY || '' || COLUMN_RECORD.COLUMN_NAME || ' ' || COLUMN_RECORD.COLUMN_TYPE || '';
+        V_STR_QUERY := 'SELECT * FROM dblink(''' || V_SERVERLINK || ''',';
+        V_STR_QUERY := V_STR_QUERY || '''SELECT COUNT(*) FROM ' || V_TABLESOURCE || ' WHERE ';
+        V_STR_QUERY := V_STR_QUERY || '' || V_TABLE_CONDITION || ''') AS ROW(RESULT BIGINT); ';
+        EXECUTE (V_STR_QUERY) INTO V_GETRECORD;
+
+        IF V_CHECKEXISTS = 0 THEN
+            IF V_GETRECORD > 0 THEN
+                ------------------ START GET DATA FROM SOURCE TABLE ------------------
+                V_STR_QUERY := '';
+                V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEDEST || ' ';
+                V_STR_QUERY := V_STR_QUERY || 'SELECT * FROM dblink(''' || V_SERVERLINK || ''',';
+                V_STR_QUERY := V_STR_QUERY || '''SELECT * FROM ' || V_TABLESOURCE || ' WHERE ' ;
+                V_STR_QUERY := V_STR_QUERY || '' || V_TABLE_CONDITION || ''') ';
+                V_STR_QUERY := V_STR_QUERY || 'as table_source(';
+                FOR COLUMN_RECORD IN 
+                SELECT a.attname AS column_name,
+                pg_catalog.format_type(a.atttypid, a.atttypmod) AS column_type,
+                a.attnum as attnum, e.max_attnum as max_attnum FROM pg_catalog.pg_attribute a
+                INNER JOIN 
+                (SELECT c.oid, n.nspname, c.relname
+                FROM pg_catalog.pg_class c
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relname ~ ('^('|| V_TABLEDEST ||')$')
+                AND pg_catalog.pg_table_is_visible(c.oid)
+                ORDER BY 2, 3) b
+                ON a.attrelid = b.oid
+                INNER JOIN 
+                (SELECT a.attrelid,
+                MAX(a.attnum) as max_attnum
+                FROM pg_catalog.pg_attribute a
+                WHERE a.attnum > 0 
+                AND NOT a.attisdropped
+                GROUP BY a.attrelid) e
+                ON a.attrelid=e.attrelid
+                WHERE a.attnum > 0 
+                AND NOT a.attisdropped
+                ORDER BY a.attnum
+                LOOP
+                    IF column_record.attnum < column_record.max_attnum THEN
+                        V_STR_QUERY := V_STR_QUERY || '' || COLUMN_RECORD.COLUMN_NAME || ' ' || COLUMN_RECORD.COLUMN_TYPE || '';
+                        V_STR_QUERY := V_STR_QUERY || ',';
+                    ELSE
+                        V_STR_QUERY := V_STR_QUERY || '' || COLUMN_RECORD.COLUMN_NAME || ' ' || COLUMN_RECORD.COLUMN_TYPE || '';
+                    END IF;
+                END LOOP;
+                V_STR_QUERY := V_STR_QUERY || ')';
+                -- RAISE NOTICE '%', V_STR_QUERY;
+                EXECUTE (V_STR_QUERY);
             END IF;
-        END LOOP;
-        V_STR_QUERY := V_STR_QUERY || ')';
-        -- RAISE NOTICE '%', V_STR_QUERY;
-        EXECUTE (V_STR_QUERY);
+        END IF;
         ------------------ END GET DATA FROM SOURCE TABLE ------------------
 
         ----- START GET RECORD AFFECTED -----
@@ -165,7 +181,7 @@ BEGIN
         V_STR_QUERY := '';
         V_STR_QUERY := 'SELECT * FROM dblink(''' || V_SERVERLINK || ''',';
         V_STR_QUERY := V_STR_QUERY || '''DELETE FROM ' || V_TABLESOURCE || ' WHERE ';
-        V_STR_QUERY := V_STR_QUERY || '' || V_TABLE_CONDITION || ''') as row(result text); ';
+        V_STR_QUERY := V_STR_QUERY || '' || V_TABLE_CONDITION || ''') AS ROW(RESULT TEXT); ';
         ------ RAISE NOTICE '%', V_STR_QUERY;
         EXECUTE (V_STR_QUERY);
         ---------------- END DELETE FROM SOURCE ------------------
