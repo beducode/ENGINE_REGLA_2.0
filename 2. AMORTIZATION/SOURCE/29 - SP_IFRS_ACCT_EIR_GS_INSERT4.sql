@@ -419,7 +419,7 @@ BEGIN
                 ,A.N_INT_PAYMENT
                 ,A.N_OSPRN
                 ,C.N_FAIRVALUE N_FAIRVALUE_PREV
-                ,ROUND(CASE 
+                ,FN_ROUND_DOUBLE(CASE 
                     --WHEN A.INTCALCCODE IN(''2'',''6'') REMARKS FOR ALIGN WITH ICC PAYMENT SCHEDULE 20160428 
                     WHEN A.INTCALCCODE IN (''1'', ''6'')
                     THEN CAST(A.I_DAYS AS FLOAT) / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE
@@ -430,7 +430,7 @@ BEGIN
                     THEN C.N_EFF_INT_RATE / C.N_INT_RATE * A.N_INT_PAYMENT
                     ELSE (CAST(30 AS FLOAT) * A.M / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE)
                 END, ' || V_ROUND || ') AS N_EFF_INT_AMT
-                ,C.N_FAIRVALUE - A.N_PRN_PAYMENT + ROUND(CASE 
+                ,C.N_FAIRVALUE - A.N_PRN_PAYMENT + FN_ROUND_DOUBLE(CASE 
                         --WHEN A.INTCALCCODE IN(''2'',''6'') REMARKS FOR ALIGN WITH ICC PAYMENT SCHEDULE 20160428
                         WHEN A.INTCALCCODE IN (''1'', ''6'')
                         THEN CAST(A.I_DAYS AS FLOAT) / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE
@@ -442,7 +442,7 @@ BEGIN
                         ELSE (CAST(30 AS FLOAT) * A.M / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE)
                     END, ' || V_ROUND || ') - A.N_INT_PAYMENT + A.DISB_AMOUNT AS N_FAIRVALUE
                 ,C.N_UNAMORT_AMT N_UNAMORT_AMT_PREV
-                ,ROUND(CASE 
+                ,FN_ROUND_DOUBLE(CASE 
                         --WHEN A.INTCALCCODE IN(''2'',''6'') REMARKS FOR ALIGN WITH ICC PAYMENT SCHEDULE 20160428
                         WHEN A.INTCALCCODE IN (''1'', ''6'')
                         THEN CAST(A.I_DAYS AS FLOAT) / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE
@@ -453,7 +453,7 @@ BEGIN
                         THEN C.N_EFF_INT_RATE / C.N_INT_RATE * A.N_INT_PAYMENT
                         ELSE (CAST(30 AS FLOAT) * A.M / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE)
                     END, ' || V_ROUND || ') - A.N_INT_PAYMENT AS N_AMORT_AMT
-                ,C.N_UNAMORT_AMT + ROUND(CASE 
+                ,C.N_UNAMORT_AMT + FN_ROUND_DOUBLE(CASE 
                         --WHEN A.INTCALCCODE IN(''2'',''6'') REMARKS FOR ALIGN WITH ICC PAYMENT SCHEDULE 20160428
                         WHEN A.INTCALCCODE IN (''1'', ''6'')
                         THEN CAST(A.I_DAYS AS FLOAT) / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE
@@ -469,7 +469,7 @@ BEGIN
                     WHEN C.N_FEE_AMT + C.N_COST_AMT = 0
                     THEN 0
                     ELSE (
-                        ROUND(CASE 
+                        FN_ROUND_DOUBLE(CASE 
                             --WHEN A.INTCALCCODE IN(''2'',''6'') REMARKS FOR ALIGN WITH ICC PAYMENT SCHEDULE 20160428
                             WHEN A.INTCALCCODE IN (''1'', ''6'')
                             THEN CAST(A.I_DAYS AS FLOAT) / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE
@@ -486,7 +486,7 @@ BEGIN
                     WHEN C.N_FEE_AMT + C.N_COST_AMT = 0
                     THEN 0
                     ELSE (
-                        ROUND(CASE 
+                        FN_ROUND_DOUBLE(CASE 
                             --WHEN A.INTCALCCODE IN(''2'',''6'') REMARKS FOR ALIGN WITH ICC PAYMENT SCHEDULE 20160428
                             WHEN A.INTCALCCODE IN (''1'', ''6'')
                             THEN CAST(A.I_DAYS AS FLOAT) / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE
@@ -504,7 +504,7 @@ BEGIN
                     WHEN C.N_FEE_AMT + C.N_COST_AMT = 0
                     THEN 0
                     ELSE (
-                        ROUND(CASE 
+                        FN_ROUND_DOUBLE(CASE 
                             --WHEN A.INTCALCCODE IN(''2'',''6'') REMARKS FOR ALIGN WITH ICC PAYMENT SCHEDULE 20160428
                             WHEN A.INTCALCCODE IN (''1'', ''6'')
                             THEN CAST(A.I_DAYS AS FLOAT) / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE
@@ -521,7 +521,7 @@ BEGIN
                     WHEN C.N_FEE_AMT + C.N_COST_AMT = 0
                     THEN 0
                     ELSE (
-                        ROUND(CASE 
+                        FN_ROUND_DOUBLE(CASE 
                             --WHEN A.INTCALCCODE IN(''2'',''6'') REMARKS FOR ALIGN WITH ICC PAYMENT SCHEDULE 20160428
                             WHEN A.INTCALCCODE IN (''1'', ''6'')
                             THEN CAST(A.I_DAYS AS FLOAT) / CAST(360 AS FLOAT) * C.N_EFF_INT_RATE / 100 * C.N_FAIRVALUE
