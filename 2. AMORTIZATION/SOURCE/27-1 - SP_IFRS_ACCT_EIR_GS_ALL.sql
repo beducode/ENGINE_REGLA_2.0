@@ -548,15 +548,10 @@ BEGIN
 
             WHILE V_COUNTER <= V_MAXCOUNTER
             LOOP
-                V_STR_QUERY := '';
-                V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT3 || ' A';
-                EXECUTE (V_STR_QUERY);
-                
 
                 V_STR_QUERY := '';
                 V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT3 || ' A
-                SET  
-                PREV_UNAMORT_NOCF1 = C.UNAMORT_NOCF1
+                SET PREV_UNAMORT_NOCF1 = C.UNAMORT_NOCF1
                 ,PREV_UNAMORT_NOCF2 = C.UNAMORT_NOCF2
                 ,PREV_CRYAMT_NOCF1 = C.CRYAMT_NOCF1
                 ,PREV_CRYAMT_NOCF2 = C.CRYAMT_NOCF2
@@ -575,7 +570,7 @@ BEGIN
                 THEN CAST(A.I_DAYS AS FLOAT) / CAST(365 AS FLOAT) * C.EIR_NOCF1 / CAST(100 AS FLOAT) * C.CRYAMT_NOCF1
                 ELSE (CAST(A.M AS NUMERIC(18, 10)) / CAST(1200 AS FLOAT) * C.EIR_NOCF1 * C.CRYAMT_NOCF1)
                 END
-                ,A.EIRAMT_NOCF2 = CASE 
+                ,EIRAMT_NOCF2 = CASE 
                 WHEN A.INTCALCCODE IN (
                 ''1''
                 ,''6''
@@ -620,10 +615,12 @@ BEGIN
                 THEN CAST(A.I_DAYS AS FLOAT) / CAST(365 AS FLOAT) * C.EIR2 / 100 * C.CRYAMT2
                 ELSE (CAST(A.M AS FLOAT) / CAST(1200 AS FLOAT) * C.EIR2 * C.CRYAMT2)
                 END
-                FROM IFRS_GS_DATE1 B ON A.MASTERID = B.MASTERID
-                JOIN ' || V_TABLEINSERT3 || ' C ON B.MASTERID = C.MASTERID
+                FROM IFRS_GS_DATE1 B,
+                ' || V_TABLEINSERT3 || ' C
+                WHERE A.MASTERID = B.MASTERID
+                AND B.MASTERID = C.MASTERID
                 AND C.COUNTER = ' || V_COUNTER || ' - 1
-                WHERE A.COUNTER = ' || V_COUNTER || '';
+                AND A.COUNTER = ' || V_COUNTER || '';
                 EXECUTE (V_STR_QUERY);
 
                 CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_ACCT_EIR_GS_PROCESS', '5');
@@ -704,7 +701,7 @@ BEGIN
             EXECUTE (V_STR_QUERY);
 
             V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || '
+            V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' A
             SET FINAL_EIR_NOCF = C.E1
             FROM TMP_T14 C
             WHERE A.MASTERID = C.MASTERID AND A.EIR_NOCF IS NULL';
@@ -1337,15 +1334,11 @@ BEGIN
             WHERE EIR_NOCF IS NOT NULL';
             EXECUTE (V_STR_QUERY);
 
-            GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
-            V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
-            V_RETURNROWS := 0;
-
             CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'END', 'SP_IFRS_ACCT_EIR_GS_PROCESS', '');
 
     END LOOP;
         
-    RAISE NOTICE 'IFRS_ACCT_EIR_PAYM_GS_DATE | AFFECTED RECORD : %', V_RETURNROWS2;
+    RAISE NOTICE 'SP_IFRS_ACCT_EIR_GS_ALL | AFFECTED RECORD : %', V_RETURNROWS2;
     ---------- ====== BODY ======
 
     -------- ====== LOG ======
