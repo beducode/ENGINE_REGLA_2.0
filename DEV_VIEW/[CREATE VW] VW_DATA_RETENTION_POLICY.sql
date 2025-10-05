@@ -1,30 +1,40 @@
 DROP VIEW IF EXISTS VW_DATA_RETENTION_POLICY;
 
 CREATE VIEW VW_DATA_RETENTION_POLICY AS
-WITH CTE_RET AS (
-SELECT A.pkid
-, A.syscode_policy_configuration AS retention_id
-, A.connection_string_pkid AS connection_id
-,(SELECT B.table_name FROM "MstTableName" B WHERE B.pkid = A.source_table_pkid) AS table_source
-,(SELECT B.table_name FROM "MstTableName" B WHERE B.pkid = A.destination_table_pkid) AS table_destination
-, A.effective_start_date::DATE AS start_date
-, A.effective_end_date::DATE AS end_date
-, A.sequence
-, (SELECT C.connection_string_name FROM "MstConnectionString" C WHERE C.PKID = A.connection_string_pkid) AS connection_key
+SELECT * FROM dblink('workflow_ntt_parameter','WITH CTE_RET AS (
+SELECT A.PKID
+, A.SYSCODE_POLICY_CONFIGURATION AS RETENTION_ID
+, A.CONNECTION_STRING_PKID AS CONNECTION_ID
+,(SELECT B.TABLE_NAME FROM "MstTableName" B WHERE B.PKID = A.SOURCE_TABLE_PKID) AS TABLE_SOURCE
+,(SELECT B.TABLE_NAME FROM "MstTableName" B WHERE B.PKID = A.DESTINATION_TABLE_PKID) AS TABLE_DESTINATION
+, A.EFFECTIVE_START_DATE::DATE AS START_DATE
+, A.EFFECTIVE_END_DATE::DATE AS END_DATE
+, A.SEQUENCE
+, (SELECT C.CONNECTION_STRING_NAME FROM "MstConnectionString" C WHERE C.PKID = A.CONNECTION_STRING_PKID) AS CONNECTION_KEY
 FROM "DataRetentionPolicy" A
-WHERE is_active = true)
+WHERE A.IS_ACTIVE = TRUE)
 
-SELECT B.pkid
-, B.retention_id
-, B.connection_id
-, B.table_source
-, B.table_destination
-, B.start_date
-, B.end_date
-, B.sequence
-, B.connection_key
-, reverse_operators(REPLACE(A.sql_conditions,B.table_source || '.','')) as table_condition_result
-, reverse_operators(REGEXP_REPLACE(REPLACE(A.sql_conditions,B.table_source || '.',''), $$([^']|^)'(?!')$$, $$\1''$$ ,'g')) as table_condition
+SELECT B.PKID
+, B.RETENTION_ID
+, B.CONNECTION_ID
+, B.TABLE_SOURCE
+, B.TABLE_DESTINATION
+, B.START_DATE
+, B.END_DATE
+, B.SEQUENCE
+, REVERSE_OPERATORS(REPLACE(A.SQL_CONDITIONS,B.TABLE_SOURCE || ''.'','''')) AS TABLE_CONDITION_RESULT
+, REVERSE_OPERATORS(REPLACE(REPLACE(A.SQL_CONDITIONS,B.TABLE_SOURCE || ''.'',''''), '''''''', '''''''''''')) AS TABLE_CONDITION
+, B.CONNECTION_KEY
 FROM "DataRetentionPolicy" A
-INNER JOIN CTE_RET B ON A.pkid = B.pkid
-ORDER BY B.sequence ASC;
+INNER JOIN CTE_RET B ON A.PKID = B.PKID
+ORDER BY B.SEQUENCE ASC') AS CCF_RULES_CONFIG(PKID BIGINT,
+RETENTION_ID VARCHAR(50),
+CONNECTION_ID BIGINT, 
+TABLE_SOURCE VARCHAR(100), 
+TABLE_DESTINATION VARCHAR(100), 
+START_DATE DATE,
+END_DATE DATE,
+SEQUENCE SMALLINT, 
+TABLE_CONDITION_RESULT TEXT,
+TABLE_CONDITION TEXT,
+CONNECTION_KEY TEXT)
