@@ -140,7 +140,7 @@ BEGIN
             ,DEAL_TYPE  
             ,DEAL_REF  
             ,CCY  
-            ,CASE WHEN MOVE_TYPE = ''P'' THEN ISNULL(AMOUNT_RECEIVE, 0) END AS PRINCIPAL  
+            ,CASE WHEN MOVE_TYPE = ''P'' THEN COALESCE(AMOUNT_RECEIVE, 0) END AS PRINCIPAL  
             ,COUNT(1) AS COUNT  
             ,''DOUBLE SOURCE'' AS REMARKS  
             ,''SP_GENERATE_SCHD'' AS CREATEDBY  
@@ -150,7 +150,7 @@ BEGIN
         AND BUSS_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         AND SCHEDULE_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         AND SOURCE_SYSTEM <> ''T24'' 
-        GROUP BY BUSS_DATE, BRANCH, DEAL_TYPE, DEAL_REF, CCY, MOVE_TYPE, ISNULL(AMOUNT_RECEIVE, 0)  
+        GROUP BY BUSS_DATE, BRANCH, DEAL_TYPE, DEAL_REF, CCY, MOVE_TYPE, COALESCE(AMOUNT_RECEIVE, 0)  
         HAVING COUNT(1) > 1
         ';
     EXECUTE (V_STR_QUERY);
@@ -165,16 +165,16 @@ BEGIN
             ,DEAL_REF  
             ,SCHEDULE_DATE  
             ,CCY  
-            ,ISNULL(AMOUNT_PAY, 0) AMOUNT_PAY  
-            ,CASE WHEN MOVE_TYPE = ''P'' THEN ISNULL(AMOUNT_RECEIVE, 0) END AS PRINCIPAL  
-            ,CASE WHEN MOVE_TYPE = ''I'' THEN ISNULL(AMOUNT_RECEIVE, 0) END AS INTEREST  
-            ,CASE WHEN MOVE_SUBTYPE IN (''R'') THEN ISNULL(AMOUNT_PAY, 0) END AS OSPRN  
+            ,COALESCE(AMOUNT_PAY, 0) AMOUNT_PAY  
+            ,CASE WHEN MOVE_TYPE = ''P'' THEN COALESCE(AMOUNT_RECEIVE, 0) END AS PRINCIPAL  
+            ,CASE WHEN MOVE_TYPE = ''I'' THEN COALESCE(AMOUNT_RECEIVE, 0) END AS INTEREST  
+            ,CASE WHEN MOVE_SUBTYPE IN (''R'') THEN COALESCE(AMOUNT_PAY, 0) END AS OSPRN  
             ,STATUS  
         )
         INTO #SCHD
         FROM ' || V_TABLEINSERT1 || ' 
-        WHERE ISNULL(MOVE_TYPE,'') IN (''P'', ''I'') -- Just Take Principal and Interest
-        AND ISNULL(MOVE_SUBTYPE,'') IN (''R'', '') -- Just Take Repayment for Principal and Blank '' for Interest
+        WHERE COALESCE(MOVE_TYPE,'') IN (''P'', ''I'') -- Just Take Principal and Interest
+        AND COALESCE(MOVE_SUBTYPE,'') IN (''R'', '') -- Just Take Repayment for Principal and Blank '' for Interest
         AND BUSS_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         AND SCHEDULE_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
         AND SOURCE_SYSTEM <> ''T24''  
@@ -186,8 +186,7 @@ BEGIN
     V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(1) FROM #SCHD';
     EXECUTE (V_STR_QUERY);
 
-    IF(COUNT > 0)
-    BEGIN
+    IF(COUNT > 0) THEN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'SELECT * INTO #SCHD2' || V_TABLEINSERT2 || ' WITH(NOLOCK) WHERE 1=2
             WHERE BUSS_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
@@ -248,9 +247,9 @@ BEGIN
                 ,DEAL_TYPE || ''_'' || DEAL_REF || ''_'' || BRANCH AS MASTERID  
                 ,SCHEDULE_DATE AS PMTDATE  
                 ,NULL AS INTEREST_RATE  
-                ,MAX(ISNULL(OSPRN,0)) AS OSPRN  
-                ,MAX(ISNULL(PRINCIPAL,0)) AS PRINCIPAL  
-                ,MAX(ISNULL(INTEREST,0)) AS INTEREST  
+                ,MAX(COALESCE(OSPRN,0)) AS OSPRN  
+                ,MAX(COALESCE(PRINCIPAL,0)) AS PRINCIPAL  
+                ,MAX(COALESCE(INTEREST,0)) AS INTEREST  
                 ,RANK () OVER (PARTITION BY BUSS_DATE, DEAL_TYPE || ''_'' || DEAL_REF || ''_'' || BRANCH ORDER BY SCHEDULE_DATE) AS COUNTER  
                 ,''SCHD'' AS SOURCE_PROCESS  
                 ,DEAL_TYPE AS PRODUCT_CODE  
