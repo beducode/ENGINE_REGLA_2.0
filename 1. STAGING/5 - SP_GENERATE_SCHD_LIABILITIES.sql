@@ -36,6 +36,8 @@ DECLARE
     V_SP_NAME VARCHAR(100);
     STACK TEXT; 
     FCESIG TEXT;
+    V_START INT;
+    V_END INT;
 BEGIN 
     -------- ====== VARIABLE ======
 	GET DIAGNOSTICS STACK = PG_CONTEXT;
@@ -105,7 +107,7 @@ BEGIN
             LTRIM(RTRIM(DEAL_TYPE)) AS DEAL_TYPE,            
             LTRIM(RTRIM(DEAL_REF)) AS DEAL_REF,            
             CCY,            
-            CASE WHEN MOVE_TYPE = ''P'' THEN ISNULL(AMOUNT_PAY, 0) END AS PRINCIPAL,            
+            CASE WHEN MOVE_TYPE = ''P'' THEN COALESCE(AMOUNT_PAY, 0) END AS PRINCIPAL,            
             COUNT(1) AS COUNT,            
             ''DOUBLE SOURCE'' AS REMARKS,            
             ''SP_GENERATE_SCHD_LIABILITIES'' AS CREATEDBY
@@ -113,7 +115,7 @@ BEGIN
         WHERE MOVE_TYPE IN (''P'')
         AND MOVE_SUBTYPE IN (''M'')
         AND BUSS_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE --AND SCHEDULE_DATE >= ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-        GROUP BY BUSS_DATE, BRANCH, DEAL_TYPE, DEAL_REF, CCY, MOVE_TYPE, ISNULL(AMOUNT_PAY, 0)
+        GROUP BY BUSS_DATE, BRANCH, DEAL_TYPE, DEAL_REF, CCY, MOVE_TYPE, COALESCE(AMOUNT_PAY, 0)
         HAVING COUNT(1) > 1
         ';
     EXECUTE (V_STR_QUERY);
@@ -128,9 +130,9 @@ BEGIN
             LTRIM(RTRIM(DEAL_REF)) AS DEAL_REF,            
             SCHEDULE_DATE,            
             CCY,            
-            ISNULL(AMOUNT_PAY, 0) AS AMOUNT_PAY,            
-            CASE WHEN MOVE_TYPE = ''P'' THEN ISNULL(AMOUNT_PAY, 0) END AS PRINCIPAL,            
-            CASE WHEN MOVE_TYPE = ''I'' THEN ISNULL(AMOUNT_PAY, 0) END AS INTEREST,            
+            COALESCE(AMOUNT_PAY, 0) AS AMOUNT_PAY,            
+            CASE WHEN MOVE_TYPE = ''P'' THEN COALESCE(AMOUNT_PAY, 0) END AS PRINCIPAL,            
+            CASE WHEN MOVE_TYPE = ''I'' THEN COALESCE(AMOUNT_PAY, 0) END AS INTEREST,            
             0 AS OSPRN,            
             STATUS
         FROM ' || V_TABLEINSERT1 || ' WITH(NOLOCK)
@@ -212,9 +214,9 @@ BEGIN
                 ,DEAL_REF AS MASTERID      
                 ,SCHEDULE_DATE AS PMTDATE      
                 ,NULL AS INTEREST_RATE      
-                ,MAX(ISNULL(OSPRN,0)) AS OSPRN      
-                ,MAX(ISNULL(PRINCIPAL,0)) AS PRINCIPAL      
-                ,MAX(ISNULL(INTEREST,0)) AS INTEREST      
+                ,MAX(COALESCE(OSPRN,0)) AS OSPRN      
+                ,MAX(COALESCE(PRINCIPAL,0)) AS PRINCIPAL      
+                ,MAX(COALESCE(INTEREST,0)) AS INTEREST      
                 ,RANK () OVER (PARTITION BY BUSS_DATE, DEAL_REF ORDER BY SCHEDULE_DATE) AS COUNTER      
                 ,''SCHD_LIABILITIES'' AS SOURCE_PROCESS      
                 ,DEAL_TYPE AS PRODUCT_CODE      
@@ -288,29 +290,24 @@ BEGIN
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DECLARE @START INT, @END INT';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'SELECT @START = 0, @END = MAX(COUNTER) 
+        V_STR_QUERY := V_STR_QUERY || 'SELECT 0, MAX(COUNTER) 
             FROM #' || V_TABLEINSERT3 || '';  
-        EXECUTE (V_STR_QUERY);
+        EXECUTE (V_STR_QUERY) INTO V_START, V_END;
 
-        WHILE @START <= @END
+        WHILE V_START <= V_END
         LOOP
             V_STR_QUERY := '';
             V_STR_QUERY := V_STR_QUERY || 'UPDATE Y
-                SET Y.OSPRN = CASE WHEN Z.DOWNLOAD_DATE = Y.PMTDATE THEN Z.PRINCIPAL ELSE ABS(X.OSPRN - CASE WHEN @START = 0 THEN X.PRINCIPAL ELSE 0 END - Y.PRINCIPAL) END
-                FROM (SELECT * FROM #' || V_TABLEINSERT3 || ' WHERE COUNTER = @start) X
-                JOIN (SELECT * FROM #' || V_TABLEINSERT3 || ' WHERE COUNTER = @start + 1) Y
+                SET Y.OSPRN = CASE WHEN Z.DOWNLOAD_DATE = Y.PMTDATE THEN Z.PRINCIPAL ELSE ABS(X.OSPRN - CASE WHEN ' || V_START || ' = 0 THEN X.PRINCIPAL ELSE 0 END - Y.PRINCIPAL) END
+                FROM (SELECT * FROM #' || V_TABLEINSERT3 || ' WHERE COUNTER = ' || V_START || ') X
+                JOIN (SELECT * FROM #' || V_TABLEINSERT3 || ' WHERE COUNTER = ' || V_START || ' + 1) Y
                 ON X.DOWNLOAD_DATE = Y.DOWNLOAD_DATE AND X.MASTERID = Y.MASTERID
                 LEFT JOIN #' || SCHD3 || ' Z ON Y.PMTDATE = Z.DOWNLOAD_DATE AND X.MASTERID = Z.MASTERID
                 WHERE Y.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE';
             EXECUTE (V_STR_QUERY);
 
-            V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'SET @START = @START + 1';
-            EXECUTE (V_STR_QUERY);
+            V_START := V_START + 1;
+            
         END LOOP;
         -- END UPDATING OSPRN  
         
@@ -377,9 +374,10 @@ BEGIN
     V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT || '';
     CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
     -------- ====== RESULT ======
-
+	
+	CALL SP_GENERATE_SCHD_LIABILITIES();
 END;
 
 $$;
 
-CALL SP_GENERATE_SCHD_LIABILITIES();
+

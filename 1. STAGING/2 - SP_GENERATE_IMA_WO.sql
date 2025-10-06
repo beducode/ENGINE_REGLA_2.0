@@ -562,7 +562,7 @@ BEGIN
             ,A.PLAFOND AS PLAFOND              
             ,A.DEAL_TYPE AS PRODUCT_CODE             
             ,''STG_M_WO_RMS'' AS SOURCE_TABLE              
-            ,(A.TOTAL_RECOVERY - ISNULL(C.RECOVERY_AMOUNT, 0)) AS RECOVERY_AMOUNT              
+            ,(A.TOTAL_RECOVERY - COALESCE(C.RECOVERY_AMOUNT, 0)) AS RECOVERY_AMOUNT              
             ,A.TOTAL_RECOVERY  
         FROM #' || WO_RMS || ' A (NOLOCK)            
         LEFT JOIN         
@@ -573,7 +573,7 @@ BEGIN
             FROM #' || V_TABLEINSERT12 || ' A (NOLOCK)            
         ) C ON EOMONTH(BUSS_DATE) = EOMONTH(''' || CAST(DATEADD(MM, -1, V_CURRDATE) AS VARCHAR(10)) || ''')::DATE
         WHERE EOMONTH(A.BUSS_DATE) = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE      
-        AND (A.TOTAL_RECOVERY - ISNULL(C.RECOVERY_AMOUNT, 0)) <> 0 
+        AND (A.TOTAL_RECOVERY - COALESCE(C.RECOVERY_AMOUNT, 0)) <> 0 
     ';EXECUTE (V_STR_QUERY);  
 
 
@@ -612,7 +612,7 @@ BEGIN
             ,A.AMOUNT_WO  AS OUTSTANDING_WO              
             ,A.DEAL_TYPE AS PRODUCT_CODE                 
             ,''STG_M_WO_CRMS'' AS SOURCE_TABLE              
-            ,(A.TOTAL_RECOVERY - ISNULL(C.RECOVERY_AMOUNT, 0)) AS RECOVERY_AMOUNT              
+            ,(A.TOTAL_RECOVERY - COALESCE(C.RECOVERY_AMOUNT, 0)) AS RECOVERY_AMOUNT              
             ,A.TOTAL_RECOVERY   
         FROM #' || V_TABLEINSERT2 || ' A (NOLOCK)
         LEFT JOIN        
@@ -621,7 +621,7 @@ BEGIN
             FROM #' || V_TABLEINSERT11 || ' 
         ) C ON EOMONTH(BUSS_DATE) = EOMONTH(''' || CAST(DATEADD(MM, -1, V_CURRDATE) AS VARCHAR(10)) || ''')::DATE
         WHERE EOMONTH(A.BUSS_DATE) = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-        AND (A.TOTAL_RECOVERY - ISNULL(C.RECOVERY_AMOUNT, 0)) <> 0 
+        AND (A.TOTAL_RECOVERY - COALESCE(C.RECOVERY_AMOUNT, 0)) <> 0 
     ';EXECUTE (V_STR_QUERY); 
 
     **/ 
@@ -751,8 +751,10 @@ BEGIN
     CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
     -------- ====== RESULT ======
 
+	CALL SP_GENERATE_IMA_WO();
+
 END;
 
 $$;
 
-CALL SP_GENERATE_IMA_WO();
+

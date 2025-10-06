@@ -143,7 +143,7 @@ BEGIN
             NEXT_INT_PAYMENT_DATE AS NEXT_PAYMENT_DATE            
             ''A'' AS ACCOUNT_STATUS            
             A.CCY AS CURRENCY            
-            ISNULL(B.SPOT_RATE,1) AS EXCHANGE_RATE            
+            COALESCE(B.SPOT_RATE,1) AS EXCHANGE_RATE            
             AMOUNT AS OUTSTANDING            
             INT_RATE AS INTEREST_RATE            
             NULL AS INTEREST_TYPE            
@@ -202,7 +202,7 @@ BEGIN
             ,A.VALUE_DATE AS SETTLE_DATE            
             ,MATURITY_DATE AS MATURITY_DATE            
             ,A.CCY AS CURRENCY            
-            ,ISNULL(B.SPOT_RATE,1) AS EXCHANGE_RATE            
+            ,COALESCE(B.SPOT_RATE,1) AS EXCHANGE_RATE            
             ,NOTIONAL_AMOUNT AS OUTSTANDING            
             ,TINGKAT_SUKU_BUNGA AS INTEREST_RATE            
             ,JENIS_SUKU_BUNGA AS INTEREST_TYPE            
