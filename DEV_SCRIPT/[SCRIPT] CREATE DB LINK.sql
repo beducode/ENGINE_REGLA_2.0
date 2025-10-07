@@ -73,16 +73,34 @@ SELECT dblink_connect('conn_db_link', 'workflow_ntt_parameter');
 -- #5
 CREATE EXTENSION dblink;
 
-CREATE SERVER ifrs9_db_access
+CREATE SERVER link_db_ifrs9_access
 FOREIGN DATA WRAPPER dblink_fdw
 OPTIONS (host 'alloy.dev.regla.cloud', dbname 'IFRS9', port '8433');
 
-GRANT USAGE ON FOREIGN SERVER ifrs9_db_access TO postgres;
+GRANT USAGE ON FOREIGN SERVER link_db_ifrs9_access TO postgres;
 
 CREATE USER MAPPING
 FOR postgres
-SERVER ifrs9_db_access
+SERVER link_db_ifrs9_access
 OPTIONS (user 'reglaalloy01', password 'ynJlX2nPkXCCrXRdP70k0L7');
 
-SELECT dblink_connect('conn_db_link', 'ifrs9_db_access');
+SELECT dblink_connect('conn_db_link', 'link_db_ifrs9_access');
+
+
+-- #6
+CREATE EXTENSION dblink;
+
+CREATE SERVER link_db_ifrs9_demo_access
+FOREIGN DATA WRAPPER dblink_fdw
+OPTIONS (host 'alloy.demo.regla.cloud', dbname 'IFRS9', port '8433');
+
+GRANT USAGE ON FOREIGN SERVER link_db_ifrs9_demo_access TO postgres;
+
+CREATE USER MAPPING
+FOR postgres
+SERVER link_db_ifrs9_demo_access
+OPTIONS (user 'reglaalloy01', password 'ynJlX2nPkXCCrXRdP70k0L7');
+
+SELECT dblink_connect('conn_db_link', 'link_db_ifrs9_demo_access');
+
 
