@@ -1,0 +1,13 @@
+NOTE DEPLOYMENT
+---------------
+
+CREATE EXTENSION IF NOT EXISTS pg_prewarm;      -- preload cache
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements; -- monitor query performance
+CREATE EXTENSION IF NOT EXISTS pg_buffercache;  -- analisis cache buffer
+CREATE EXTENSION IF NOT EXISTS pg_repack;       -- reorg table tanpa downtime
+CREATE EXTENSION IF NOT EXISTS pgcrypto;       -- untuk decrypt & encrypt data
+
+
+ADD TO "postgresql.conf"
+
+shared_preload_libraries = 'pg_prewarm'

@@ -17,7 +17,7 @@ BEGIN
             seq_scan,
             idx_scan
         FROM pg_stat_user_tables
-        WHERE n_dead_tup > 10000 OR seq_scan > idx_scan * 2 AND schemaname = 'public'
+        WHERE relname <> 'ifrs_amort_log' AND (n_dead_tup > 10000 OR seq_scan > idx_scan * 2) AND schemaname = 'public'
     LOOP
         -- VACUUM jika dead tuples tinggi
         IF r.n_dead_tup > 10000 THEN
