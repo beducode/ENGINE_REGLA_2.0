@@ -69,7 +69,7 @@ BEGIN
         SELECT
             CURRDATE INTO V_CURRDATE
         FROM
-            IFRS_PRC_DATE;
+            IFRS_PRC_DATE_ECL;
     ELSE        
         V_CURRDATE := P_DOWNLOAD_DATE;
     END IF;
@@ -88,39 +88,7 @@ BEGIN
     -------- ====== BODY ======
     IF P_PRC = 'S' THEN
             V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT1 || ' ';
-            EXECUTE (V_STR_QUERY);
-
-            V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM IFRS_IMA_IMP_CURR WHERE 0=1';
-            EXECUTE (V_STR_QUERY);
-
-            V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'DROP SEQUENCE IF EXISTS ' || V_TABLEINSERT1 || '_PKID_SEQ ';
-            EXECUTE (V_STR_QUERY);
-
-            V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'CREATE SEQUENCE IF NOT EXISTS ' || V_TABLEINSERT1 || '_PKID_SEQ
-            INCREMENT 1
-            START 1
-            MINVALUE 1
-            MAXVALUE 9223372036854775807
-            CACHE 1';
-            EXECUTE (V_STR_QUERY);
-
-            V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'ALTER TABLE ' || V_TABLEINSERT1 || ' ALTER COLUMN PKID SET DEFAULT nextval('' ' || V_TABLEINSERT1 || '_PKID_SEQ '') ';
-            EXECUTE (V_STR_QUERY);
-
-            V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'DROP INDEX IF EXISTS NCI_' || V_TABLEINSERT1 || ' ';
-            EXECUTE (V_STR_QUERY);
-
-            V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'CREATE INDEX IF NOT EXISTS NCI_' || V_TABLEINSERT1 || '
-            ON ' || V_TABLEINSERT1 || ' USING BTREE
-            (DOWNLOAD_DATE ASC NULLS LAST, MASTERID ASC NULLS LAST, MASTER_ACCOUNT_CODE ASC NULLS LAST, PRODUCT_CODE ASC NULLS LAST, ACCOUNT_NUMBER ASC NULLS LAST)
-            TABLESPACE PG_DEFAULT';
+            V_STR_QUERY := V_STR_QUERY || 'SELECT DUPLICATE_TABLE(LOWER(''IFRS_IMA_IMP_CURR''),LOWER(''' || V_TABLEINSERT1 || '''), FALSE)';
             EXECUTE (V_STR_QUERY);
         ELSE
             V_STR_QUERY := '';
@@ -1280,14 +1248,6 @@ BEGIN
     V_OPERATION = 'INSERT';
     
     CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
-
-    -- V_TABLEDEST = V_TABLEINSERT2;
-    -- V_COLUMNDEST = '-';
-    -- V_SPNAME = 'SP_IFRS_IMP_FILL_IMA_PREV_CURR';
-    -- V_OPERATION = 'INSERT';
-    
-    -- CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
-    -------- ====== LOG ======
 
     -------- ====== RESULT ======
     V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT1 || '';
