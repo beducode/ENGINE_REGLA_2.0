@@ -1,60 +1,60 @@
- DROP VIEW IF EXISTS VW_MSTR_SEGMENT_RULES_HEADER;
+DROP VIEW IF EXISTS VW_MSTR_SEGMENT_RULES_HEADER;
 
 CREATE VIEW VW_MSTR_SEGMENT_RULES_HEADER AS
 
 -- combine data with only level 0 (don't have parent) and data only parent (without level 0)
-WITH Grp_seg AS (
-	select * from dblink('workflow_ntt_impairment','
-					SELECT * FROM "Segmentation"  where level <> 0 and is_active = true
-					Union all
-				    select * from "Segmentation" where level = 0 and parent_code_level_0 not in (
-						select distinct parent_code_level_0 from "Segmentation" where parent_code_level_1 is not null and is_active = true)')
-						Segmentation(pkid bigint, 
-                              syscode_segmentation character varying, 
-                              version character varying, 
-                              parent_code_level_0 character varying, 
-                              parent_code_level_1 character varying, 
-                              parent_code character varying, 
-                              segment_name character varying, 
-                              segment_type character varying, 
-                              description character varying, 
-                              level integer, 
-                              effective_start_date timestamp without time zone,
-                              effective_end_date timestamp without time zone,
-                              is_active boolean,
-                              is_publish boolean, 
-                              is_last_child boolean, 
-                              json_conditions text, 
-                              sql_conditions text, 
-                              created_by character varying, 
-                              created_date timestamp without time zone, 
-                              created_host character varying, 
-                              updated_by character varying, 
-                              updated_date timestamp without time zone, 
-                              updated_host character varying, 
-                              merge_sql_conditions text)
-), List_Sub AS (
-   select * from dblink('workflow_ntt_impairment','SELECT distinct SYSCODE_SEGMENTATION,SEGMENT_NAME FROM "Segmentation"')
-	list_segment(syscode_segmentation character varying, segment_name character varying)
+WITH GRP_SEG AS (
+	SELECT * FROM dblink('workflow_ntt_impairment','
+					SELECT * FROM "Segmentation"  WHERE LEVEL <> 0 AND IS_ACTIVE = TRUE
+					UNION ALL
+				    SELECT * FROM "Segmentation" WHERE LEVEL = 0 AND PARENT_CODE_LEVEL_0 NOT IN (
+						SELECT DISTINCT PARENT_CODE_LEVEL_0 FROM "Segmentation" WHERE PARENT_CODE_LEVEL_1 IS NOT NULL AND IS_ACTIVE = TRUE)')
+						SEGMENTATION(PKID BIGINT, 
+                              SYSCODE_SEGMENTATION CHARACTER VARYING, 
+                              VERSION CHARACTER VARYING, 
+                              PARENT_CODE_LEVEL_0 CHARACTER VARYING, 
+                              PARENT_CODE_LEVEL_1 CHARACTER VARYING, 
+                              PARENT_CODE CHARACTER VARYING, 
+                              SEGMENT_NAME CHARACTER VARYING, 
+                              SEGMENT_TYPE CHARACTER VARYING, 
+                              DESCRIPTION CHARACTER VARYING, 
+                              LEVEL INTEGER, 
+                              EFFECTIVE_START_DATE TIMESTAMP WITHOUT TIME ZONE,
+                              EFFECTIVE_END_DATE TIMESTAMP WITHOUT TIME ZONE,
+                              IS_ACTIVE BOOLEAN,
+                              IS_PUBLISH BOOLEAN, 
+                              IS_LAST_CHILD BOOLEAN, 
+                              JSON_CONDITIONS TEXT, 
+                              SQL_CONDITIONS TEXT, 
+                              CREATED_BY CHARACTER VARYING, 
+                              CREATED_DATE TIMESTAMP WITHOUT TIME ZONE, 
+                              CREATED_HOST CHARACTER VARYING, 
+                              UPDATED_BY CHARACTER VARYING, 
+                              UPDATED_DATE TIMESTAMP WITHOUT TIME ZONE, 
+                              UPDATED_HOST CHARACTER VARYING, 
+                              MERGE_SQL_CONDITIONS TEXT)
+), LIST_SUB AS (
+   SELECT * FROM dblink('workflow_ntt_impairment','SELECT distinct SYSCODE_SEGMENTATION,SEGMENT_NAME FROM "Segmentation"')
+	LIST_SEGMENT(SYSCODE_SEGMENTATION CHARACTER VARYING, SEGMENT_NAME CHARACTER VARYING)
 )
 
-
-select A.pkid,
-      B.SEGMENT_NAME as group_segment,
-      C.SEGMENT_NAME as segment,
-      D.SEGMENT_NAME as sub_segment, 
-      A.is_active as active_flag, 
-		COALESCE(A.segment_type,'PORTFOLIO_SEGMENT') as segment_type, 
-      A.level as sequence, 
-      1 as is_new,
-		0 As is_delete,
-      A.created_by As createdby,
-      created_date As createddate,
-      created_host As createdhost,
-      updated_by As updatedby,
-      updated_date As updateddate,
-		updated_host As updatedhost 
-		from Grp_seg A 
-		left join List_Sub B ON A.parent_code_level_0 = B.SYSCODE_SEGMENTATION
-		left join List_Sub C ON A.parent_code_level_1 = C.SYSCODE_SEGMENTATION
-		left join List_Sub D ON A.SYSCODE_SEGMENTATION = D.SYSCODE_SEGMENTATION;
+SELECT A.PKID,
+      B.SEGMENT_NAME AS GROUP_SEGMENT,
+      C.SEGMENT_NAME AS SEGMENT,
+      D.SEGMENT_NAME AS SUB_SEGMENT, 
+      A.IS_ACTIVE AS ACTIVE_FLAG, 
+		COALESCE(A.SEGMENT_TYPE,'PORTFOLIO_SEGMENT') AS SEGMENT_TYPE, 
+      A.LEVEL AS SEQUENCE, 
+      1 AS IS_NEW,
+		0 AS IS_DELETE,
+      A.CREATED_BY AS CREATEDBY,
+      CREATED_DATE AS CREATEDDATE,
+      CREATED_HOST AS CREATEDHOST,
+      UPDATED_BY AS UPDATEDBY,
+      UPDATED_DATE AS UPDATEDDATE,
+		UPDATED_HOST AS UPDATEDHOST 
+		FROM GRP_SEG A 
+		LEFT JOIN LIST_SUB B ON A.PARENT_CODE_LEVEL_0 = B.SYSCODE_SEGMENTATION
+		LEFT JOIN LIST_SUB C ON A.PARENT_CODE_LEVEL_1 = C.SYSCODE_SEGMENTATION
+		LEFT JOIN LIST_SUB D ON A.SYSCODE_SEGMENTATION = D.SYSCODE_SEGMENTATION
+      ORDER BY A.PKID;
