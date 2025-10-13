@@ -104,11 +104,11 @@ BEGIN
 
     -------- ====== BODY ======
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || 'TMP_LGD' || ' ';
+    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_LGD ';
     EXECUTE (V_STR_QUERY);
 
     V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || 'TMP_LGD' || ' AS 
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_LGD AS 
         SELECT * FROM ' || V_TABLEINSERT1 || ' WHERE 1 = 2 ';
     EXECUTE (V_STR_QUERY);
 
@@ -118,7 +118,7 @@ BEGIN
                 ,B.SEGMENT              AS SEGMENT
                 ,B.SUB_SEGMENT          AS SUB_SEGMENT
                 ,B.GROUP_SEGMENT        AS GROUP_SEGMENT
-                ,B.CONDITION            AS CONDITION
+                ,REPLACE(B.CONDITION,''"'','''') AS CONDITION
                 ,A.LAG_1MONTH_FLAG      AS V_LAG
                 ,UPPER(A.CALC_METHOD)   AS V_CALC_METHOD
             FROM ' || 'IFRS_LGD_RULES_CONFIG' || ' A          
@@ -136,7 +136,7 @@ BEGIN
             ORDER BY PKID '
     LOOP 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || 'TMP_LGD' || ' 
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO TMP_LGD 
             (               
                 DOWNLOAD_DATE          
                 ,DEFAULT_DATE          
@@ -176,7 +176,7 @@ BEGIN
                 ,A.OS_AT_DEFAULT AS OS_AT_DEFAULT          
                 ,A.NETT_RECOVERY AS RECOVERY_AMOUNT          
                 ,A.EIR_AT_DEFAULT AS EIR_AT_DEFAULT          
-                ,COALESCE(A.JAP_NON_JAP_IDENTIFIER, 0) AS JAP_FLAG          
+                ,COALESCE(A.JAP_NON_JAP_IDENTIFIER::INT, 0) AS JAP_FLAG          
             FROM ' || 'IFRS_RECOVERY_CORP' || ' A          
             JOIN ' || 'IFRS_LGD_RULES_CONFIG' || ' B 
                 ON B.PKID = ' || V_SEGMENT.LGD_RULE_ID || '          
@@ -187,18 +187,15 @@ BEGIN
                 WHEN B.LAG_1MONTH_FLAG = 1 
                 THEN F_EOMONTH(CAST(''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - INTERVAL ''1 MONTH'' AS DATE), 0, ''M'', ''NEXT'') 
                 ELSE ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE
-            END ' || CASE 
-                WHEN V_SEGMENT.GROUP_SEGMENT LIKE '%JENIUS%' 
-                THEN || 'AND A.CUSTOMER_NUMBER NOT IN (SELECT DISTINCT CUSTOMER_NUMBER FROM IFRS_EXCLUDE_JENIUS) ' 
-                ELSE '' 
-            END || ' 
-            AND ' || V_SEGMENT.CONDITION || ' ';
+            END ' 
+            || CASE WHEN V_SEGMENT.GROUP_SEGMENT LIKE '%JENIUS%' THEN 'AND A.CUSTOMER_NUMBER NOT IN (SELECT DISTINCT CUSTOMER_NUMBER FROM IFRS_EXCLUDE_JENIUS) ' 
+            ELSE '' END || 'AND ' || V_SEGMENT.CONDITION || ' ';
         EXECUTE (V_STR_QUERY);
     END LOOP;
 
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TABLEINSERT1 || ' A 
-        USING ' || 'IFRS_LGD_RULES_CONFIG' || ' B 
+        USING IFRS_LGD_RULES_CONFIG B 
         WHERE A.LGD_RULE_ID = B.PKID  
         AND DOWNLOAD_DATE = CASE 
             WHEN B.LAG_1MONTH_FLAG = 1 
@@ -256,7 +253,7 @@ BEGIN
                 ,(EXTRACT(YEAR FROM RECOVERY_DATE) - EXTRACT(YEAR FROM DEFAULT_DATE)) * 12 + (EXTRACT(MONTH FROM RECOVERY_DATE) - EXTRACT(MONTH FROM DEFAULT_DATE))
                 ,RECOVERY_AMOUNT
             ) AS NPV_RECOVERY 
-        FROM ' || 'TMP_LGD' || ' ';
+        FROM TMP_LGD ';
     EXECUTE (V_STR_QUERY);
 
     GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;

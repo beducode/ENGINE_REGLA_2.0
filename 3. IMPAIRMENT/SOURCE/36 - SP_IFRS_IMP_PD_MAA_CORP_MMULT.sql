@@ -117,7 +117,7 @@ BEGIN
 
     FOR V_SEGMENT IN 
         EXECUTE 'SELECT DISTINCT PKID 
-            FROM ' || 'IFRS_PD_RULES_CONFIG' || ' 
+            FROM IFRS_PD_RULES_CONFIG 
             WHERE PD_METHOD = ''MAA_CORP'' 
                 AND ACTIVE_FLAG = 1 
                 AND IS_DELETE  = 0'
@@ -129,7 +129,7 @@ BEGIN
         V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_BASE_MAA_MMULT AS 
             SELECT * FROM ' || V_TABLEINSERT1 || ' 
-            WHERE A.TO_DATE = ''' || CAST(V_CURRDATE_NOLAG AS VARCHAR(10)) || '''::DATE 
+            WHERE TO_DATE = ''' || CAST(V_CURRDATE_NOLAG AS VARCHAR(10)) || '''::DATE 
                 AND BUCKET_TO <> 0 
                 AND PD_RULE_ID = ' || V_SEGMENT.PKID || ' ';
         EXECUTE (V_STR_QUERY);
@@ -170,7 +170,7 @@ BEGIN
                     , AVERAGE_RATE_FINAL AS  MMULT
                     ,''SP_IFRS_IMP_PD_MAA_CORP_MMULT'' AS CREATEDBY
                     ,CURRENT_TIMESTAMP AS CREATEDDATE
-                FROM TEMP_BASE_MAA_MMULT  
+                FROM TMP_BASE_MAA_MMULT  
                 WHERE PD_RULE_ID = ' || V_SEGMENT.PKID || ' ';
             EXECUTE (V_STR_QUERY);
 
@@ -206,7 +206,7 @@ BEGIN
                     ,SUM(A.AVERAGE_RATE_FINAL*B.MMULT) AS MMULT
                     ,''SP_IFRS_IMP_PD_MAA_AVERAGE''  AS CREATEDBY
                     ,CURRENT_TIMESTAMP AS CREATEDDATE
-                FROM TEMP_BASE_MAA_MMULT A 
+                FROM TMP_BASE_MAA_MMULT A 
                 JOIN (
                     SELECT * FROM ' || V_TABLEINSERT2 || ' 
                     WHERE TO_DATE = ''' || CAST(V_CURRDATE_NOLAG AS VARCHAR(10)) || '''::DATE 

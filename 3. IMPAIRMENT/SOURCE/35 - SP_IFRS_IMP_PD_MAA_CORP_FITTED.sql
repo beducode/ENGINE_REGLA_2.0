@@ -194,36 +194,34 @@ BEGIN
             SELECT BUCKET_ID, ADJUSTED_DEFAULT_RATE 
             FROM ' || V_TABLEINSERT2 || ' A 
             WHERE A.TO_DATE = ''' || CAST(V_CURRDATE_NOLAG AS VARCHAR(10)) || '''::DATE 
-            AND PD_RULE_ID = ' || V_SEGMENT.PD_RULE_ID || ' 
+            AND PD_RULE_ID = ' || V_SEGMENT.PKID || ' 
             ORDER BY BUCKET_ID ';
         EXECUTE (V_STR_QUERY);
 
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' 
+        V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' X 
             SET 
-                X.A = Y.A  
-                ,X.B = Y.B  
-                ,X.R2 =  Y.R2  
-                ,X.FITTED_DEFAULT_RATE = CASE 
-                    WHEN Z.MAX_BUCKET_ID IS NOT NULL  
-                    THEN 1   
-                    WHEN Y.A * EXP(Y.b*CAST(X.BUCKET_ID AS FLOAT)) <= 0.0003 
-                    THEN 0.0003   
-                    ELSE  Y.A * EXP(Y.b*CAST(X.BUCKET_ID AS FLOAT)) 
+                A = Y.A  
+                ,B = Y.B  
+                ,R2 =  Y.R2  
+                ,FITTED_DEFAULT_RATE = CASE 
+                WHEN Z.MAX_BUCKET_ID IS NOT NULL
+                THEN 1   
+                WHEN Y.A * EXP(Y.b*CAST(X.BUCKET_ID AS DOUBLE PRECISION)) <= 0.0003 
+                THEN 0.0003   
+                ELSE  Y.A * EXP(Y.b*CAST(X.BUCKET_ID AS DOUBLE PRECISION)) 
                 END   
-            FROM ' || V_TABLEINSERT2 || ' X   
-            JOIN (
+            FROM (
                 SELECT 
-                    ' || V_SEGMENT.PD_RULE_ID || ' AS PD_RULE_ID 
+                    ' || V_SEGMENT.PKID || ' AS PD_RULE_ID 
                     ,* 
                 FROM F_CURVE_FITTING(2)
-            ) Y  
-                ON X.PD_RULE_ID = Y.PD_RULE_ID  
-            JOIN ' || 'VW_IFRS_MAX_BUCKET' || ' Z 
-                ON X.BUCKET_GROUP = Z.BUCKET_GROUP 
+                ) Y, VW_IFRS_MAX_BUCKET Z 
+            WHERE X.PD_RULE_ID = Y.PD_RULE_ID 
+                AND X.BUCKET_GROUP = Z.BUCKET_GROUP 
                 AND X.BUCKET_ID  = Z.MAX_BUCKET_ID  
-            WHERE X.TO_DATE = ''' || CAST(V_CURRDATE_NOLAG AS VARCHAR(10)) || '''::DATE 
-                AND X.PD_RULE_ID = @PD_RULE_ID ';
+                AND X.TO_DATE = ''' || CAST(V_CURRDATE_NOLAG AS VARCHAR(10)) || '''::DATE 
+                AND X.PD_RULE_ID = ' || V_SEGMENT.PKID || ' ';
         EXECUTE (V_STR_QUERY);
     END LOOP;
 

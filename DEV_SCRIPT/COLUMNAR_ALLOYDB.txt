@@ -1,0 +1,11 @@
+SELECT google_columnar_engine_add('ifrs_ead_term_yearly');
+SELECT google_columnar_engine_add('ifrs_ead_term_monthly');
+SELECT google_columnar_engine_add('ifrs_paym_schd_all');
+SELECT google_columnar_engine_add('ifrs_master_account');
+SELECT google_columnar_engine_add('ifrs_master_account_monthly');
+SELECT google_columnar_engine_add('ifrs_ecl_result_detail');
+SELECT google_columnar_engine_add('tmp_ifrs_ecl_ima');
+SELECT google_columnar_engine_add('ifrs_ima_imp_curr');
+SELECT google_columnar_engine_add('ifrs_imp_pd_fl_term_yearly');
+SELECT google_columnar_engine_add('ifrs_pd_term_structure_nofl_yearly');
+SELECT google_columnar_engine_add('stg_psak71');

@@ -1126,7 +1126,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''                
                     THEN - 1 * B.AMOUNT                
                     ELSE B.AMOUNT                
-                END AS FLOAT) / NULLIF(CAST(C.SUM_AMT AS FLOAT), 0) AS NUMERIC(32, 20)) * A.N_ACCRU_FEE AS NUMERIC), ' || V_ROUND || ') AS N_AMOUNT                
+                END AS DOUBLE PRECISION) / NULLIF(CAST(C.SUM_AMT AS DOUBLE PRECISION), 0) AS NUMERIC(32, 20)) * A.N_ACCRU_FEE AS NUMERIC), ' || V_ROUND || ') AS N_AMOUNT                
                 ,B.STATUS                
                 ,CURRENT_TIMESTAMP                
                 ,A.ACCTNO                
@@ -1208,7 +1208,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''                
                     THEN - 1 * B.AMOUNT                
                     ELSE B.AMOUNT                
-                END AS FLOAT) / NULLIF(CAST(C.SUM_AMT AS FLOAT), 0) AS NUMERIC(32, 20)) * A.N_ACCRU_COST AS NUMERIC), ' || V_ROUND || ') AS N_AMOUNT                
+                END AS DOUBLE PRECISION) / NULLIF(CAST(C.SUM_AMT AS DOUBLE PRECISION), 0) AS NUMERIC(32, 20)) * A.N_ACCRU_COST AS NUMERIC), ' || V_ROUND || ') AS N_AMOUNT                
                 ,B.STATUS                
                 ,CURRENT_TIMESTAMP                
                 ,A.ACCTNO                
@@ -1805,7 +1805,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''                
                         THEN - 1 * B.AMOUNT                
                     ELSE B.AMOUNT                
-                    END AS FLOAT) / NULLIF(CAST(C.SUM_AMT AS FLOAT), 0) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE * - 1, ' || V_ROUND || ') AS N_AMOUNT                
+                    END AS DOUBLE PRECISION) / NULLIF(CAST(C.SUM_AMT AS DOUBLE PRECISION), 0) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE * - 1, ' || V_ROUND || ') AS N_AMOUNT                
                 ,B.STATUS                
                 ,CURRENT_TIMESTAMP                
                 ,A.ACCTNO                
@@ -1901,7 +1901,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''                
                         THEN - 1 * B.AMOUNT                
                     ELSE B.AMOUNT                
-                    END AS FLOAT) / NULLIF(CAST(C.SUM_AMT AS FLOAT), 0) AS DECIMAL(32, 20)) * A.N_ACCRU_COST * - 1, ' || V_ROUND || ') AS N_AMOUNT                
+                    END AS DOUBLE PRECISION) / NULLIF(CAST(C.SUM_AMT AS DOUBLE PRECISION), 0) AS DECIMAL(32, 20)) * A.N_ACCRU_COST * - 1, ' || V_ROUND || ') AS N_AMOUNT                
                 ,B.STATUS                
                 ,CURRENT_TIMESTAMP                
                 ,A.ACCTNO                
@@ -2695,7 +2695,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''                
                         THEN - 1 * B.AMOUNT                
                     ELSE B.AMOUNT                
-                    END AS FLOAT) / NULLIF(CAST(C.SUM_AMT AS FLOAT), 0) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE, ' || V_ROUND || ') AS N_AMOUNT                
+                    END AS DOUBLE PRECISION) / NULLIF(CAST(C.SUM_AMT AS DOUBLE PRECISION), 0) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE, ' || V_ROUND || ') AS N_AMOUNT                
                 ,B.STATUS                
                 ,CURRENT_TIMESTAMP                
                 ,A.ACCTNO                
@@ -2785,7 +2785,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''                
                         THEN - 1 * B.AMOUNT                
                     ELSE B.AMOUNT                
-                    END AS FLOAT) / NULLIF(CAST(C.SUM_AMT AS FLOAT), 0) AS DECIMAL(32, 20)) * A.N_ACCRU_COST, ' || V_ROUND || ') AS N_AMOUNT                
+                    END AS DOUBLE PRECISION) / NULLIF(CAST(C.SUM_AMT AS DOUBLE PRECISION), 0) AS DECIMAL(32, 20)) * A.N_ACCRU_COST, ' || V_ROUND || ') AS N_AMOUNT                
                 ,B.STATUS                
                 ,CURRENT_TIMESTAMP                
                 ,A.ACCTNO                
@@ -2964,7 +2964,7 @@ BEGIN
                 WHEN B.FLAG_REVERSE = ''Y''
                 THEN - 1 * B.AMOUNT                
                 ELSE B.AMOUNT                
-                END AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)) * A.GAIN_LOSS_FEE_AMT, ' || V_ROUND || ') AS N_AMOUNT                
+                END AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)) * A.GAIN_LOSS_FEE_AMT, ' || V_ROUND || ') AS N_AMOUNT                
             ,B.STATUS                
             ,CURRENT_TIMESTAMP                
             ,IMA.ACCOUNT_NUMBER                
@@ -3029,7 +3029,7 @@ BEGIN
                 WHEN B.FLAG_REVERSE = ''Y''
                 THEN - 1 * B.AMOUNT                
                 ELSE B.AMOUNT                
-                END AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)) * A.GAIN_LOSS_COST_AMT, ' || V_ROUND || ') AS N_AMOUNT                
+                END AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)) * A.GAIN_LOSS_COST_AMT, ' || V_ROUND || ') AS N_AMOUNT                
             ,B.STATUS                
             ,CURRENT_TIMESTAMP                
             ,IMA.ACCOUNT_NUMBER                
