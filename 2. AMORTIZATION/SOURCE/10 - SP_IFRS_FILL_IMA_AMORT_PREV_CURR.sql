@@ -324,7 +324,7 @@ BEGIN
             ,ACCOUNT_TYPE 
             ,CUSTOMER_TYPE 
             ,PRODUCT_TYPE_1 
-            ,CCF::REAL 
+            ,CCF::DOUBLE PRECISION 
             ,CCF_RULE_ID::INT 
             ,CCF_EFF_DATE::DATE 
             ,ECL_AMOUNT 
@@ -569,7 +569,7 @@ BEGIN
             ,ACCOUNT_TYPE 
             ,CUSTOMER_TYPE 
             ,PRODUCT_TYPE_1 
-            ,CCF::REAL 
+            ,CCF::DOUBLE PRECISION 
             ,CCF_RULE_ID::INT 
             ,CCF_EFF_DATE::DATE 
             ,ECL_AMOUNT 

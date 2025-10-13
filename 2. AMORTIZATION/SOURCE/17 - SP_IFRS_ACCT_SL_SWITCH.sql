@@ -543,8 +543,8 @@ BEGIN
                         WHEN B.FLAG_REVERSE = ''Y'' 
                         THEN -1 * B.AMOUNT 
                         ELSE B.AMOUNT 
-                    END AS FLOAT
-                ) / CAST(C.SUM_AMT AS FLOAT) 
+                    END AS DOUBLE PRECISION
+                ) / CAST(C.SUM_AMT AS DOUBLE PRECISION) 
                 AS NUMERIC(32, 20)
             ) * A.N_ACCRU_FEE AS N_AMOUNT 
             ,B.STATUS 
@@ -613,8 +613,8 @@ BEGIN
                         WHEN B.FLAG_REVERSE = ''Y''
                         THEN -1 * B.AMOUNT
                         ELSE B.AMOUNT
-                    END AS FLOAT 
-                ) / CAST(C.SUM_AMT AS FLOAT) 
+                    END AS DOUBLE PRECISION 
+                ) / CAST(C.SUM_AMT AS DOUBLE PRECISION) 
                 AS NUMERIC(32, 20) 
             ) * A.N_ACCRU_COST AS N_AMOUNT 
             ,B.STATUS 

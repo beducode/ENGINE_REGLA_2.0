@@ -788,12 +788,12 @@ BEGIN
         V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT5 || ' A 
             SET INT_AMT = CASE 
                 WHEN A.ICC IN (''1'', ''2'') 
-                THEN OS_PRN_PREV * CAST(A.I_DAYS AS FLOAT) * INTEREST_RATE / CASE 
+                THEN OS_PRN_PREV * CAST(A.I_DAYS AS DOUBLE PRECISION) * INTEREST_RATE / CASE 
                     WHEN A.ICC = 1 
                     THEN 36000 
                     ELSE 36500 
                 END 
-                ELSE (CAST(A.I_DAYS AS FLOAT) / CAST(F_CNT_DAYS_30_360(LAST_PAYM_DATE, NEXT_PAYMENT_DATE) AS FLOAT)) * INT_AMT 
+                ELSE (CAST(A.I_DAYS AS DOUBLE PRECISION) / CAST(F_CNT_DAYS_30_360(LAST_PAYM_DATE, NEXT_PAYMENT_DATE) AS DOUBLE PRECISION)) * INT_AMT 
             END 
             FROM ' || 'TMP_LAST_PAYM_DATE' || ' B 
             WHERE A.MASTERID = B.MASTERID 
@@ -824,14 +824,14 @@ BEGIN
                 ) - 1 < CAST(VALUE2 AS INT) 
                 THEN CASE 
                     WHEN A.ICC IN (''1'', ''2'') 
-                    THEN (CAST(A.I_DAYS AS FLOAT) / CAST(CASE 
+                    THEN (CAST(A.I_DAYS AS DOUBLE PRECISION) / CAST(CASE 
                         WHEN (NEXT_PAYMENT_DATE - LAST_PAYM_DATE) = 0 
                         THEN 1 
                         ELSE (NEXT_PAYMENT_DATE - LAST_PAYM_DATE) 
-                    END AS FLOAT)) * A.INT_AMT 
-                    ELSE (CAST(A.I_DAYS AS FLOAT) / CAST(
+                    END AS DOUBLE PRECISION)) * A.INT_AMT 
+                    ELSE (CAST(A.I_DAYS AS DOUBLE PRECISION) / CAST(
                         (((F_CNT_DAYS_30_360(LAST_PAYM_DATE, NEXT_PAYMENT_DATE) - 1) / 30) + 1) * 30
-                        AS FLOAT
+                        AS DOUBLE PRECISION
                     )) * A.INT_AMT 
                 END 
                 ELSE A.INT_AMT 
