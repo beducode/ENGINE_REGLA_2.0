@@ -186,7 +186,7 @@ BEGIN
                     ELSE ' '
                 END || COALESCE(
                 CASE 
-                    WHEN TRIM(V_SEG_RULE.DATA_TYPE) IN ('NUMBER', 'DECIMAL', 'NUMERIC', 'FLOAT', 'INT') THEN 
+                    WHEN TRIM(V_SEG_RULE.DATA_TYPE) IN ('NUMBER', 'DECIMAL', 'NUMERIC', 'DOUBLE PRECISION', 'INT') THEN 
                     CASE 
                         WHEN V_SEG_RULE.OPERATOR IN ('=', '<>', '>', '<', '>=', '<=') THEN COALESCE(V_SEG_RULE.COLUMN_NAME, '')
                          || ' '

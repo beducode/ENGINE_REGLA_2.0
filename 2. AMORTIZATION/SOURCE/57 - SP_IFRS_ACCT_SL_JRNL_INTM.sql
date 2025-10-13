@@ -643,7 +643,7 @@ BEGIN
             ,''ACCRU_SL''
             ,''ACT''
             ,''N''
-            ,A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20))
+            ,A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20))
             ,CURRENT_TIMESTAMP
             ,''SL ACCRU FEE 1''
             ,A.ACCTNO
@@ -703,7 +703,7 @@ BEGIN
             ,''AMORT''
             ,''ACT''
             ,''N''
-            ,A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20))
+            ,A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20))
             ,CURRENT_TIMESTAMP
             ,''SL AMORT FEE 1''
             ,A.ACCTNO
@@ -825,7 +825,7 @@ BEGIN
             ,''DEFA0''
             ,''ACT''
             ,''N''
-            ,- 1 * A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20))
+            ,- 1 * A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20))
             ,CURRENT_TIMESTAMP
             ,''SL DEFA0 FEE 1''
             ,A.ACCTNO
@@ -1012,7 +1012,7 @@ BEGIN
             ,''ACCRU_SL''
             ,''ACT''
             ,''N''
-            ,A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20))
+            ,A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20))
             ,CURRENT_TIMESTAMP
             ,''SL ACCRU COST 1''
             ,A.ACCTNO
@@ -1072,7 +1072,7 @@ BEGIN
             ,''AMORT''
             ,''ACT''
             ,''N''
-            ,A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20))
+            ,A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20))
             ,CURRENT_TIMESTAMP
             ,''SL AMORT COST 1''
             ,A.ACCTNO
@@ -1132,7 +1132,7 @@ BEGIN
             ,''DEFA0''
             ,''ACT''
             ,''N''
-            ,- 1 * A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20))
+            ,- 1 * A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20))
             ,CURRENT_TIMESTAMP
             ,''SL AMORT COST 1''
             ,A.ACCTNO

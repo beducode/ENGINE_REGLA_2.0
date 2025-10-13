@@ -326,7 +326,7 @@ BEGIN
             -- ADD CONDITION
             V_CONDITION := V_CONDITION || COALESCE(
                 CASE
-                    WHEN UPPER(V_SEGMENT_RULE.DATA_TYPE) IN ('NUMBER', 'DECIMAL', 'NUMERIC', 'FLOAT', 'INT') THEN
+                    WHEN UPPER(V_SEGMENT_RULE.DATA_TYPE) IN ('NUMBER', 'DECIMAL', 'NUMERIC', 'DOUBLE PRECISION', 'INT') THEN
                     CASE
                         WHEN V_SEGMENT_RULE.OPERATOR IN ('=', '<>', '>', '<', '>=', '<=') THEN 
                             COALESCE(V_SEGMENT_RULE.COLUMN_NAME, '') || ' ' ||
