@@ -118,6 +118,14 @@ BEGIN
     -------- ====== PRE SIMULATION TABLE ======
     IF P_PRC = 'S' THEN
         V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLECCFCONFIG || ' ';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLECCFCONFIG || ' AS SELECT * FROM IFRS_CCF_RULES_CONFIG';
+        EXECUTE (V_STR_QUERY);
+
+        V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT4 || ' ';
         EXECUTE (V_STR_QUERY);
 

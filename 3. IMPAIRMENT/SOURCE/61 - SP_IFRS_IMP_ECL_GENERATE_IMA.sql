@@ -114,6 +114,30 @@ BEGIN
     -------- ====== BODY ======
     IF P_PRC = 'S' THEN
             V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLECCFCONFIG || ' ';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLECCFCONFIG || ' AS SELECT * FROM IFRS_CCF_RULES_CONFIG';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEEADCONFIG || ' ';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEEADCONFIG || ' AS SELECT * FROM IFRS_EAD_RULES_CONFIG';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLELGDCONFIG || ' ';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLELGDCONFIG || ' AS SELECT * FROM IFRS_LGD_RULES_CONFIG';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
             V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT1 || ' ';
             EXECUTE (V_STR_QUERY);
 
