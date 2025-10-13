@@ -917,7 +917,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''    
                     THEN - 1 * B.AMOUNT    
                     ELSE B.AMOUNT    
-                END AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE AS N_AMOUNT    
+                END AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE AS N_AMOUNT    
                 ,B.STATUS    
                 ,CURRENT_TIMESTAMP    
                 ,A.ACCTNO    
@@ -1000,7 +1000,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''    
                     THEN - 1 * B.AMOUNT    
                     ELSE B.AMOUNT    
-                END AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)) * A.N_ACCRU_COST AS N_AMOUNT    
+                END AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)) * A.N_ACCRU_COST AS N_AMOUNT    
                 ,B.STATUS    
                 ,CURRENT_TIMESTAMP    
                 ,A.ACCTNO    
@@ -1163,10 +1163,10 @@ BEGIN
                 THEN (A.DUE_DATE - INTERVAL ''1 MONTH'')    
                 ELSE A.START_AMORT_DATE    
             END)) --DAYSCOUNT    
-            ,A.COST_AMT - (CAST(A.DUE_DATE - A.START_AMORT_DATE AS FLOAT) / CAST(A.DUE_DATE - A.START_AMORT_DATE AS FLOAT) * A.COST_AMT) --UNAMORT COST    
-            ,A.FEE_AMT - (CAST(A.DUE_DATE - A.START_AMORT_DATE AS FLOAT) / CAST(A.DUE_DATE - A.START_AMORT_DATE AS FLOAT) * A.FEE_AMT) --UNAMORT FEE    
-            ,(CAST(A.DUE_DATE - A.START_AMORT_DATE AS FLOAT) / CAST(A.DUE_DATE - A.START_AMORT_DATE AS FLOAT) * A.COST_AMT) * - 1 --AMORT COST    
-            ,(CAST(A.DUE_DATE - A.START_AMORT_DATE AS FLOAT) / CAST(A.DUE_DATE - A.START_AMORT_DATE AS FLOAT) * A.FEE_AMT) * - 1 --AMORT FEE    
+            ,A.COST_AMT - (CAST(A.DUE_DATE - A.START_AMORT_DATE AS DOUBLE PRECISION) / CAST(A.DUE_DATE - A.START_AMORT_DATE AS DOUBLE PRECISION) * A.COST_AMT) --UNAMORT COST    
+            ,A.FEE_AMT - (CAST(A.DUE_DATE - A.START_AMORT_DATE AS DOUBLE PRECISION) / CAST(A.DUE_DATE - A.START_AMORT_DATE AS DOUBLE PRECISION) * A.FEE_AMT) --UNAMORT FEE    
+            ,(CAST(A.DUE_DATE - A.START_AMORT_DATE AS DOUBLE PRECISION) / CAST(A.DUE_DATE - A.START_AMORT_DATE AS DOUBLE PRECISION) * A.COST_AMT) * - 1 --AMORT COST    
+            ,(CAST(A.DUE_DATE - A.START_AMORT_DATE AS DOUBLE PRECISION) / CAST(A.DUE_DATE - A.START_AMORT_DATE AS DOUBLE PRECISION) * A.FEE_AMT) * - 1 --AMORT FEE    
             ,CURRENT_TIMESTAMP    
             ,''SP_ACCT_SL_ECF''    
             ,B.MASTERID    
@@ -1180,14 +1180,14 @@ BEGIN
                     WHEN EXTRACT(DAY FROM ((A.DUE_DATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) > 0    
                     THEN (A.DUE_DATE - INTERVAL ''1 MONTH'')    
                     ELSE A.START_AMORT_DATE    
-                END - A.START_AMORT_DATE)) AS FLOAT) / CAST((A.DUE_DATE - A.START_AMORT_DATE) AS FLOAT) * CAST(A.COST_AMT AS FLOAT)    
+                END - A.START_AMORT_DATE)) AS DOUBLE PRECISION) / CAST((A.DUE_DATE - A.START_AMORT_DATE) AS DOUBLE PRECISION) * CAST(A.COST_AMT AS DOUBLE PRECISION)    
             ) --UNAMORT COST    
             ,A.FEE_AMT - (    
                 CAST(EXTRACT(DAY FROM (CASE     
                     WHEN EXTRACT(DAY FROM ((A.DUE_DATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) > 0    
                     THEN (A.DUE_DATE - INTERVAL ''1 MONTH'')    
                     ELSE A.START_AMORT_DATE    
-                END - A.START_AMORT_DATE)) AS FLOAT) / CAST((A.DUE_DATE - A.START_AMORT_DATE) AS FLOAT) * CAST(A.FEE_AMT AS FLOAT)    
+                END - A.START_AMORT_DATE)) AS DOUBLE PRECISION) / CAST((A.DUE_DATE - A.START_AMORT_DATE) AS DOUBLE PRECISION) * CAST(A.FEE_AMT AS DOUBLE PRECISION)    
             ) --UNAMORT FEE    
             ,A.START_AMORT_DATE    
         FROM ' || V_TABLEINSERT6 || ' A    
@@ -1355,10 +1355,10 @@ BEGIN
                     THEN ((A.PMTDATE - INTERVAL ''1 MONTH'') - INTERVAL ''1 MONTH'')    
                     ELSE A.START_AMORT_DATE    
                 END)) --DAYSCOUNT    
-                ,B.COST_AMT - (EXTRACT(DAY FROM ((A.PMTDATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) / CAST(A.PERIOD AS FLOAT) * CAST(B.COST_AMT AS FLOAT)) --UNAMORT COST    
-                ,B.FEE_AMT - (EXTRACT(DAY FROM ((A.PMTDATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) / CAST(A.PERIOD AS FLOAT) * CAST(B.FEE_AMT AS FLOAT)) --UNAMORT FEE    
-                ,((EXTRACT(DAY FROM ((A.PMTDATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) / CAST(A.PERIOD AS FLOAT) * CAST(B.COST_AMT AS FLOAT))) * - 1 --AMORT COST    
-                ,((EXTRACT(DAY FROM ((A.PMTDATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) / CAST(A.PERIOD AS FLOAT) * CAST(B.FEE_AMT AS FLOAT))) * - 1 --AMORT FEE    
+                ,B.COST_AMT - (EXTRACT(DAY FROM ((A.PMTDATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) / CAST(A.PERIOD AS DOUBLE PRECISION) * CAST(B.COST_AMT AS DOUBLE PRECISION)) --UNAMORT COST    
+                ,B.FEE_AMT - (EXTRACT(DAY FROM ((A.PMTDATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) / CAST(A.PERIOD AS DOUBLE PRECISION) * CAST(B.FEE_AMT AS DOUBLE PRECISION)) --UNAMORT FEE    
+                ,((EXTRACT(DAY FROM ((A.PMTDATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) / CAST(A.PERIOD AS DOUBLE PRECISION) * CAST(B.COST_AMT AS DOUBLE PRECISION))) * - 1 --AMORT COST    
+                ,((EXTRACT(DAY FROM ((A.PMTDATE - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) / CAST(A.PERIOD AS DOUBLE PRECISION) * CAST(B.FEE_AMT AS DOUBLE PRECISION))) * - 1 --AMORT FEE    
                 ,CURRENT_TIMESTAMP    
                 ,''SP_ACCT_SL_ECF''    
                 ,A.MASTERID    
@@ -1372,14 +1372,14 @@ BEGIN
                         WHEN EXTRACT(DAY FROM (((A.PMTDATE - INTERVAL ''1 MONTH'') - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) > 0    
                         THEN ((A.PMTDATE - INTERVAL ''1 MONTH'') - INTERVAL ''1 MONTH'')    
                         ELSE A.START_AMORT_DATE    
-                    END - A.START_AMORT_DATE)) / CAST(A.PERIOD AS FLOAT) * CAST(B.COST_AMT AS FLOAT)    
+                    END - A.START_AMORT_DATE)) / CAST(A.PERIOD AS DOUBLE PRECISION) * CAST(B.COST_AMT AS DOUBLE PRECISION)    
                 ) --UNAMORT COST    
                 ,B.FEE_AMT - (    
                     EXTRACT(DAY FROM (CASE     
                         WHEN EXTRACT(DAY FROM (((A.PMTDATE - INTERVAL ''1 MONTH'') - INTERVAL ''1 MONTH'') - A.START_AMORT_DATE)) > 0    
                         THEN ((A.PMTDATE - INTERVAL ''1 MONTH'') - INTERVAL ''1 MONTH'')    
                         ELSE A.START_AMORT_DATE    
-                    END - A.START_AMORT_DATE)) / CAST(A.PERIOD AS FLOAT) * CAST(B.FEE_AMT AS FLOAT)    
+                    END - A.START_AMORT_DATE)) / CAST(A.PERIOD AS DOUBLE PRECISION) * CAST(B.FEE_AMT AS DOUBLE PRECISION)    
                 ) --UNAMORT FEE    
                 ,A.START_AMORT_DATE    
             FROM ' || V_TABLEINSERT12 || ' A    
@@ -1787,7 +1787,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''    
                     THEN - 1 * B.AMOUNT    
                     ELSE B.AMOUNT    
-                END AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE * - 1 AS N_AMOUNT    
+                END AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE * - 1 AS N_AMOUNT    
                 ,B.STATUS    
                 ,CURRENT_TIMESTAMP    
                 ,A.ACCTNO    
@@ -1882,7 +1882,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''    
                     THEN - 1 * B.AMOUNT    
                     ELSE B.AMOUNT    
-                END AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)) * A.N_ACCRU_COST * - 1 AS N_AMOUNT    
+                END AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)) * A.N_ACCRU_COST * - 1 AS N_AMOUNT    
                 ,B.STATUS    
                 ,CURRENT_TIMESTAMP    
                 ,A.ACCTNO    
@@ -2152,7 +2152,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''    
                     THEN - 1 * B.AMOUNT    
                     ELSE B.AMOUNT    
-                END AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE AS N_AMOUNT    
+                END AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)) * A.N_ACCRU_FEE AS N_AMOUNT    
                 ,B.STATUS    
                 ,CURRENT_TIMESTAMP    
                 ,A.ACCTNO    
@@ -2233,7 +2233,7 @@ BEGIN
                     WHEN B.FLAG_REVERSE = ''Y''    
                     THEN - 1 * B.AMOUNT    
                     ELSE B.AMOUNT    
-                END AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)) * A.N_ACCRU_COST AS N_AMOUNT    
+                END AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)) * A.N_ACCRU_COST AS N_AMOUNT    
                 ,B.STATUS    
                 ,CURRENT_TIMESTAMP    
                 ,A.ACCTNO    

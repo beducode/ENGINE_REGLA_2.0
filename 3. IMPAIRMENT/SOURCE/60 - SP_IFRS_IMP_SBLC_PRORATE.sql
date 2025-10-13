@@ -329,7 +329,7 @@ BEGIN
                         WHEN A.DATA_SOURCE = ''LIMIT_T24'' 
                         THEN A.UNUSED_IDR 
                         ELSE A.OS_IDR 
-                    END AS FLOAT) / CAST(B.SUM_IDR AS FLOAT)) * CAST(C.REMAINING AS FLOAT) 
+                    END AS DOUBLE PRECISION) / CAST(B.SUM_IDR AS DOUBLE PRECISION)) * CAST(C.REMAINING AS DOUBLE PRECISION) 
                 END AS PRORATE_COLLATERAL_LCY      
                 ,A.UNUSED_IDR AS UNUSED_AMOUNT_LCY      
                 ,' || V_SEGMENT.SEQUENCE || ' AS PRIORITY      
@@ -398,7 +398,7 @@ BEGIN
 
     -- V_STR_QUERY := '';
     -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' 
-    --     SET SBLC_AMOUNT = COALESCE(C.AGUNAN_AMOUNT,0) + CAST(COALESCE(B.PRORATE_COLLATERAL_LCY, 0) AS FLOAT) / CAST(A.EXCHANGE_RATE AS FLOAT)           
+    --     SET SBLC_AMOUNT = COALESCE(C.AGUNAN_AMOUNT,0) + CAST(COALESCE(B.PRORATE_COLLATERAL_LCY, 0) AS DOUBLE PRECISION) / CAST(A.EXCHANGE_RATE AS DOUBLE PRECISION)           
     --     FROM ' || V_TABLEINSERT2 || ' A                  
     --     JOIN ' || V_TABLEINSERT1 || ' B                   
     --         ON A.DOWNLOAD_DATE = B.DOWNLOAD_DATE                  

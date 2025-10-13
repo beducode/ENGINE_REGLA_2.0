@@ -237,7 +237,7 @@ BEGIN
                 END
                 || COALESCE(
                 CASE
-                WHEN TRIM(V_DATA_TYPE) IN ('NUMBER', 'DECIMAL', 'NUMERIC', 'FLOAT', 'INT') THEN
+                WHEN TRIM(V_DATA_TYPE) IN ('NUMBER', 'DECIMAL', 'NUMERIC', 'DOUBLE PRECISION', 'INT') THEN
                 CASE
                 WHEN V_OPERATOR IN ('=', '<>', '>', '<', '>=', '<=') THEN
                 V_COLUMN_NAME

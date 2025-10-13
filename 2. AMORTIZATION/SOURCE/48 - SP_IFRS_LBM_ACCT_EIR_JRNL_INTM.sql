@@ -710,7 +710,7 @@ BEGIN
             ,''ACCRU''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM ACCRU FEE 1''                
             ,A.ACCTNO                
@@ -768,7 +768,7 @@ BEGIN
             ,''AMORT''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)),' || V_ROUND || ')                
+            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)),' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM AMORT FEE 1''                
             ,A.ACCTNO                
@@ -828,7 +828,7 @@ BEGIN
             ,''DEFA0''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(- 1 * A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(- 1 * A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM DEFA0 FEE 1''                
             ,A.ACCTNO                
@@ -991,7 +991,7 @@ BEGIN
             ,''ACCRU''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM ACCRU COST 1''                
             ,A.ACCTNO                
@@ -1050,7 +1050,7 @@ BEGIN
             ,''AMORT''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM AMORT COST 1''                
             ,A.ACCTNO                
@@ -1109,7 +1109,7 @@ BEGIN
             ,''DEFA0''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(- 1 * A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(- 1 * A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM AMORT COST 1''                
             ,A.ACCTNO                

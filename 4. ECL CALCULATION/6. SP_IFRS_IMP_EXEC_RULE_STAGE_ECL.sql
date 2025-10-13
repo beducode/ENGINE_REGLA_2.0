@@ -186,7 +186,7 @@ BEGIN
             THEN '('          
             ELSE ' '          
             END || COALESCE(CASE           
-            WHEN RTRIM(LTRIM(V_DATA_TYPE)) IN ('NUMBER','DECIMAL','NUMERIC','FLOAT','INT')          
+            WHEN RTRIM(LTRIM(V_DATA_TYPE)) IN ('NUMBER','DECIMAL','NUMERIC','DOUBLE PRECISION','INT')          
             THEN CASE           
             WHEN V_OPERATOR IN ('=','<>','>','<','>=','<=')          
                 THEN COALESCE(V_COLUMN_NAME, '') || ' ' || COALESCE(V_OPERATOR, '') || ' ' || COALESCE(V_VALUE1, '')          

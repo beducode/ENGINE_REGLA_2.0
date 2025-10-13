@@ -78,7 +78,7 @@ BEGIN
 			V_SCRIPT1 :=  COALESCE(V_SCRIPT1, ' ') || ' ' || AOC || ' ' || CASE WHEN  QG <> PREV_QG   THEN '(' ELSE ' ' END             
 			|| 
 			COALESCE(
-			CASE WHEN RTRIM(LTRIM (V_DATA_TYPE)) IN ('NUMBER', 'DECIMAL', 'NUMERIC', 'FLOAT', 'INT') THEN 
+			CASE WHEN RTRIM(LTRIM (V_DATA_TYPE)) IN ('NUMBER', 'DECIMAL', 'NUMERIC', 'DOUBLE PRECISION', 'INT') THEN 
 			CASE WHEN V_OPERATOR IN ('=','<>','>','<','>=','<=') THEN COALESCE(V_COLUMN_NAME, '')
 			|| ' '            
 			|| COALESCE(V_OPERATOR, '')            

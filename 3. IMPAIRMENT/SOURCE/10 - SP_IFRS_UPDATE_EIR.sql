@@ -87,7 +87,7 @@ BEGIN
         V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE IF NOT EXISTS T_TRN_LOAN_VALUATION (
             VALUATION_DATE DATE,
             DEAL_ID VARCHAR(25),
-            AMOUNT FLOAT4
+            AMOUNT DOUBLE PRECISION4
             ) ';
         EXECUTE (V_STR_QUERY);
     END IF;
