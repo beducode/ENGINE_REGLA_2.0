@@ -1,0 +1,53 @@
+DROP VIEW IF EXISTS VW_SOURCE_MSTR_SEGMENT_RULES_HEADER;
+
+CREATE VIEW VW_SOURCE_MSTR_SEGMENT_RULES_HEADER
+AS
+ SELECT PKID,
+    GROUP_SEGMENT,
+    SEGMENT,
+    SUB_SEGMENT,
+    ACTIVE_FLAG,
+    SEGMENT_TYPE,
+    SEQUENCE,
+    IS_NEW,
+    IS_DELETE,
+    CREATEDBY,
+    CREATEDDATE,
+    CREATEDHOST,
+    UPDATEDBY,
+    UPDATEDDATE,
+    UPDATEDHOST
+   FROM ( SELECT PKID,
+            GROUP_SEGMENT,
+            SEGMENT,
+            SUB_SEGMENT,
+            ACTIVE_FLAG,
+            SEGMENT_TYPE,
+            SEQUENCE,
+            IS_NEW,
+            IS_DELETE,
+            CREATEDBY,
+            CREATEDDATE,
+            CREATEDHOST,
+            UPDATEDBY,
+            UPDATEDDATE,
+            UPDATEDHOST
+           FROM VW_MSTR_SEGMENT_RULES_HEADER
+          WHERE SEGMENT IS NOT NULL
+        EXCEPT
+         SELECT PKID,
+            GROUP_SEGMENT,
+            SEGMENT,
+            SUB_SEGMENT,
+            ACTIVE_FLAG,
+            SEGMENT_TYPE,
+            SEQUENCE,
+            IS_NEW,
+            IS_DELETE,
+            CREATEDBY,
+            CREATEDDATE,
+            CREATEDHOST,
+            UPDATEDBY,
+            UPDATEDDATE,
+            UPDATEDHOST
+           FROM IFRS_MSTR_SEGMENT_RULES_HEADER) CHECK_IFRS_MSTR_SEGMENT_RULES_HEADER;

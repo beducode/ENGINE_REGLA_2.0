@@ -3,29 +3,41 @@ DROP VIEW IF EXISTS VW_IFRS_ECL_MODEL_DETAIL_PD;
 CREATE VIEW VW_IFRS_ECL_MODEL_DETAIL_PD
 AS
 
-SELECT A.PKID
-,A.SYSCODE_ECL_CONFIGURATION AS ECL_MODEL_ID
-,A.SYSCODE_SEGMENTATION AS SEGMENTATION_ID
-,A.SYSCODE_PD_CONFIG AS PD_MODEL_ID
-,NULL ME_MODEL_ID
-,A.EFFECTIVE_DATE AS EFF_DATE_OPTION
-,A.EFFECTIVE_PERIOD AS EFF_DATE
-,0 AS IS_DELETE
-,A.CREATED_BY AS CREATEDBY
-,A.CREATED_DATE AS CREATEDDATE
-,A.CREATED_HOST AS CREATEDHOST
-,A.UPDATED_BY AS UPDATEDBY
-,A.UPDATED_DATE AS UPDATEDDATE
-,A.UPDATED_HOST AS UPDATEDHOST
-,NULL SCALAR_EFF_DATE_OPTION
-,CURRENT_DATE AS SCALAR_EFF_DATE FROM (
-		SELECT * FROM dblink('workflow_ntt_impairment','
+ SELECT a.pkid,
+    a.syscode_ecl_configuration AS ecl_model_id,
+    a.syscode_segmentation AS segmentation_id,
+    a.syscode_pd_config AS pd_model_id,
+    NULL::bigint AS me_model_id,
+    a.effective_date AS eff_date_option,
+    a.effective_period AS eff_date,
+    0 AS is_delete,
+    a.created_by AS createdby,
+    a.created_date AS createddate,
+    a.created_host AS createdhost,
+    a.updated_by AS updatedby,
+    a.updated_date AS updateddate,
+    a.updated_host AS updatedhost,
+    NULL::text AS scalar_eff_date_option,
+    CURRENT_DATE AS scalar_eff_date
+   FROM ( SELECT eclpdmodel.pkid,
+            eclpdmodel.syscode_ecl_configuration,
+            eclpdmodel.syscode_segmentation,
+            eclpdmodel.syscode_pd_config,
+            eclpdmodel.effective_date,
+            eclpdmodel.effective_period,
+            eclpdmodel.created_by,
+            eclpdmodel.created_date,
+            eclpdmodel.created_host,
+            eclpdmodel.updated_by,
+            eclpdmodel.updated_date,
+            eclpdmodel.updated_host
+           FROM dblink('workflow_ntt_impairment'::text, '
 			SELECT A.PKID,
-				MAX(B.PKID) AS SYSCODE_ECL_CONFIGURATION,
-				MAX(C.PKID) AS SYSCODE_SEGMENTATION,
-				MAX(D.PKID) AS SYSCODE_PD_CONFIG,
-				MAX(A.EFFECTIVE_DATE) AS EFFECTIVE_DATE,
-				MAX(A.EFFECTIVE_PERIOD) AS EFFECTIVE_PERIOD,
+				max(B.PKID) AS SYSCODE_ECL_CONFIGURATION,
+				max(C.PKID) AS SYSCODE_SEGMENTATION,
+				max(D.PKID) AS SYSCODE_PD_CONFIG,
+				max(A.EFFECTIVE_DATE),
+				max(A.EFFECTIVE_PERIOD),
 				A.CREATED_BY,
 				A.CREATED_DATE, 
 				A.CREATED_HOST, 
@@ -33,27 +45,13 @@ SELECT A.PKID
 				A.UPDATED_DATE, 
 				A.UPDATED_HOST
 			FROM "EclPdModel" A
-			LEFT JOIN "EadConfiguration" B ON A.SYSCODE_ECL_CONFIGURATION = B.SYSCODE_ECL_CONFIGURATION
-			LEFT JOIN "Segmentation" C ON A.CODE_SEGMENTATION = C.SYSCODE_SEGMENTATION
+			LEFT JOIN "EclConfiguration" B ON A.SYSCODE_ECL_CONFIGURATION = B.SYSCODE_ECL_CONFIGURATION
+			LEFT JOIN "Segmentation" C ON A.CODE_SEGMENTATION = c.SYSCODE_SEGMENTATION
 			LEFT JOIN "PdConfiguration" D ON A.CODE_PD_CONFIGURATION = D.SYSCODE_PD_CONFIG
-			GROUP BY A.PKID,
+			group by A.PKID,
 				A.CREATED_BY,
 				A.CREATED_DATE, 
 				A.CREATED_HOST, 
 				A.UPDATED_BY, 
 				A.UPDATED_DATE, 
-				A.UPDATED_HOST
-			')
-			ECLPDMODEL(PKID BIGINT,
-						SYSCODE_ECL_CONFIGURATION BIGINT,
-						SYSCODE_SEGMENTATION BIGINT,
-						SYSCODE_PD_CONFIG BIGINT,
-						EFFECTIVE_DATE CHARACTER VARYING,
-						EFFECTIVE_PERIOD TIMESTAMP WITHOUT TIME ZONE,
-						CREATED_BY CHARACTER VARYING, 
-						CREATED_DATE TIMESTAMP WITHOUT TIME ZONE, 
-						CREATED_HOST CHARACTER VARYING, 
-						UPDATED_BY CHARACTER VARYING, 
-						UPDATED_DATE TIMESTAMP WITHOUT TIME ZONE, 
-						UPDATED_HOST CHARACTER VARYING)
-			) A
+				A.UPDATED_HOST'::text) eclpdmodel(pkid bigint, syscode_ecl_configuration bigint, syscode_segmentation bigint, syscode_pd_config bigint, effective_date character varying, effective_period date, created_by character varying, created_date timestamp without time zone, created_host character varying, updated_by character varying, updated_date timestamp without time zone, updated_host character varying)) a;

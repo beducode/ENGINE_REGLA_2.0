@@ -3,60 +3,59 @@ DROP VIEW IF EXISTS VW_IFRS_ECL_MODEL_DETAIL_PF;
 CREATE VIEW VW_IFRS_ECL_MODEL_DETAIL_PF
 AS
 
-SELECT A.PKID
-,SYSCODE_ECL_CONFIGURATION AS ECL_MODEL_ID
-,CODE_SEGMENTATION AS SEGMENTATION_ID
-,NULL AS LT_RULE_ID
-,NULL AS SICR_RULE_ID
-,NULL AS UPSIDE_VALUE
-,NULL AS BASE_VALUE
-,NULL AS DOWNSIDE_VALUE
-,NULL AS UPSIDE_PROB_OUTCOME
-,NULL AS BASE_PROB_OUTCOME
-,NULL AS DOWNSIDE_PROB_OUTCOME
-,NULL AS OVERLAY_AMOUNT
-,0 AS IS_DELETE
-,A.CREATED_BY AS CREATEDBY
-,A.CREATED_DATE AS CREATEDDATE
-,A.CREATED_HOST AS CREATEDHOST
-,A.UPDATED_BY AS UPDATEDBY
-,A.UPDATED_DATE AS UPDATEDDATE
-,A.UPDATED_HOST AS UPDATEDHOST
-,BUCKET_CODE AS BUCKET_GROUP 
-,DEFAULT_CRITERIA_CODE AS DEFAULT_RULE_ID FROM (
-		SELECT * FROM dblink('workflow_ntt_impairment','
-			SELECT A.PKID,
-					MAX(B.PKID) AS SYSCODE_ECL_CONFIGURATION,
-					MAX(C.PKID) AS CODE_SEGMENTATION,
+ SELECT a.pkid,
+    a.syscode_ecl_configuration AS ecl_model_id,
+    a.code_segmentation AS segmentation_id,
+    NULL::bigint AS lt_rule_id,
+    NULL::bigint AS sicr_rule_id,
+    NULL::double precision AS upside_value,
+    NULL::double precision AS base_value,
+    NULL::double precision AS downside_value,
+    NULL::double precision AS upside_prob_outcome,
+    NULL::double precision AS base_prob_outcome,
+    NULL::double precision AS downside_prob_outcome,
+    NULL::double precision AS overlay_amount,
+    0 AS is_delete,
+    a.created_by AS createdby,
+    a.created_date AS createddate,
+    a.created_host AS createdhost,
+    a.updated_by AS updatedby,
+    a.updated_date AS updateddate,
+    a.updated_host AS updatedhost,
+    a.bucket_code AS bucket_group,
+    a.default_criteria_code AS default_rule_id
+   FROM ( SELECT eclpdmodel.pkid,
+            eclpdmodel.syscode_ecl_configuration,
+            eclpdmodel.code_segmentation,
+            eclpdmodel.created_by,
+            eclpdmodel.created_date,
+            eclpdmodel.created_host,
+            eclpdmodel.updated_by,
+            eclpdmodel.updated_date,
+            eclpdmodel.updated_host,
+            eclpdmodel.bucket_code,
+            eclpdmodel.default_criteria_code
+           FROM dblink('workflow_ntt_impairment'::text, '
+			select A.pkid,
+					MAX(B.pkid) as SYSCODE_ECL_CONFIGURATION,
+					MAX(C.pkid) as CODE_SEGMENTATION,
 					A.CREATED_BY,
 					A.CREATED_DATE, 
 					A.CREATED_HOST, 
 					A.UPDATED_BY, 
 					A.UPDATED_DATE, 
 					A.UPDATED_HOST,
-					MAX(E.PKID) AS BUCKET_CODE,
-					MAX(F.PKID) AS DEFAULT_CRITERIA_CODE
+					MAX(E.unique_code) as bucket_code,
+					MAX(F.pkid) as default_criteria_code
 			FROM "EclPortfolio" A
 			LEFT JOIN "EclConfiguration" B ON A.SYSCODE_ECL_CONFIGURATION = B.SYSCODE_ECL_CONFIGURATION
 			LEFT JOIN "Segmentation" C ON A.CODE_SEGMENTATION = C.SYSCODE_SEGMENTATION
-			LEFT JOIN "PdConfiguration" D ON A.CODE_SEGMENTATION = D.SEGMENT_CODE
-			LEFT JOIN "GroupBucket" E ON D.BUCKET_CODE = E.SYSCODE_GROUP_BUCKET
-			LEFT JOIN "DefaultCriteria" F ON D.DEFAULT_CRITERIA_CODE = F.SYSCODE_DEFAULT_CRITERIA
-			GROUP BY A.PKID,A.CREATED_BY,
+			LEFT JOIN "PdConfiguration" D ON A.CODE_SEGMENTATION = D.segment_code
+			LEFT JOIN "GroupBucket" E ON D.bucket_code = E.syscode_group_bucket
+			LEFT JOIN "DefaultCriteria" F ON D.default_criteria_code = F.syscode_default_criteria
+			group by A.pkid,A.CREATED_BY,
 					A.CREATED_DATE, 
 					A.CREATED_HOST, 
 					A.UPDATED_BY, 
 					A.UPDATED_DATE, 
-					A.UPDATED_HOST')
-			ECLPDMODEL(PKID BIGINT,
-						SYSCODE_ECL_CONFIGURATION BIGINT,
-						CODE_SEGMENTATION BIGINT,
-						CREATED_BY CHARACTER VARYING, 
-						CREATED_DATE TIMESTAMP WITHOUT TIME ZONE, 
-						CREATED_HOST CHARACTER VARYING, 
-						UPDATED_BY CHARACTER VARYING, 
-						UPDATED_DATE TIMESTAMP WITHOUT TIME ZONE, 
-						UPDATED_HOST CHARACTER VARYING,
-						BUCKET_CODE BIGINT,
-						DEFAULT_CRITERIA_CODE BIGINT)
-			) A
+					A.UPDATED_HOST'::text) eclpdmodel(pkid bigint, syscode_ecl_configuration bigint, code_segmentation bigint, created_by character varying, created_date timestamp without time zone, created_host character varying, updated_by character varying, updated_date timestamp without time zone, updated_host character varying, bucket_code character varying, default_criteria_code bigint)) a;
