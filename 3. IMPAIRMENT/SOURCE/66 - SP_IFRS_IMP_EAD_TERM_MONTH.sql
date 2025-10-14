@@ -102,14 +102,6 @@ BEGIN
     -------- ====== BODY ======
     IF P_PRC = 'S' THEN
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEMSTPARAM || '';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEMSTPARAM || ' AS SELECT * FROM IFRS_MASTER_PRODUCT_PARAM';
-        EXECUTE (V_STR_QUERY);
-
-        V_STR_QUERY := '';
         V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS IFRS_EAD_TERM_MONTHLY_' || P_RUNID || '';
         EXECUTE (V_STR_QUERY);
 

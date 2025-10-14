@@ -181,122 +181,45 @@ BEGIN
 			AND DETAIL_TYPE = CAST(' || V_VALUE || ' AS VARCHAR(1))       
 		) A'
         LOOP
-            -- =============================================
-            -- Bangun string aturan SQL dinamis ke dalam variabel V_STR_SQL_RULE
-            -- =============================================
-            V_STR_SQL_RULE := 
-            -- Pastikan nilai awal tidak NULL
-            COALESCE(V_STR_SQL_RULE, ' ')
-
-            -- Tambahkan operator logika (misal AND/OR) antar kondisi
-            || ' ' || V_AOC || ' '
-
-            -- Jika group (V_QG) berbeda dari group sebelumnya, buka tanda kurung baru
-            || CASE 
-            WHEN V_QG <> V_PREV_QG THEN '(' 
-            ELSE ' ' 
-            END
-
-            -- Gabungkan kondisi utama sesuai tipe data
-            || COALESCE(
-            CASE 
-            -- ============================================================
-            -- 1️⃣ NUMERIC / DECIMAL / NUMBER / DOUBLE PRECISION / INT
-            -- ============================================================
-            WHEN RTRIM(LTRIM(V_DATA_TYPE)) IN ('NUMBER', 'DECIMAL', 'NUMERIC', 'DOUBLE PRECISION', 'INT') THEN 
-            CASE 
-                -- Operator perbandingan biasa (=, <>, >, <, >=, <=)
-                WHEN V_OPERATOR IN ('=', '<>', '>', '<', '>=', '<=') THEN
-                    COALESCE(V_COLUMN_NAME, '') || ' ' 
-                    || COALESCE(V_OPERATOR, '') || ' ' 
-                    || COALESCE(V_VALUE1, '')
-
-                -- Operator BETWEEN
-                WHEN UPPER(V_OPERATOR) = 'BETWEEN' THEN
-                    COALESCE(V_COLUMN_NAME, '') || ' ' 
-                    || COALESCE(V_OPERATOR, '') || ' ' 
-                    || COALESCE(V_VALUE1, '') || ' AND ' 
-                    || COALESCE(V_VALUE2, '')
-
-                -- Operator IN / NOT IN
-                WHEN UPPER(V_OPERATOR) IN ('IN', 'NOT IN') THEN
-                    COALESCE(V_COLUMN_NAME, '') || ' ' 
-                    || COALESCE(V_OPERATOR, '') || ' (' 
-                    || COALESCE(V_VALUE1, '') || ')'
-
-                -- Default jika operator tidak cocok
-                ELSE '1'
-            END
-
-            -- ============================================================
-            -- 2️⃣ DATE
-            -- ============================================================
-            WHEN RTRIM(LTRIM(V_DATA_TYPE)) = 'DATE' THEN 
-            CASE 
-                -- Operator perbandingan biasa
-                WHEN V_OPERATOR IN ('=', '<>', '>', '<', '>=', '<=') THEN
-                    COALESCE(V_COLUMN_NAME, '') || ' ' 
-                    || COALESCE(V_OPERATOR, '') || ' TO_DATE(''' 
-                    || COALESCE(V_VALUE1, '') || ''',''MM/DD/YYYY'')'
-
-                -- Operator BETWEEN, gunakan konversi tanggal format 110 (MM/DD/YYYY)
-                WHEN UPPER(V_OPERATOR) = 'BETWEEN' THEN
-                    COALESCE(V_COLUMN_NAME, '') || ' ' 
-                    || COALESCE(V_OPERATOR, '') || ' CONVERT(DATE,''' 
-                    || COALESCE(V_VALUE1, '') || ''',110) AND CONVERT(DATE,''' 
-                    || COALESCE(V_VALUE2, '') || ''',110)'
-
-                -- Operator perbandingan lain dalam bentuk TO_DATE()
-                WHEN UPPER(V_OPERATOR) IN ('=', '<>', '>', '<', '>=', '<=') THEN
-                    COALESCE(V_COLUMN_NAME, '') || ' ' 
-                    || COALESCE(V_OPERATOR, '') || ' (TO_DATE(''' 
-                    || COALESCE(V_VALUE1, '') || ''',''MM/DD/YYYY''))'
-
-                -- Default jika operator tidak cocok
-                ELSE '2'
-            END
-
-            -- ============================================================
-            -- 3️⃣ CHARACTER TYPES (CHAR, VARCHAR, VARCHAR2, BIT)
-            -- ============================================================
-            WHEN UPPER(RTRIM(LTRIM(V_DATA_TYPE))) IN ('CHAR', 'CHARACTER', 'VARCHAR', 'VARCHAR2', 'BIT') THEN 
-            CASE 
-                -- Operator sama dengan (=)
-                WHEN RTRIM(LTRIM(V_OPERATOR)) = '=' THEN
-                    COALESCE(V_COLUMN_NAME, ' ') || ' ' 
-                    || COALESCE(V_OPERATOR, ' ') || ' ''' 
-                    || COALESCE(V_VALUE1, ' ') || ''''
-
-                -- Operator BETWEEN untuk string
-                WHEN RTRIM(LTRIM(UPPER(V_OPERATOR))) = 'BETWEEN' THEN
-                    COALESCE(V_COLUMN_NAME, '') || ' ' 
-                    || COALESCE(V_OPERATOR, '') || ' ' 
-                    || COALESCE(V_VALUE1, '') || ' AND ' 
-                    || COALESCE(V_VALUE2, '')
-
-                -- Operator IN / NOT IN untuk string
-                WHEN RTRIM(LTRIM(UPPER(V_OPERATOR))) IN ('IN', 'NOT IN') THEN
-                    COALESCE(V_COLUMN_NAME, '') || ' ' 
-                    || COALESCE(V_OPERATOR, '') || ' (''' 
-                    || COALESCE(REPLACE(V_VALUE1, ',', ''','''), '') || ''')'
-
-                -- Default jika operator tidak cocok
-                ELSE '3'
-            END
-
-            -- ============================================================
-            -- 4️⃣ DEFAULT / UNKNOWN DATA TYPE
-            -- ============================================================
-            ELSE '4'
-            END, 
-            ' ')
-
-            -- Tutup tanda kurung jika group berubah atau sudah baris terakhir
-            || CASE 
-            WHEN V_QG <> V_NEXT_QG OR V_RN = V_JML THEN ')' 
-            ELSE ' ' 
-            END;
-
+            V_STR_SQL_RULE := COALESCE(V_STR_SQL_RULE, ' ') || ' ' || V_AOC || ' ' || CASE           
+            WHEN V_QG <> V_PREV_QG          
+            THEN '('          
+            ELSE ' '          
+            END || COALESCE(CASE           
+            WHEN RTRIM(LTRIM(V_DATA_TYPE)) IN ('NUMBER','DECIMAL','NUMERIC','DOUBLE PRECISION','INT')          
+            THEN CASE           
+            WHEN V_OPERATOR IN ('=','<>','>','<','>=','<=')          
+                THEN COALESCE(V_COLUMN_NAME, '') || ' ' || COALESCE(V_OPERATOR, '') || ' ' || COALESCE(V_VALUE1, '')          
+                WHEN UPPER(V_OPERATOR) = 'BETWEEN'          
+                THEN COALESCE(V_COLUMN_NAME, '') || ' ' || COALESCE(V_OPERATOR, '') || ' ' || COALESCE(V_VALUE1, '') || ' AND ' || COALESCE(V_VALUE2, '')          
+                WHEN UPPER(V_OPERATOR) IN ('IN','NOT IN')          
+                THEN COALESCE(V_COLUMN_NAME, '') || ' ' || COALESCE(V_OPERATOR, '') || ' ' || '(' || COALESCE(V_VALUE1, '') || ')'          
+                ELSE 'XXX'          
+                END          
+                WHEN RTRIM(LTRIM(V_DATA_TYPE)) = 'DATE'          
+                THEN CASE WHEN V_OPERATOR IN ('=','<>','>','<','>=','<=')          
+                THEN COALESCE(V_COLUMN_NAME, '') || ' ' || COALESCE(V_OPERATOR, '') || '  TO_DATE(''' || COALESCE(V_VALUE1, '') || ''',''MM/DD/YYYY'')'              
+                    WHEN UPPER(V_OPERATOR) = 'BETWEEN'          
+                THEN COALESCE(V_COLUMN_NAME, '') || ' ' || COALESCE(V_OPERATOR, '') || ' ' || '   CONVERT(DATE,''' || COALESCE(V_VALUE1, '') || ''',110)' || ' AND ' || '  CONVERT(DATE,''' || COALESCE(V_VALUE2, '') || ''',110)'          
+                    WHEN UPPER(V_OPERATOR) IN ('=','<>','>','<','>=','<=')          
+                THEN COALESCE(V_COLUMN_NAME, '') || ' ' || COALESCE(V_OPERATOR, '') || ' ' || '(' || '  TO_DATE(''' || COALESCE(V_VALUE1, '') || ''',''MM/DD/YYYY'')' || ')'          
+                    ELSE 'XXX'          
+                END          
+                WHEN UPPER(RTRIM(LTRIM(V_DATA_TYPE))) IN ('CHAR','CHARACTER','VARCHAR','VARCHAR2','BIT')          
+                    THEN CASE WHEN RTRIM(LTRIM(V_OPERATOR)) = '='          
+                    THEN COALESCE(V_COLUMN_NAME, ' ') || ' ' || COALESCE(V_OPERATOR, ' ') || '''' || COALESCE(V_VALUE1, ' ') || ''''          
+                WHEN RTRIM(LTRIM(UPPER(V_OPERATOR))) = 'BETWEEN'          
+                    THEN COALESCE(V_COLUMN_NAME, '') || ' ' || COALESCE(V_OPERATOR, '') || '  ' || COALESCE(V_VALUE1, '') || ' AND ' || COALESCE(V_VALUE2, '')          
+                WHEN RTRIM(LTRIM(UPPER(V_OPERATOR))) IN ('IN','NOT IN')          
+                    THEN COALESCE(V_COLUMN_NAME, '') || ' ' || COALESCE(V_OPERATOR, '') || '  ' || '(''' || COALESCE(REPLACE(V_VALUE1, ',', ''','''), '') || ''')'          
+                    ELSE 'XXX'          
+                END          
+                ELSE 'XXX'          
+                END, ' ') || CASE           
+                WHEN V_QG <> V_NEXT_QG OR V_RN = V_JML          
+                THEN ')'          
+                ELSE ' '          
+                END;
         END LOOP;
 
         V_STR_SQL_RULE := '(' || LTRIM(SUBSTRING(V_STR_SQL_RULE, 6, CHAR_LENGTH(V_STR_SQL_RULE)));
@@ -307,7 +230,7 @@ BEGIN
         V_STR_SQL_SICR := V_STR_SQL_SICR || ' WHEN ' || V_VALUE || ' = ' || V_VALUE || '';          
         V_STR_SQL_SICR := V_STR_SQL_SICR || ' THEN ' || V_VALUE || '';          
         V_STR_SQL_SICR := V_STR_SQL_SICR || ' END';          
-        ---- ==== SICR CONDITION       
+        ---- ==== SICR CONDITION             
         V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT1 || ' A SET ' || V_UPDATED_COLUMN || ' = ' || V_STR_SQL_SICR;          
         V_STR_QUERY := V_STR_QUERY || ',          
         SICR_RULE_ID = ''' || LTRIM(RTRIM(CAST(V_RULE_CODE1 AS VARCHAR))) || ''',          
