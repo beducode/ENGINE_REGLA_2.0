@@ -88,7 +88,7 @@ BEGIN
         SELECT
             CURRDATE INTO V_CURRDATE
         FROM
-            IFRS_PRC_DATE_ECL;
+            IFRS_PRC_DATE;
     ELSE        
         V_CURRDATE := P_DOWNLOAD_DATE;
     END IF;
