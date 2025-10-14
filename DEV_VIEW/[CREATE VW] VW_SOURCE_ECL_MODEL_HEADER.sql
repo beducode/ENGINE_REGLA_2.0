@@ -1,0 +1,44 @@
+
+DROP VIEW IF EXISTS VW_SOURCE_ECL_MODEL_HEADER;
+
+CREATE VIEW VW_SOURCE_ECL_MODEL_HEADER
+AS
+ SELECT PKID,
+    ECL_MODEL_NAME,
+    DATA_DATE,
+    ACTIVE_STATUS,
+    RUN_STATUS,
+    IS_DELETE,
+    CREATEDBY,
+    CREATEDDATE,
+    CREATEDHOST,
+    UPDATEDBY,
+    UPDATEDDATE,
+    UPDATEDHOST
+   FROM ( SELECT PKID,
+            ECL_MODEL_NAME,
+            DATA_DATE,
+            ACTIVE_STATUS,
+            RUN_STATUS,
+            IS_DELETE,
+            CREATEDBY,
+            CREATEDDATE,
+            CREATEDHOST,
+            UPDATEDBY,
+            UPDATEDDATE,
+            UPDATEDHOST
+           FROM VW_IFRS_ECL_MODEL_HEADER
+        EXCEPT
+         SELECT PKID,
+            ECL_MODEL_NAME,
+            DATA_DATE,
+            ACTIVE_STATUS,
+            RUN_STATUS,
+            IS_DELETE,
+            CREATEDBY,
+            CREATEDDATE,
+            CREATEDHOST,
+            UPDATEDBY,
+            UPDATEDDATE,
+            UPDATEDHOST
+           FROM IFRS_ECL_MODEL_HEADER) CHECK_IFRS_ECL_MODEL_HEADER;

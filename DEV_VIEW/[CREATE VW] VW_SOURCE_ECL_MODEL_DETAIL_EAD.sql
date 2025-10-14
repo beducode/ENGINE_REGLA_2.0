@@ -1,0 +1,50 @@
+
+DROP VIEW IF EXISTS VW_SOURCE_ECL_MODEL_DETAIL_EAD;
+
+CREATE VIEW VW_SOURCE_ECL_MODEL_DETAIL_EAD
+AS
+ SELECT PKID,
+    ECL_MODEL_ID,
+    SEGMENTATION_ID,
+    EAD_MODEL_ID,
+    IS_DELETE,
+    CREATEDBY,
+    CREATEDDATE,
+    CREATEDHOST,
+    UPDATEDBY,
+    UPDATEDDATE,
+    UPDATEDHOST,
+    CCF_MODEL_ID,
+    CCF_EFF_DATE_OPTION,
+    CCF_EFF_DATE
+   FROM ( SELECT PKID,
+            ECL_MODEL_ID,
+            SEGMENTATION_ID,
+            EAD_MODEL_ID,
+            IS_DELETE,
+            CREATEDBY,
+            CREATEDDATE,
+            CREATEDHOST,
+            UPDATEDBY,
+            UPDATEDDATE,
+            UPDATEDHOST,
+            CCF_MODEL_ID,
+            CCF_EFF_DATE_OPTION,
+            CCF_EFF_DATE
+           FROM VW_IFRS_ECL_MODEL_DETAIL_EAD
+        EXCEPT
+         SELECT PKID,
+            ECL_MODEL_ID,
+            SEGMENTATION_ID,
+            EAD_MODEL_ID,
+            IS_DELETE,
+            CREATEDBY,
+            CREATEDDATE,
+            CREATEDHOST,
+            UPDATEDBY,
+            UPDATEDDATE,
+            UPDATEDHOST,
+            CCF_MODEL_ID,
+            CCF_EFF_DATE_OPTION,
+            CCF_EFF_DATE
+           FROM IFRS_ECL_MODEL_DETAIL_EAD) CHECK_IFRS_ECL_MODEL_DETAIL_EAD;
