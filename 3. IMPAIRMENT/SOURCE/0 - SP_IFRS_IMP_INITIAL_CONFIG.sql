@@ -39,8 +39,8 @@ DECLARE
 BEGIN 
     -------- ====== VARIABLE ======
 	GET DIAGNOSTICS STACK = PG_CONTEXT;
-	FCESIG := substring(STACK from 'function (.*?) line');
-	V_SP_NAME := UPPER(LEFT(fcesig::regprocedure::text, POSITION('(' in fcesig::regprocedure::text)-1));
+	FCESIG := SUBSTRING(STACK FROM 'FUNCTION (.*?) LINE');
+	V_SP_NAME := UPPER(LEFT(FCESIG::REGPROCEDURE::TEXT, POSITION('(' IN FCESIG::REGPROCEDURE::TEXT)-1));
 
     IF COALESCE(P_PRC, NULL) IS NULL THEN
         P_PRC := 'S';
@@ -72,50 +72,50 @@ BEGIN
 
     IF V_ACTIVEFLAG = TRUE THEN
 
-        -------- START ifrs_mstr_segment_rules_header
+        -------- START IFRS_MSTR_SEGMENT_RULES_HEADER
         -------- CHECK DATA EXIST IN WORKFLOW
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM vw_source_mstr_segment_rules_header';
+        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM VW_SOURCE_MSTR_SEGMENT_RULES_HEADER';
         EXECUTE (V_STR_QUERY) INTO V_CHECKDIFF;
 
         ----- IF DATA NOT EXIST, INSERT DATA
         IF V_CHECKDIFF > 0 THEN
 			---- DELETE DATA MODIFY EXISTING
 			V_STR_QUERY := '';
-			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ifrs_mstr_segment_rules_header WHERE PKID IN(SELECT PKID FROM vw_source_mstr_segment_rules_header)';
+			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_MSTR_SEGMENT_RULES_HEADER WHERE PKID IN(SELECT PKID FROM VW_SOURCE_MSTR_SEGMENT_RULES_HEADER)';
         	EXECUTE (V_STR_QUERY);
 			
             V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ifrs_mstr_segment_rules_header(pkid
-			,group_segment
-			,segment
-			,sub_segment
-			,active_flag
-			,segment_type
-			,sequence
-			,is_new
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost)
-            SELECT pkid
-			,group_segment
-			,segment
-			,sub_segment
-			,active_flag
-			,segment_type
-			,sequence
-			,is_new
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost FROM vw_source_mstr_segment_rules_header';
+            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_MSTR_SEGMENT_RULES_HEADER(PKID
+			,GROUP_SEGMENT
+			,SEGMENT
+			,SUB_SEGMENT
+			,ACTIVE_FLAG
+			,SEGMENT_TYPE
+			,SEQUENCE
+			,IS_NEW
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST)
+            SELECT PKID
+			,GROUP_SEGMENT
+			,SEGMENT
+			,SUB_SEGMENT
+			,ACTIVE_FLAG
+			,SEGMENT_TYPE
+			,SEQUENCE
+			,IS_NEW
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST FROM VW_SOURCE_MSTR_SEGMENT_RULES_HEADER';
             EXECUTE (V_STR_QUERY);
 
             V_CHECKDIFF := 0;
@@ -124,52 +124,52 @@ BEGIN
             V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
             V_RETURNROWS := 0;
 
-            RAISE NOTICE 'INSERT TABLE ifrs_mstr_segment_rules_header | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
+            RAISE NOTICE 'INSERT TABLE IFRS_MSTR_SEGMENT_RULES_HEADER | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
         END IF;
-        -------- END ifrs_mstr_segment_rules_header
+        -------- END IFRS_MSTR_SEGMENT_RULES_HEADER
 		
-		-------- START ifrs_ecl_model_detail_ead
+		-------- START IFRS_ECL_MODEL_DETAIL_EAD
         -------- CHECK DATA EXIST IN WORKFLOW
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM vw_source_ecl_model_detail_ead';
+        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM VW_SOURCE_ECL_MODEL_DETAIL_EAD';
         EXECUTE (V_STR_QUERY) INTO V_CHECKDIFF;
 
         ----- IF DATA NOT EXIST, INSERT DATA
         IF V_CHECKDIFF > 0 THEN
 			---- DELETE DATA MODIFY EXISTING
 			V_STR_QUERY := '';
-			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ifrs_ecl_model_detail_ead WHERE PKID IN(SELECT PKID FROM vw_source_ecl_model_detail_ead)';
+			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_ECL_MODEL_DETAIL_EAD WHERE PKID IN(SELECT PKID FROM VW_SOURCE_ECL_MODEL_DETAIL_EAD)';
         	EXECUTE (V_STR_QUERY);
 			
             V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ifrs_ecl_model_detail_ead(pkid
-			,ecl_model_id
-			,segmentation_id
-			,ead_model_id
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost
-			,ccf_model_id
-			,ccf_eff_date_option
-			,ccf_eff_date)
-            SELECT pkid
-			,ecl_model_id
-			,segmentation_id
-			,ead_model_id
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost
-			,ccf_model_id
-			,ccf_eff_date_option
-			,ccf_eff_date FROM vw_source_ecl_model_detail_ead';
+            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ECL_MODEL_DETAIL_EAD(PKID
+			,ECL_MODEL_ID
+			,SEGMENTATION_ID
+			,EAD_MODEL_ID
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST
+			,CCF_MODEL_ID
+			,CCF_EFF_DATE_OPTION
+			,CCF_EFF_DATE)
+            SELECT PKID
+			,ECL_MODEL_ID
+			,SEGMENTATION_ID
+			,EAD_MODEL_ID
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST
+			,CCF_MODEL_ID
+			,CCF_EFF_DATE_OPTION
+			,CCF_EFF_DATE FROM VW_SOURCE_ECL_MODEL_DETAIL_EAD';
             EXECUTE (V_STR_QUERY);
 
             V_CHECKDIFF := 0;
@@ -178,52 +178,52 @@ BEGIN
             V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
             V_RETURNROWS := 0;
 
-            RAISE NOTICE 'INSERT TABLE ifrs_ecl_model_detail_ead | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
+            RAISE NOTICE 'INSERT TABLE IFRS_ECL_MODEL_DETAIL_EAD | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
         END IF;
-        -------- END ifrs_ecl_model_detail_ead
+        -------- END IFRS_ECL_MODEL_DETAIL_EAD
 
-		-------- START ifrs_ecl_model_detail_lgd
+		-------- START IFRS_ECL_MODEL_DETAIL_LGD
         -------- CHECK DATA EXIST IN WORKFLOW
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM vw_source_ecl_model_detail_lgd';
+        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM VW_SOURCE_ECL_MODEL_DETAIL_LGD';
         EXECUTE (V_STR_QUERY) INTO V_CHECKDIFF;
 
         ----- IF DATA NOT EXIST, INSERT DATA
         IF V_CHECKDIFF > 0 THEN
 			---- DELETE DATA MODIFY EXISTING
 			V_STR_QUERY := '';
-			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ifrs_ecl_model_detail_lgd WHERE PKID IN(SELECT PKID FROM vw_source_ecl_model_detail_lgd)';
+			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_ECL_MODEL_DETAIL_LGD WHERE PKID IN(SELECT PKID FROM VW_SOURCE_ECL_MODEL_DETAIL_LGD)';
         	EXECUTE (V_STR_QUERY);
 			
             V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ifrs_ecl_model_detail_lgd(pkid
-			,ecl_model_id
-			,segmentation_id
-			,lgd_model_id
-			,me_model_id
-			,eff_date_option
-			,eff_date
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost)
-            SELECT pkid
-			,ecl_model_id
-			,segmentation_id
-			,lgd_model_id
-			,me_model_id
-			,eff_date_option
-			,eff_date
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost FROM vw_source_ecl_model_detail_lgd';
+            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ECL_MODEL_DETAIL_LGD(PKID
+			,ECL_MODEL_ID
+			,SEGMENTATION_ID
+			,LGD_MODEL_ID
+			,ME_MODEL_ID
+			,EFF_DATE_OPTION
+			,EFF_DATE
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST)
+            SELECT PKID
+			,ECL_MODEL_ID
+			,SEGMENTATION_ID
+			,LGD_MODEL_ID
+			,ME_MODEL_ID
+			,EFF_DATE_OPTION
+			,EFF_DATE
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST FROM VW_SOURCE_ECL_MODEL_DETAIL_LGD';
             EXECUTE (V_STR_QUERY);
 
             V_CHECKDIFF := 0;
@@ -232,56 +232,56 @@ BEGIN
             V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
             V_RETURNROWS := 0;
 
-            RAISE NOTICE 'INSERT TABLE ifrs_ecl_model_detail_lgd | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
+            RAISE NOTICE 'INSERT TABLE IFRS_ECL_MODEL_DETAIL_LGD | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
         END IF;
-        -------- END ifrs_ecl_model_detail_lgd
+        -------- END IFRS_ECL_MODEL_DETAIL_LGD
 
-		-------- START ifrs_ecl_model_detail_pd
+		-------- START IFRS_ECL_MODEL_DETAIL_PD
         -------- CHECK DATA EXIST IN WORKFLOW
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM vw_source_ecl_model_detail_pd';
+        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM VW_SOURCE_ECL_MODEL_DETAIL_PD';
         EXECUTE (V_STR_QUERY) INTO V_CHECKDIFF;
 
         ----- IF DATA NOT EXIST, INSERT DATA
         IF V_CHECKDIFF > 0 THEN
 			---- DELETE DATA MODIFY EXISTING
 			V_STR_QUERY := '';
-			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ifrs_ecl_model_detail_pd WHERE PKID IN(SELECT PKID FROM vw_source_ecl_model_detail_pd)';
+			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_ECL_MODEL_DETAIL_PD WHERE PKID IN(SELECT PKID FROM VW_SOURCE_ECL_MODEL_DETAIL_PD)';
         	EXECUTE (V_STR_QUERY);
 			
             V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ifrs_ecl_model_detail_pd(pkid
-			,ecl_model_id
-			,segmentation_id
-			,pd_model_id
-			,me_model_id
-			,eff_date_option
-			,eff_date
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost
-			,scalar_eff_date_option
-			,scalar_eff_date)
-            SELECT pkid
-			,ecl_model_id
-			,segmentation_id
-			,pd_model_id
-			,me_model_id
-			,eff_date_option
-			,eff_date
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost
-			,scalar_eff_date_option
-			,scalar_eff_date FROM vw_source_ecl_model_detail_pd';
+            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ECL_MODEL_DETAIL_PD(PKID
+			,ECL_MODEL_ID
+			,SEGMENTATION_ID
+			,PD_MODEL_ID
+			,ME_MODEL_ID
+			,EFF_DATE_OPTION
+			,EFF_DATE
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST
+			,SCALAR_EFF_DATE_OPTION
+			,SCALAR_EFF_DATE)
+            SELECT PKID
+			,ECL_MODEL_ID
+			,SEGMENTATION_ID
+			,PD_MODEL_ID
+			,ME_MODEL_ID
+			,EFF_DATE_OPTION
+			,EFF_DATE
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST
+			,SCALAR_EFF_DATE_OPTION
+			,SCALAR_EFF_DATE FROM VW_SOURCE_ECL_MODEL_DETAIL_PD';
             EXECUTE (V_STR_QUERY);
 
             V_CHECKDIFF := 0;
@@ -290,66 +290,66 @@ BEGIN
             V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
             V_RETURNROWS := 0;
 
-            RAISE NOTICE 'INSERT TABLE ifrs_ecl_model_detail_pd | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
+            RAISE NOTICE 'INSERT TABLE IFRS_ECL_MODEL_DETAIL_PD | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
         END IF;
-        -------- END ifrs_ecl_model_detail_pd
+        -------- END IFRS_ECL_MODEL_DETAIL_PD
 
-		-------- START ifrs_ecl_model_detail_pf
+		-------- START IFRS_ECL_MODEL_DETAIL_PF
         -------- CHECK DATA EXIST IN WORKFLOW
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM vw_source_ecl_model_detail_pf';
+        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM VW_SOURCE_ECL_MODEL_DETAIL_PF';
         EXECUTE (V_STR_QUERY) INTO V_CHECKDIFF;
 
         ----- IF DATA NOT EXIST, INSERT DATA
         IF V_CHECKDIFF > 0 THEN
 			---- DELETE DATA MODIFY EXISTING
 			V_STR_QUERY := '';
-			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ifrs_ecl_model_detail_pf WHERE PKID IN(SELECT PKID FROM vw_source_ecl_model_detail_pf)';
+			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_ECL_MODEL_DETAIL_PF WHERE PKID IN(SELECT PKID FROM VW_SOURCE_ECL_MODEL_DETAIL_PF)';
         	EXECUTE (V_STR_QUERY);
 			
             V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ifrs_ecl_model_detail_pf(pkid
-			,ecl_model_id
-			,segmentation_id
-			,lt_rule_id
-			,sicr_rule_id
-			,upside_value
-			,base_value
-			,downside_value
-			,upside_prob_outcome
-			,base_prob_outcome
-			,downside_prob_outcome
-			,overlay_amount
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost
-			,bucket_group
-			,default_rule_id)
-            SELECT pkid
-			,ecl_model_id
-			,segmentation_id
-			,lt_rule_id
-			,sicr_rule_id
-			,upside_value
-			,base_value
-			,downside_value
-			,upside_prob_outcome
-			,base_prob_outcome
-			,downside_prob_outcome
-			,overlay_amount
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost
-			,bucket_group
-			,default_rule_id FROM vw_source_ecl_model_detail_pf';
+            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ECL_MODEL_DETAIL_PF(PKID
+			,ECL_MODEL_ID
+			,SEGMENTATION_ID
+			,LT_RULE_ID
+			,SICR_RULE_ID
+			,UPSIDE_VALUE
+			,BASE_VALUE
+			,DOWNSIDE_VALUE
+			,UPSIDE_PROB_OUTCOME
+			,BASE_PROB_OUTCOME
+			,DOWNSIDE_PROB_OUTCOME
+			,OVERLAY_AMOUNT
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST
+			,BUCKET_GROUP
+			,DEFAULT_RULE_ID)
+            SELECT PKID
+			,ECL_MODEL_ID
+			,SEGMENTATION_ID
+			,LT_RULE_ID
+			,SICR_RULE_ID
+			,UPSIDE_VALUE
+			,BASE_VALUE
+			,DOWNSIDE_VALUE
+			,UPSIDE_PROB_OUTCOME
+			,BASE_PROB_OUTCOME
+			,DOWNSIDE_PROB_OUTCOME
+			,OVERLAY_AMOUNT
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST
+			,BUCKET_GROUP
+			,DEFAULT_RULE_ID FROM VW_SOURCE_ECL_MODEL_DETAIL_PF';
             EXECUTE (V_STR_QUERY);
 
             V_CHECKDIFF := 0;
@@ -358,48 +358,48 @@ BEGIN
             V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
             V_RETURNROWS := 0;
 
-            RAISE NOTICE 'INSERT TABLE ifrs_ecl_model_detail_pf | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
+            RAISE NOTICE 'INSERT TABLE IFRS_ECL_MODEL_DETAIL_PF | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
         END IF;
-        -------- END ifrs_ecl_model_detail_pf
+        -------- END IFRS_ECL_MODEL_DETAIL_PF
 
-		-------- START IFRS_ecl_model_header
+		-------- START IFRS_ECL_MODEL_HEADER
         -------- CHECK DATA EXIST IN WORKFLOW
         V_STR_QUERY := '';
-        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM vw_source_ecl_model_header';
+        V_STR_QUERY := V_STR_QUERY || 'SELECT COUNT(*) FROM VW_SOURCE_ECL_MODEL_HEADER';
         EXECUTE (V_STR_QUERY) INTO V_CHECKDIFF;
 
         ----- IF DATA NOT EXIST, INSERT DATA
         IF V_CHECKDIFF > 0 THEN
 			---- DELETE DATA MODIFY EXISTING
 			V_STR_QUERY := '';
-			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ifrs_ecl_model_header WHERE PKID IN(SELECT PKID FROM vw_source_ecl_model_header)';
+			V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_ECL_MODEL_HEADER WHERE PKID IN(SELECT PKID FROM VW_SOURCE_ECL_MODEL_HEADER)';
         	EXECUTE (V_STR_QUERY);
 			
             V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ifrs_ecl_model_header(pkid
-			,ecl_model_name
-			,data_date
-			,active_status
-			,run_status
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost)
-            SELECT pkid
-			,ecl_model_name
-			,data_date
-			,active_status
-			,run_status
-			,is_delete
-			,createdby
-			,createddate
-			,createdhost
-			,updatedby
-			,updateddate
-			,updatedhost FROM vw_source_ecl_model_header';
+            V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ECL_MODEL_HEADER(PKID
+			,ECL_MODEL_NAME
+			,DATA_DATE
+			,ACTIVE_STATUS
+			,RUN_STATUS
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST)
+            SELECT PKID
+			,ECL_MODEL_NAME
+			,DATA_DATE
+			,ACTIVE_STATUS
+			,RUN_STATUS
+			,IS_DELETE
+			,CREATEDBY
+			,CREATEDDATE
+			,CREATEDHOST
+			,UPDATEDBY
+			,UPDATEDDATE
+			,UPDATEDHOST FROM VW_SOURCE_ECL_MODEL_HEADER';
             EXECUTE (V_STR_QUERY);
 
             V_CHECKDIFF := 0;
@@ -408,9 +408,9 @@ BEGIN
             V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
             V_RETURNROWS := 0;
 
-            RAISE NOTICE 'INSERT TABLE ifrs_ecl_model_header | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
+            RAISE NOTICE 'INSERT TABLE IFRS_ECL_MODEL_HEADER | SUCCESS, TOTAL INSERTED %', V_RETURNROWS2;
         END IF;
-        -------- END ifrs_ecl_model_header
+        -------- END IFRS_ECL_MODEL_HEADER
 
         -------- START IFRS_PD_RULES_CONFIG
         -------- CHECK DATA EXIST IN WORKFLOW

@@ -1,6 +1,6 @@
 DO $$
 DECLARE
-    duplicate_count INT := 200000;
+    duplicate_count INT := 2000000;
 BEGIN
     WITH numbers AS (
         SELECT ROW_NUMBER() OVER () AS n
@@ -9,10 +9,10 @@ BEGIN
              generate_series(1, 10) a3,
              generate_series(1, 10) a4,
 			 generate_series(1, 10) a5,
-             generate_series(1, 2)  a6   -- 10⁵ * 2 = 200,000
+             generate_series(1, 2)  a6   -- 10⁵ * 2 = 2.000,000
     )
-	---- SELECT COUNT(*) FROM IFRS_PAYM_SCHD_ALL_COPY;
-    INSERT INTO IFRS_PAYM_SCHD_ALL_COPY (
+	---- SELECT COUNT(*) FROM IFRS_PAYM_SCHD_ALL_1B;
+    INSERT INTO IFRS_PAYM_SCHD_ALL_1B (
         DOWNLOAD_DATE,
         MASTERID,
         PMTDATE,
