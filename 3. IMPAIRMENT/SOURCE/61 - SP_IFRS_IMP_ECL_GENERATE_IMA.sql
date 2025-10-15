@@ -114,11 +114,51 @@ BEGIN
     -------- ====== BODY ======
     IF P_PRC = 'S' THEN
             V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEPDCONFIG || ' ';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEPDCONFIG || ' AS SELECT * FROM IFRS_PD_RULES_CONFIG';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLECCFCONFIG || ' ';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLECCFCONFIG || ' AS SELECT * FROM IFRS_CCF_RULES_CONFIG';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEEADCONFIG || ' ';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEEADCONFIG || ' AS SELECT * FROM IFRS_EAD_RULES_CONFIG';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLELGDCONFIG || ' ';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLELGDCONFIG || ' AS SELECT * FROM IFRS_LGD_RULES_CONFIG';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLELGDCONFIG || ' ';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLELGDCONFIG || ' AS SELECT * FROM IFRS_LGD_RULES_CONFIG';
+            EXECUTE (V_STR_QUERY);
+
+            V_STR_QUERY := '';
             V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT1 || ' ';
             EXECUTE (V_STR_QUERY);
 
             V_STR_QUERY := '';
-            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM TMP_IFRS_ECL_IMA WHERE 0=1';
+            V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT1 || ' AS SELECT * FROM TMP_IFRS_ECL_IMA';
             EXECUTE (V_STR_QUERY);
         ELSE
             V_STR_QUERY := '';
