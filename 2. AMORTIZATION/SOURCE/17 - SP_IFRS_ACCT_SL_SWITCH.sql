@@ -1,10 +1,6 @@
----- DROP PROCEDURE SP_IFRS_ACCT_SL_SWITCH;
-
-CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_SL_SWITCH(
-    IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
-    IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
-    IN P_PRC VARCHAR(1) DEFAULT 'S')
-LANGUAGE PLPGSQL AS $$
+CREATE OR REPLACE SP_IFRS_ACCT_SL_SWITCH(IN P_RUNID CHARACTER VARYING DEFAULT 'S_00000_0000'::CHARACTER VARYING, IN P_DOWNLOAD_DATE DATE DEFAULT NULL::DATE, IN P_PRC CHARACTER VARYING DEFAULT 'S'::CHARACTER VARYING)
+ LANGUAGE PLPGSQL
+AS $$
 DECLARE
     ---- DATE
     V_PREVDATE DATE;
@@ -42,8 +38,8 @@ DECLARE
 BEGIN 
     -------- ====== VARIABLE ======
 	GET DIAGNOSTICS STACK = PG_CONTEXT;
-	FCESIG := substring(STACK from 'function (.*?) line');
-	V_SP_NAME := UPPER(LEFT(fcesig::regprocedure::text, POSITION('(' in fcesig::regprocedure::text)-1));
+	FCESIG := SUBSTRING(STACK FROM 'FUNCTION (.*?) LINE');
+	V_SP_NAME := UPPER(LEFT(FCESIG::REG::TEXT, POSITION('(' IN FCESIG::REG::TEXT)-1));
 
     IF COALESCE(P_PRC, NULL) IS NULL THEN
         P_PRC := 'S';
@@ -543,8 +539,8 @@ BEGIN
                         WHEN B.FLAG_REVERSE = ''Y'' 
                         THEN -1 * B.AMOUNT 
                         ELSE B.AMOUNT 
-                    END AS DOUBLE PRECISION
-                ) / CAST(C.SUM_AMT AS DOUBLE PRECISION) 
+                    END AS FLOAT
+                ) / CAST(C.SUM_AMT AS FLOAT) 
                 AS NUMERIC(32, 20)
             ) * A.N_ACCRU_FEE AS N_AMOUNT 
             ,B.STATUS 
@@ -613,8 +609,8 @@ BEGIN
                         WHEN B.FLAG_REVERSE = ''Y''
                         THEN -1 * B.AMOUNT
                         ELSE B.AMOUNT
-                    END AS DOUBLE PRECISION 
-                ) / CAST(C.SUM_AMT AS DOUBLE PRECISION) 
+                    END AS FLOAT 
+                ) / CAST(C.SUM_AMT AS FLOAT) 
                 AS NUMERIC(32, 20) 
             ) * A.N_ACCRU_COST AS N_AMOUNT 
             ,B.STATUS 
@@ -744,4 +740,4 @@ BEGIN
 
 END;
 
-$$;
+$$

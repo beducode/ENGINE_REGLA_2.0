@@ -1,10 +1,6 @@
----- DROP PROCEDURE SP_IFRS_LBM_ACCT_EIR_JRNL_INTM;
-
-CREATE OR REPLACE PROCEDURE SP_IFRS_LBM_ACCT_EIR_JRNL_INTM(
-    IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
-    IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
-    IN P_PRC VARCHAR(1) DEFAULT 'S')
-LANGUAGE PLPGSQL AS $$
+CREATE OR REPLACE SP_IFRS_LBM_ACCT_EIR_JRNL_INTM(IN P_RUNID CHARACTER VARYING DEFAULT 'S_00000_0000'::CHARACTER VARYING, IN P_DOWNLOAD_DATE DATE DEFAULT NULL::DATE, IN P_PRC CHARACTER VARYING DEFAULT 'S'::CHARACTER VARYING)
+ LANGUAGE PLPGSQL
+AS $$
 DECLARE
     ---- DATE
     V_PREVDATE DATE;
@@ -49,8 +45,8 @@ DECLARE
 BEGIN 
     -------- ====== VARIABLE ======
 	GET DIAGNOSTICS STACK = PG_CONTEXT;
-	FCESIG := substring(STACK from 'function (.*?) line');
-	V_SP_NAME := UPPER(LEFT(fcesig::regprocedure::text, POSITION('(' in fcesig::regprocedure::text)-1));
+	FCESIG := SUBSTRING(STACK FROM 'FUNCTION (.*?) LINE');
+	V_SP_NAME := UPPER(LEFT(FCESIG::REG::TEXT, POSITION('(' IN FCESIG::REG::TEXT)-1));
 
     IF COALESCE(P_PRC, NULL) IS NULL THEN
         P_PRC := 'S';
@@ -710,7 +706,7 @@ BEGIN
             ,''ACCRU''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM ACCRU FEE 1''                
             ,A.ACCTNO                
@@ -768,7 +764,7 @@ BEGIN
             ,''AMORT''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)),' || V_ROUND || ')                
+            ,ROUND(A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)),' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM AMORT FEE 1''                
             ,A.ACCTNO                
@@ -828,7 +824,7 @@ BEGIN
             ,''DEFA0''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(- 1 * A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(- 1 * A.N_ACCRU_FEE * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM DEFA0 FEE 1''                
             ,A.ACCTNO                
@@ -991,7 +987,7 @@ BEGIN
             ,''ACCRU''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM ACCRU COST 1''                
             ,A.ACCTNO                
@@ -1050,7 +1046,7 @@ BEGIN
             ,''AMORT''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM AMORT COST 1''                
             ,A.ACCTNO                
@@ -1109,7 +1105,7 @@ BEGIN
             ,''DEFA0''                
             ,''ACT''                
             ,''N''                
-            ,ROUND(- 1 * A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
+            ,ROUND(- 1 * A.N_ACCRU_COST * CAST(CAST(B.N_AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS DECIMAL(32, 20)), ' || V_ROUND || ')                
             ,CURRENT_TIMESTAMP                
             ,''EIR LBM AMORT COST 1''                
             ,A.ACCTNO                
@@ -1747,11 +1743,6 @@ BEGIN
     CALL SP_IFRS_LOG_AMORT(V_CURRDATE, 'DEBUG', 'SP_IFRS_LBM_ACCT_EIR_JOURNAL_INTM', '29');
     
     -- PNL FOR NO COST FEE ECF FOR CLOSED ACCOUNT AND EVENT CHANGE        
-
-    V_STR_QUERY := '';
-    V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT1 || '';
-    EXECUTE (V_STR_QUERY);
-
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT1 || ' (
             FACNO                
@@ -2088,4 +2079,4 @@ BEGIN
 
 END;
 
-$$;
+$$
