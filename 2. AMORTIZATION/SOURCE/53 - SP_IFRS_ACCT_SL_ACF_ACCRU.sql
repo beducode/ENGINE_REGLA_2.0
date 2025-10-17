@@ -1,10 +1,6 @@
----- DROP PROCEDURE SP_IFRS_ACCT_SL_ACF_ACCRU;
-
-CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_SL_ACF_ACCRU(
-    IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
-    IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
-    IN P_PRC VARCHAR(1) DEFAULT 'S')
-LANGUAGE PLPGSQL AS $$
+CREATE OR REPLACE SP_IFRS_ACCT_SL_ACF_ACCRU(IN P_RUNID CHARACTER VARYING DEFAULT 'S_00000_0000'::CHARACTER VARYING, IN P_DOWNLOAD_DATE DATE DEFAULT NULL::DATE, IN P_PRC CHARACTER VARYING DEFAULT 'S'::CHARACTER VARYING)
+ LANGUAGE PLPGSQL
+AS $$
 DECLARE
     ---- DATE
     V_PREVDATE DATE;
@@ -43,8 +39,8 @@ DECLARE
 BEGIN 
     -------- ====== VARIABLE ======
 	GET DIAGNOSTICS STACK = PG_CONTEXT;
-	FCESIG := substring(STACK from 'function (.*?) line');
-	V_SP_NAME := UPPER(LEFT(fcesig::regprocedure::text, POSITION('(' in fcesig::regprocedure::text)-1));
+	FCESIG := SUBSTRING(STACK FROM 'FUNCTION (.*?) LINE');
+	V_SP_NAME := UPPER(LEFT(FCESIG::REG::TEXT, POSITION('(' IN FCESIG::REG::TEXT)-1));
 
     IF COALESCE(P_PRC, NULL) IS NULL THEN
         P_PRC := 'S';
@@ -145,28 +141,28 @@ BEGIN
             ,M.DATA_SOURCE      
             ,CASE       
                 WHEN ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) > 1 --AS NUMERIC(32, 6)) > 1      
+                    / CAST(A.I_DAYSCNT AS FLOAT) > 1 --AS NUMERIC(32, 6)) > 1      
                 THEN (A.N_UNAMORT_COST - A.UNAMORT_COST_PREV)      
                 ELSE ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) --AS NUMERIC(32, 6))      
+                    / CAST(A.I_DAYSCNT AS FLOAT) --AS NUMERIC(32, 6))      
                     * (A.N_UNAMORT_COST - A.UNAMORT_COST_PREV)      
             END + A.UNAMORT_COST_PREV      
             ,CASE       
                 WHEN ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) > 1 --AS NUMERIC(32, 6)) > 1      
+                    / CAST(A.I_DAYSCNT AS FLOAT) > 1 --AS NUMERIC(32, 6)) > 1      
                 THEN (A.N_UNAMORT_FEE - A.UNAMORT_FEE_PREV)      
                 ELSE ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) --AS NUMERIC(32, 6))      
+                    / CAST(A.I_DAYSCNT AS FLOAT) --AS NUMERIC(32, 6))      
                     * (A.N_UNAMORT_FEE - A.UNAMORT_FEE_PREV)      
             END + A.UNAMORT_FEE_PREV      
             ,(C.N_UNAMORT_COST) /*( A.N_UNAMORT_COST + A.N_AMORT_COST )*/      
             - (      
             CASE       
                 WHEN ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) > 1 --AS NUMERIC(32, 6)) > 1      
+                    / CAST(A.I_DAYSCNT AS FLOAT) > 1 --AS NUMERIC(32, 6)) > 1      
                 THEN (A.N_UNAMORT_COST - A.UNAMORT_COST_PREV)      
                 ELSE ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) --AS NUMERIC(32, 6))      
+                    / CAST(A.I_DAYSCNT AS FLOAT) --AS NUMERIC(32, 6))      
                     * (A.N_UNAMORT_COST - A.UNAMORT_COST_PREV)      
             END + A.UNAMORT_COST_PREV      
             )      
@@ -174,7 +170,7 @@ BEGIN
             - (      
             CASE       
                 WHEN ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) > 1 --AS NUMERIC(32, 6)) > 1      
+                    / CAST(A.I_DAYSCNT AS FLOAT) > 1 --AS NUMERIC(32, 6)) > 1      
                 THEN (A.N_UNAMORT_FEE - A.UNAMORT_FEE_PREV)      
                 ELSE ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
                     / CAST(A.I_DAYSCNT AS NUMERIC(32, 6)) * (A.N_UNAMORT_FEE - A.UNAMORT_FEE_PREV)      
@@ -182,18 +178,18 @@ BEGIN
             )      
             ,CASE       
                 WHEN ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) > 1 --AS NUMERIC(32, 6)) > 1      
+                    / CAST(A.I_DAYSCNT AS FLOAT) > 1 --AS NUMERIC(32, 6)) > 1      
                 THEN (A.N_UNAMORT_COST - A.UNAMORT_COST_PREV)      
                 ELSE ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) --AS NUMERIC(32, 6))      
+                    / CAST(A.I_DAYSCNT AS FLOAT) --AS NUMERIC(32, 6))      
                     * (A.N_UNAMORT_COST - A.UNAMORT_COST_PREV)      
             END - COALESCE(A.SW_ADJ_COST, 0)      
             ,CASE       
                 WHEN ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) > 1 --AS NUMERIC(32, 6)) > 1      
+                    / CAST(A.I_DAYSCNT AS FLOAT) > 1 --AS NUMERIC(32, 6)) > 1      
                 THEN (A.N_UNAMORT_FEE - A.UNAMORT_FEE_PREV)      
                 ELSE ((''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - A.PREVDATE) + 1)
-                    / CAST(A.I_DAYSCNT AS DOUBLE PRECISION) --AS NUMERIC(32, 6))      
+                    / CAST(A.I_DAYSCNT AS FLOAT) --AS NUMERIC(32, 6))      
                     * (A.N_UNAMORT_FEE - A.UNAMORT_FEE_PREV)      
             END - COALESCE(A.SW_ADJ_FEE, 0)      
             ,A.N_UNAMORT_COST - A.UNAMORT_COST_PREV - COALESCE(A.SW_ADJ_COST, 0) AS N_ACCRUFULL_COST      
@@ -343,7 +339,7 @@ BEGIN
             ,B.PRDCODE      
             ,B.TRXCODE      
             ,B.CCY      
-            ,CAST(CAST(B.AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS NUMERIC(32, 20)) * A.N_UNAMORT_FEE AS N_AMOUNT      
+            ,CAST(CAST(B.AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS NUMERIC(32, 20)) * A.N_UNAMORT_FEE AS N_AMOUNT      
             ,B.STATUS      
             ,CURRENT_TIMESTAMP      
             ,A.ACCTNO      
@@ -476,7 +472,7 @@ BEGIN
             ,B.PRDCODE      
             ,B.TRXCODE      
             ,B.CCY      
-            ,CAST(CAST(B.AMOUNT AS DOUBLE PRECISION) / CAST(C.SUM_AMT AS DOUBLE PRECISION) AS NUMERIC(32, 20)) * A.N_UNAMORT_COST AS N_AMOUNT      
+            ,CAST(CAST(B.AMOUNT AS FLOAT) / CAST(C.SUM_AMT AS FLOAT) AS NUMERIC(32, 20)) * A.N_UNAMORT_COST AS N_AMOUNT      
             ,B.STATUS      
             ,CURRENT_TIMESTAMP      
             ,A.ACCTNO      
@@ -544,4 +540,4 @@ BEGIN
 
 END;
 
-$$;
+$$

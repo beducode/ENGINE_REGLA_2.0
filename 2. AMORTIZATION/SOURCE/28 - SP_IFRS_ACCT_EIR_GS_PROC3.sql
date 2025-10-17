@@ -1,10 +1,6 @@
----- DROP PROCEDURE SP_IFRS_ACCT_EIR_GS_PROC3;
-
-CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_GS_PROC3(
-    IN P_RUNID VARCHAR(20) DEFAULT 'S_00000_0000',
-    IN P_DOWNLOAD_DATE DATE DEFAULT NULL,
-    IN P_PRC VARCHAR(1) DEFAULT 'S')
-LANGUAGE PLPGSQL AS $$
+CREATE OR REPLACE SP_IFRS_ACCT_EIR_GS_PROC3(IN P_RUNID CHARACTER VARYING DEFAULT 'S_00000_0000'::CHARACTER VARYING, IN P_DOWNLOAD_DATE DATE DEFAULT NULL::DATE, IN P_PRC CHARACTER VARYING DEFAULT 'S'::CHARACTER VARYING)
+ LANGUAGE PLPGSQL
+AS $$
 DECLARE
     ---- DATE
     V_PREVDATE DATE;
@@ -44,8 +40,8 @@ DECLARE
 BEGIN 
     -------- ====== VARIABLE ======
 	GET DIAGNOSTICS STACK = PG_CONTEXT;
-	FCESIG := substring(STACK from 'function (.*?) line');
-	V_SP_NAME := UPPER(LEFT(fcesig::regprocedure::text, POSITION('(' in fcesig::regprocedure::text)-1));
+	FCESIG := SUBSTRING(STACK FROM 'FUNCTION (.*?) LINE');
+	V_SP_NAME := UPPER(LEFT(FCESIG::REG::TEXT, POSITION('(' IN FCESIG::REG::TEXT)-1));
 
     IF COALESCE(P_PRC, NULL) IS NULL THEN
         P_PRC := 'S';
@@ -204,7 +200,7 @@ BEGIN
                     WHEN B.STAFFLOAN = 1
                         AND B.BENEFIT >= 0
                 THEN 0
-                    ELSE case when B.FEE_AMT=0 then -1000 else B.FEE_AMT end --btpn handle zero prev unamort
+                    ELSE CASE WHEN B.FEE_AMT=0 THEN -1000 ELSE B.FEE_AMT END --BTPN HANDLE ZERO PREV UNAMORT
                     END + CASE 
                     WHEN B.STAFFLOAN = 1
                         AND B.BENEFIT <= 0
@@ -212,7 +208,7 @@ BEGIN
                     WHEN B.STAFFLOAN = 1
                         AND B.BENEFIT > 0
                 THEN B.BENEFIT
-                    ELSE case when B.COST_AMT=0 then 700 else B.COST_AMT end --btpn handle zero prev unamort
+                    ELSE CASE WHEN B.COST_AMT=0 THEN 700 ELSE B.COST_AMT END --BTPN HANDLE ZERO PREV UNAMORT
             END
             )
             ,EIR1 = B.PREV_EIR
@@ -802,4 +798,4 @@ BEGIN
 
 END;
 
-$$;
+$$
