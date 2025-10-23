@@ -21,7 +21,7 @@ AS
             ECL_MODEL_ID,
             SEGMENTATION_ID,
             LGD_MODEL_ID,
-            ME_MODEL_ID,
+            ME_MODEL_ID::INT,
             EFF_DATE_OPTION,
             EFF_DATE,
             IS_DELETE,
