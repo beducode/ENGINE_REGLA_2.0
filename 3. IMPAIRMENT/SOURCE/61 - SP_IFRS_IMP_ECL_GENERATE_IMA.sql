@@ -232,11 +232,11 @@ FROM
     ON D.LGD_MODEL_ID = G.PKID
     LEFT JOIN ' || V_TABLEPDCONFIG || ' H
     ON E.PD_MODEL_ID = H.PKID
-    LEFT JOIN IFRS_MSTR_SEGMENT_RULES_HEADER I
+    LEFT JOIN VW_MSTR_SEGMENT_RULES_HEADER I
     ON C.SEGMENTATION_ID = I.PKID
-    LEFT JOIN IFRS_MSTR_SEGMENT_RULES_HEADER J
+    LEFT JOIN VW_MSTR_SEGMENT_RULES_HEADER J
     ON G.SEGMENTATION_ID = J.PKID
-    LEFT JOIN IFRS_MSTR_SEGMENT_RULES_HEADER K
+    LEFT JOIN VW_MSTR_SEGMENT_RULES_HEADER K
     ON H.SEGMENTATION_ID = K.PKID
     LEFT JOIN ' || V_TABLECCFCONFIG || ' L
     ON B.CCF_MODEL_ID = L.PKID
@@ -249,7 +249,7 @@ FROM
                 ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - INTERVAL ''1 day''
         END = M.DOWNLOAD_DATE )
     AND L.PKID = M.CCF_RULE_ID
-    LEFT JOIN IFRS_MSTR_SEGMENT_RULES_HEADER N
+    LEFT JOIN VW_MSTR_SEGMENT_RULES_HEADER N
     ON B.SEGMENTATION_ID = N.PKID
     WHERE A.IS_DELETE = 0          
     AND B.IS_DELETE = 0          
@@ -294,7 +294,7 @@ FROM
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || ' AS
     SELECT Z.CCF_EFF_DATE, Z.CCF_RULES_ID, Z.CCF, Y.SEGMENT, Y.SUB_SEGMENT, Y.GROUP_SEGMENT 
-    FROM IFRS_MSTR_SEGMENT_RULES_HEADER Y 
+    FROM VW_MSTR_SEGMENT_RULES_HEADER Y 
     LEFT JOIN TMP_IFRS_ECL_MODEL_' || P_RUNID || ' Z ON Z.SEGMENTATION_ID = Y.PKID
     WHERE Y.SEGMENT_TYPE = ''PORTFOLIO_SEGMENT'' AND Z.CCF_EFF_DATE IS NOT NULL';
     EXECUTE (V_STR_QUERY);
@@ -348,7 +348,7 @@ FROM
     '' || COALESCE(CAST(A.SEGMENTATION_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS SEGMENTATION_ID, 
     A.ACCOUNT_NUMBER,                                                     
     A.CUSTOMER_NUMBER, 
-    '' || COALESCE(CAST(A.SICR_RULE_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS SICR_RULE_ID,                                                          
+    '' || COALESCE(CAST(A.SICR_RULE_ID AS VARCHAR(10)),' || '''''''0''''''' || ') || '' AS SICR_RULE_ID,                                                          
     ''''0'''' AS SICR_FLAG,                                                                  
     A.DPD_CIF,
     A.PRODUCT_ENTITY,                                                    
@@ -409,7 +409,7 @@ FROM
     '' || COALESCE(CAST(A.CCF_RULES_ID AS VARCHAR(10)),''NULL'') || '' AS CCF_RULE_ID, 
     '' || COALESCE(CAST(A.LGD_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS LGD_MODEL_ID, 
     '' || COALESCE(CAST(A.PD_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS PD_MODEL_ID, 
-    '' || COALESCE(CAST(A.PD_ME_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS PD_ME_MODEL_ID,                                                           
+    '' || COALESCE(CAST(A.PD_ME_MODEL_ID AS VARCHAR(10)),' || '''''''0''''''' || ') || '' AS PD_ME_MODEL_ID,                                                           
     CASE WHEN G.LIFETIME_OVERRIDE IS NULL OR G.LIFETIME_OVERRIDE = 0 THEN CASE             
     WHEN A.PRODUCT_TYPE_1 = ''''PRK'''' AND A.REMAINING_TENOR <= 0 THEN 12               
     WHEN A.DATA_SOURCE = ''''LOAN_T24'''' AND COALESCE(A.REVOLVING_FLAG,''''1'''') = ''''1'''' AND A.REMAINING_TENOR <= 0 THEN 12              
@@ -441,7 +441,7 @@ FROM
     ,A.EXT_RATING_DOWNGRADE
     ,A.SEGMENT_FLAG
     FROM ' || V_TABLEINSERT2 || ' A                                                           
-    JOIN IFRS_MSTR_SEGMENT_RULES_HEADER B ON A.GROUP_SEGMENT = B.GROUP_SEGMENT                                                        
+    JOIN VW_MSTR_SEGMENT_RULES_HEADER B ON A.GROUP_SEGMENT = B.GROUP_SEGMENT                                                        
     AND A.SEGMENT = B.SEGMENT                              
     AND A.SUB_SEGMENT = B.SUB_SEGMENT
     JOIN IFRS_BUCKET_HEADER C ON '''''' || COALESCE(A.BUCKET_GROUP,' || '''''''1''''''' || ') || '''''' = C.BUCKET_GROUP                                                   

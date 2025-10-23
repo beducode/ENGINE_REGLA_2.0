@@ -211,7 +211,7 @@ BEGIN
             ,C.DEFAULT_RULE_ID
             ,(1 - RECOVERY_RATE) AS LGD  
         FROM ' || 'IFRS_RECOVERY_RATE_TREASURY' || ' A  
-        JOIN ' || 'IFRS_MSTR_SEGMENT_RULES_HEADER' || ' B 
+        JOIN ' || 'VW_MSTR_SEGMENT_RULES_HEADER' || ' B 
             ON A.SEGMENT = B.SEGMENT 
             AND B.SEGMENT_TYPE = ''LGD_SEGMENT''  
         JOIN ' || 'IFRS_LGD_RULES_CONFIG' || ' C 
