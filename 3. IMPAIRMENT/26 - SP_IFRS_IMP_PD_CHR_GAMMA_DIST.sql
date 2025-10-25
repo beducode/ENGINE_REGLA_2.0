@@ -103,7 +103,7 @@ BEGIN
                 PD_RULE_ID 
                 ,INCREMENT_PERIOD 
             FROM ' || V_TABLEINSERT1 || ' A 
-            JOIN ' || 'IFRS_PD_RULES_CONFIG' || ' B 
+            JOIN IFRS_PD_RULES_CONFIG B 
             ON A.PD_RULE_ID = B.PKID 
             WHERE DOWNLOAD_DATE = F_EOMONTH(CAST(''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - (B.INCREMENT_PERIOD * INTERVAL ''1 MONTH'') AS DATE), 0, ''M'', ''NEXT'') 
             AND B.ACTIVE_FLAG = 1 
