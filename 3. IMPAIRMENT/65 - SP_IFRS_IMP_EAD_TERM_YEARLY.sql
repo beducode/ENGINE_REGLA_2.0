@@ -942,7 +942,7 @@ BEGIN
     -- A.DATA_SOURCE IN (''TRADE_T24'',''TRS'')               
     -- ) AND A.IMPAIRED_FLAG = ''C''';
     -- EXECUTE (V_STR_QUERY);
-    -- -- RAISE NOTICE '%', V_STR_QUERY;
+    -- 
 
     -- GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
     -- V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;

@@ -103,18 +103,6 @@ BEGIN
     -------- RECORD RUN_ID --------
     CALL SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, PG_BACKEND_PID(), CURRENT_DATE);
     -------- RECORD RUN_ID --------
-
-    -------- ====== PRE SIMULATION TABLE ======
-    -- IF P_PRC = 'S' THEN
-    --     V_STR_QUERY := '';
-    --     V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS ' || V_TABLEINSERT4 || ' ';
-    --     EXECUTE (V_STR_QUERY);
-
-    --     V_STR_QUERY := '';
-    --     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TABLEINSERT4 || ' AS SELECT * FROM XXX WHERE 0=1';
-    --     EXECUTE (V_STR_QUERY);
-    -- END IF;
-    -------- ====== PRE SIMULATION TABLE ======
     
     -------- ====== BODY ======
     V_STR_QUERY := '';

@@ -31,8 +31,8 @@ DECLARE
 BEGIN 
     -------- ====== VARIABLE ======
 	GET DIAGNOSTICS STACK = PG_CONTEXT;
-	FCESIG := SUBSTRING(STACK FROM 'FUNCTION (.*?) LINE');
-	V_SP_NAME := UPPER(LEFT(FCESIG::REG::TEXT, POSITION('(' IN FCESIG::REG::TEXT)-1));
+	FCESIG := substring(STACK from 'function (.*?) line');
+	V_SP_NAME := UPPER(LEFT(fcesig::regprocedure::text, POSITION('(' in fcesig::regprocedure::text)-1));
 
     IF COALESCE(P_PRC, NULL) IS NULL THEN
         P_PRC := 'S';

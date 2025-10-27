@@ -83,7 +83,7 @@ BEGIN
             ----- START DROP SERVER DBLINK IF EXISTS -----
             V_STR_QUERY := '';
             V_STR_QUERY := V_STR_QUERY || 'DROP SERVER IF EXISTS ' || V_SERVERLINK || ' CASCADE;';
-            ------ RAISE NOTICE '%', V_STR_QUERY;
+            ----
             EXECUTE (V_STR_QUERY);
             ----- END DROP SERVER DBLINK IF EXISTS -----
 
@@ -92,14 +92,14 @@ BEGIN
             V_STR_QUERY := V_STR_QUERY || 'CREATE SERVER ' || V_SERVERLINK || '
             FOREIGN DATA WRAPPER dblink_fdw
             OPTIONS (host ''' || V_SERVERHOST || ''', dbname ''' || V_DBNAME || ''', port ''' || V_DBPORT || ''');';
-            ------ RAISE NOTICE '%', V_STR_QUERY;
+            ----
             EXECUTE (V_STR_QUERY);
             ----- END CREATE SERVER DBLINK -----
 
             ----- START GRANT USAGE ON FOREIGN SERVER -----
             V_STR_QUERY := '';
             V_STR_QUERY := V_STR_QUERY || 'GRANT USAGE ON FOREIGN SERVER ' || V_SERVERLINK || ' TO ' || V_DBUSERDEST || ';';
-            ------ RAISE NOTICE '%', V_STR_QUERY;
+            ----
             EXECUTE (V_STR_QUERY);
             ----- END GRANT USAGE ON FOREIGN SERVER -----
 
@@ -109,14 +109,14 @@ BEGIN
             FOR ' || V_DBUSERDEST || '
             SERVER ' || V_SERVERLINK || '
             OPTIONS (user ''' || V_DBUSER || ''', password ''' || V_DBPASS || ''');';
-            ------ RAISE NOTICE '%', V_STR_QUERY;
+            ----
             EXECUTE (V_STR_QUERY);
             ----- END CREATE USER MAPPING -----
 
             ----- START CONNECT DBLINK -----
             V_STR_QUERY := '';
             V_STR_QUERY := V_STR_QUERY || 'SELECT dblink_connect(''' || 'conn_' || V_SERVERLINK || ''', ''' || V_SERVERLINK || ''');';
-            ------ RAISE NOTICE '%', V_STR_QUERY;
+            ----
             EXECUTE (V_STR_QUERY);
             ----- END CONNECT DBLINK -----
 
@@ -188,20 +188,20 @@ BEGIN
             V_STR_QUERY := 'SELECT * FROM dblink(''' || V_SERVERLINK || ''',';
             V_STR_QUERY := V_STR_QUERY || '''DELETE FROM ' || V_TABLESOURCE || ' WHERE ';
             V_STR_QUERY := V_STR_QUERY || '' || V_TABLE_CONDITION || ''') AS ROW(RESULT TEXT); ';
-            ------ RAISE NOTICE '%', V_STR_QUERY;
+            ----
             EXECUTE (V_STR_QUERY);
             ---------------- END DELETE FROM SOURCE ------------------
 
             V_STR_QUERY := '';
             V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ARCHIVING_LOGS (RETENTION_ID, TABLE_SOURCE, TABLE_DEST, SEQUENCE_ID, AFFECTED_RECORD, OPERATION_TYPE) ';
             V_STR_QUERY := V_STR_QUERY || 'VALUES (''' || V_RETENTION_ID || ''', ''' || V_TABLESOURCE || ''', ''' || V_TABLEDEST || ''', ' || V_SEQUENCE_PARAM || ', ' || V_RETURNROWS2 || ', ''ARCHIVING'');';
-            ------ RAISE NOTICE '%', V_STR_QUERY;
+            ----
             EXECUTE (V_STR_QUERY);
 
             ----- START DISCONNECT DBLINK -----
             V_STR_QUERY := '';
             V_STR_QUERY := V_STR_QUERY || 'SELECT dblink_disconnect(''' || 'conn_' || V_SERVERLINK || ''');';
-            ------ RAISE NOTICE '%', V_STR_QUERY;
+            ----
             EXECUTE (V_STR_QUERY);
             ----- END DISCONNECT DBLINK -----
 
