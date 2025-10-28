@@ -171,8 +171,8 @@ BEGIN
                         END IF;
                     END LOOP;
                     V_STR_QUERY := V_STR_QUERY || ')';
-                    RAISE NOTICE '%', V_STR_QUERY;
-                    -- EXECUTE (V_STR_QUERY);
+                    -- RAISE NOTICE '%', V_STR_QUERY;
+                    EXECUTE (V_STR_QUERY);
                 END IF;
             END IF;
             ------------------ END GET DATA FROM SOURCE TABLE ------------------
