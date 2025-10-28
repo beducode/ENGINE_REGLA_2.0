@@ -232,11 +232,11 @@ FROM
     ON D.LGD_MODEL_ID = G.PKID
     LEFT JOIN ' || V_TABLEPDCONFIG || ' H
     ON E.PD_MODEL_ID = H.PKID
-    LEFT JOIN VW_MSTR_SEGMENT_RULES_HEADER I
+    LEFT JOIN IFRS_MSTR_SEGMENT_RULES_HEADER I
     ON C.SEGMENTATION_ID = I.PKID
-    LEFT JOIN VW_MSTR_SEGMENT_RULES_HEADER J
+    LEFT JOIN IFRS_MSTR_SEGMENT_RULES_HEADER J
     ON G.SEGMENTATION_ID = J.PKID
-    LEFT JOIN VW_MSTR_SEGMENT_RULES_HEADER K
+    LEFT JOIN IFRS_MSTR_SEGMENT_RULES_HEADER K
     ON H.SEGMENTATION_ID = K.PKID
     LEFT JOIN ' || V_TABLECCFCONFIG || ' L
     ON B.CCF_MODEL_ID = L.PKID
@@ -249,7 +249,7 @@ FROM
                 ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE - INTERVAL ''1 day''
         END = M.DOWNLOAD_DATE )
     AND L.PKID = M.CCF_RULE_ID
-    LEFT JOIN VW_MSTR_SEGMENT_RULES_HEADER N
+    LEFT JOIN IFRS_MSTR_SEGMENT_RULES_HEADER N
     ON B.SEGMENTATION_ID = N.PKID
     WHERE A.IS_DELETE = 0          
     AND B.IS_DELETE = 0          
@@ -294,436 +294,435 @@ FROM
     V_STR_QUERY := '';
     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || ' AS
     SELECT Z.CCF_EFF_DATE, Z.CCF_RULES_ID, Z.CCF, Y.SEGMENT, Y.SUB_SEGMENT, Y.GROUP_SEGMENT 
-    FROM VW_MSTR_SEGMENT_RULES_HEADER Y 
+    FROM IFRS_MSTR_SEGMENT_RULES_HEADER Y 
     LEFT JOIN TMP_IFRS_ECL_MODEL_' || P_RUNID || ' Z ON Z.SEGMENTATION_ID = Y.PKID
     WHERE Y.SEGMENT_TYPE = ''PORTFOLIO_SEGMENT'' AND Z.CCF_EFF_DATE IS NOT NULL';
-    -- EXECUTE (V_STR_QUERY);
-    RAISE NOTICE '%', V_STR_QUERY;
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'DROP INDEX IF EXISTS NCI_UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || '';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DROP INDEX IF EXISTS NCI_UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || '';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'CREATE INDEX IF NOT EXISTS NCI_UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || '
-    -- ON UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || ' USING BTREE
-    -- (SEGMENT ASC NULLS LAST, SUB_SEGMENT ASC NULLS LAST, GROUP_SEGMENT ASC NULLS LAST)
-    -- TABLESPACE PG_DEFAULT;';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'CREATE INDEX IF NOT EXISTS NCI_UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || '
+    ON UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || ' USING BTREE
+    (SEGMENT ASC NULLS LAST, SUB_SEGMENT ASC NULLS LAST, GROUP_SEGMENT ASC NULLS LAST)
+    TABLESPACE PG_DEFAULT;';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' X
-    -- SET CCF_EFF_DATE = Y.CCF_EFF_DATE,
-    -- CCF_RULE_ID = Y.CCF_RULES_ID,
-    -- CCF = Y.CCF
-    -- FROM UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || ' Y
-    -- WHERE X.SEGMENT = Y.SEGMENT
-    -- AND X.SUB_SEGMENT = Y.SUB_SEGMENT
-    -- AND X.GROUP_SEGMENT = Y.GROUP_SEGMENT;';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' X
+    SET CCF_EFF_DATE = Y.CCF_EFF_DATE,
+    CCF_RULE_ID = Y.CCF_RULES_ID,
+    CCF = Y.CCF
+    FROM UPDATE_IFRS_IMA_IMP_CURR_' || P_RUNID || ' Y
+    WHERE X.SEGMENT = Y.SEGMENT
+    AND X.SUB_SEGMENT = Y.SUB_SEGMENT
+    AND X.GROUP_SEGMENT = Y.GROUP_SEGMENT;';
+    EXECUTE (V_STR_QUERY);
     
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' X
-    -- SET UNUSED_AMOUNT = 0 
-    -- FROM IFRS_CREDITLINE_JENIUS Y
-    -- WHERE X.CUSTOMER_NUMBER = Y.CUSTOMER_NUMBER
-    -- AND X.PRODUCT_CODE = Y.DEAL_TYPE
-    -- AND Y.DEAL_TYPE IS NOT NULL
-    -- AND Y.ELIGIBILITY_STATUS IN (''NOT_ELIGIBLE'', ''NOT ELIGIBLE'')';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' X
+    SET UNUSED_AMOUNT = 0 
+    FROM IFRS_CREDITLINE_JENIUS Y
+    WHERE X.CUSTOMER_NUMBER = Y.CUSTOMER_NUMBER
+    AND X.PRODUCT_CODE = Y.DEAL_TYPE
+    AND Y.DEAL_TYPE IS NOT NULL
+    AND Y.ELIGIBILITY_STATUS IN (''NOT_ELIGIBLE'', ''NOT ELIGIBLE'')';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_QRY';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS TMP_QRY';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_QRY AS
-    -- SELECT ROW_NUMBER() OVER (ORDER BY A.ECL_MODEL_ID) AS RN, 
-    -- ' || '''
-    -- SELECT                                        
-    -- A.DOWNLOAD_DATE,                                                          
-    -- A.MASTERID,                                                          
-    -- A.GROUP_SEGMENT,                                                          
-    -- A.SEGMENT,
-    -- A.SUB_SEGMENT, 
-    -- '' || COALESCE(CAST(A.SEGMENTATION_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS SEGMENTATION_ID, 
-    -- A.ACCOUNT_NUMBER,                                                     
-    -- A.CUSTOMER_NUMBER, 
-    -- '' || COALESCE(CAST(A.SICR_RULE_ID AS VARCHAR(10)),' || '''''''0''''''' || ') || '' AS SICR_RULE_ID,                                                          
-    -- ''''0'''' AS SICR_FLAG,                                                                  
-    -- A.DPD_CIF,
-    -- A.PRODUCT_ENTITY,                                                    
-    -- A.DATA_SOURCE,                                                   
-    -- A.PRODUCT_CODE,                                                   
-    -- A.PRODUCT_TYPE,                                                      
-    -- A.PRODUCT_GROUP,                                                   
-    -- A.STAFF_LOAN_FLAG,
-    -- A.IS_IMPAIRED,
-    -- '' || COALESCE('''''''' || A.SUB_SEGMENT_PD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_PD,
-    -- '' || COALESCE('''''''' || A.SUB_SEGMENT_LGD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_LGD,
-    -- '' || COALESCE('''''''' || A.SUB_SEGMENT_EAD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_EAD,
-    -- COALESCE(E.ECL_AMOUNT,0) AS PREV_ECL_AMOUNT,
-    -- '' || COALESCE('''''''' || A.BUCKET_GROUP || '''''''',' || '''''''''''''' || ') || '' AS BUCKET_GROUP,
-    -- D.BUCKET_ID,                                                      
-    -- A.REVOLVING_FLAG,                                                          
-    -- CASE WHEN COALESCE(A.EIR, 0) <> 0 THEN A.EIR WHEN COALESCE(A.INTEREST_RATE, 0) <> 0 THEN A.INTEREST_RATE ELSE F.AVG_EIR * 100.00 END AS EIR ,                                                      
-    -- A.OUTSTANDING,                                                          
-    -- COALESCE(A.UNAMORT_COST_AMT,0) AS UNAMORT_COST_AMT,                                                          
-    -- COALESCE(A.UNAMORT_FEE_AMT,0) AS UNAMORT_FEE_AMT,           
-    -- COALESCE(CASE WHEN A.INTEREST_ACCRUED < 0 THEN 0 ELSE A.INTEREST_ACCRUED END, 0) AS INTEREST_ACCRUED,                                            
-    -- COALESCE(A.UNUSED_AMOUNT,0) AS UNUSED_AMOUNT,                                                          
-    -- COALESCE(A.FAIR_VALUE_AMOUNT,0) AS FAIR_VALUE_AMOUNT,
-    -- CASE WHEN A.PRODUCT_TYPE_1 <> ''''PRK'''' AND A.DATA_SOURCE NOT IN  (''''LIMIT'''',''''LIMIT_T24'''') THEN
-    -- COALESCE(CASE WHEN A.BI_COLLECTABILITY >= 3 THEN '' || CASE
-    -- WHEN A.EAD_BALANCE LIKE ''%A.INTEREST_ACCRUED%'' THEN
-    --     REPLACE(REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0''), ''A.INTEREST_ACCRUED'', ''0'')
-    -- ELSE
-    --     REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0'')
-    -- END || '' ELSE '' || REPLACE(
-    -- CASE
-    --     WHEN A.EAD_BALANCE LIKE ''%UNUSED_AMOUNT%'' THEN
-    --         A.EAD_BALANCE
-    --     ELSE
-    --         REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0'')
-    -- END,
-    -- ''A.INTEREST_ACCRUED'',
-    -- ''CASE WHEN A.INTEREST_ACCRUED < 0 THEN   0 ELSE A.INTEREST_ACCRUED END'') || '' END, 0)                                       
-    -- ELSE                                                      
-    -- COALESCE(CASE WHEN A.BI_COLLECTABILITY >= 3 THEN '' || CASE
-    -- WHEN A.EAD_BALANCE LIKE ''%A.INTEREST_ACCRUED%'' THEN
-    --     REPLACE(REPLACE(A.EAD_BALANCE, ''A.INTEREST_ACCRUED'', ''0''), ''A.UNUSED_AMOUNT'', ''0'')
-    -- ELSE
-    --     REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0'')
-    -- END || '' WHEN A.DPD_FINAL > 30 THEN '' || REPLACE(REPLACE(A.EAD_BALANCE,
-    -- ''A.UNUSED_AMOUNT'',
-    -- ''0''),
-    -- ''A.INTEREST_ACCRUED'',
-    -- ''CASE WHEN A.INTEREST_ACCRUED < 0 THEN 0 ELSE A.INTEREST_ACCRUED END'') ||
-    -- '' ELSE '' || REPLACE(A.EAD_BALANCE,
-    -- ''A.INTEREST_ACCRUED'',
-    -- ''CASE WHEN A.INTEREST_ACCRUED < 0 THEN 0 ELSE A.INTEREST_ACCRUED END'') || '' END, 0)                                                          
-    -- END AS EAD_BALANCE,
-    -- COALESCE(A.PLAFOND,0) PLAFOND, 
-    -- '' || COALESCE(CAST(A.ECL_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS ECL_MODEL_ID, 
-    -- '' || COALESCE(CAST(A.EAD_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS EAD_MODEL_ID, 
-    -- '' || COALESCE(CAST(A.CCF_FLAG AS VARCHAR(10)),' || '''''''1''''''' || ') || '' AS CCF_FLAG, 
-    -- '' || COALESCE(CAST(A.CCF_RULES_ID AS VARCHAR(10)),''NULL'') || '' AS CCF_RULE_ID, 
-    -- '' || COALESCE(CAST(A.LGD_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS LGD_MODEL_ID, 
-    -- '' || COALESCE(CAST(A.PD_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS PD_MODEL_ID, 
-    -- '' || COALESCE(CAST(A.PD_ME_MODEL_ID AS VARCHAR(10)),' || '''''''0''''''' || ') || '' AS PD_ME_MODEL_ID,                                                           
-    -- CASE WHEN G.LIFETIME_OVERRIDE IS NULL OR G.LIFETIME_OVERRIDE = 0 THEN CASE             
-    -- WHEN A.PRODUCT_TYPE_1 = ''''PRK'''' AND A.REMAINING_TENOR <= 0 THEN 12               
-    -- WHEN A.DATA_SOURCE = ''''LOAN_T24'''' AND COALESCE(A.REVOLVING_FLAG,''''1'''') = ''''1'''' AND A.REMAINING_TENOR <= 0 THEN 12              
-    -- ELSE A.REMAINING_TENOR             
-    -- END
-	-- ELSE G.LIFETIME_OVERRIDE END AS LIFETIME,
-    -- '' || COALESCE(CAST(A.DEFAULT_RULE_ID AS VARCHAR(10)),''NULL'') || '' AS DEFAULT_RULE_ID,
-    -- A.DPD_FINAL,                                                           
-    -- A.BI_COLLECTABILITY,                                                           
-    -- A.DPD_FINAL_CIF,                                              
-    -- A.BI_COLLECT_CIF,                                        
-    -- A.RESTRUCTURE_COLLECT_FLAG,                                                
-    -- A.PRODUCT_TYPE_1,                                                
-    -- NULL AS CCF,                                               
-    -- '''''' || CAST(COALESCE(A.CCF_EFF_DATE, DATE(CURRENT_TIMESTAMP)) AS VARCHAR(20)) || '''''' AS CCF_EFF_DATE,
-    -- A.RESTRUCTURE_COLLECT_FLAG_CIF,                                    
-    -- A.IMPAIRED_FLAG,
-    -- A.INITIAL_RATING_CODE                                
-    -- ,A.RATING_CODE                                
-    -- ,A.RATING_DOWNGRADE                                
-    -- ,A.PD_INITIAL_RATE                                
-    -- ,A.WATCHLIST_FLAG                                
-    -- ,A.PD_CURRENT_RATE                                
-    -- ,A.PD_CHANGE             
-    -- ,A.COLL_AMOUNT                    
-    -- ,A.EXT_RATING_AGENCY                    
-    -- ,A.EXT_RATING_CODE                    
-    -- ,A.EXT_INIT_RATING_CODE                    
-    -- ,A.EXT_RATING_DOWNGRADE
-    -- ,A.SEGMENT_FLAG
-    -- FROM ' || V_TABLEINSERT2 || ' A                                                           
-    -- JOIN VW_MSTR_SEGMENT_RULES_HEADER B ON A.GROUP_SEGMENT = B.GROUP_SEGMENT                                                        
-    -- AND A.SEGMENT = B.SEGMENT                              
-    -- AND A.SUB_SEGMENT = B.SUB_SEGMENT
-    -- JOIN IFRS_BUCKET_HEADER C ON '''''' || COALESCE(A.BUCKET_GROUP,' || '''''''1''''''' || ') || '''''' = C.BUCKET_GROUP                                                   
-    -- JOIN IFRS_BUCKET_DETAIL D ON C.BUCKET_GROUP = D.BUCKET_GROUP
-    -- AND ((CASE WHEN C.OPTION_GROUPING = ''''DPD''''                       
-    -- THEN A.DAY_PAST_DUE                                                                 
-    -- WHEN C.OPTION_GROUPING = ''''DPD_CIF''''                                                     
-    -- THEN A.DPD_CIF                                                       
-    -- WHEN C.OPTION_GROUPING = ''''DPD_FINAL''''                                   
-    -- THEN A.DPD_FINAL                                                                   
-    -- WHEN C.OPTION_GROUPING = ''''DPD_FINAL_CIF''''                                        
-    -- THEN A.DPD_FINAL_CIF                                                     
-    -- WHEN C.OPTION_GROUPING = ''''BIC''''                                                     
-    -- THEN A.BI_COLLECTABILITY                                            
-    -- END) BETWEEN D.RANGE_START AND D.RANGE_END OR C.OPTION_GROUPING  IN (''''IR'''',''''ER'''') AND  D.SUB_BUCKET_GROUP = CASE WHEN C.OPTION_GROUPING = ''''ER'''' THEN A.EXT_RATING_CODE WHEN C.OPTION_GROUPING = ''''IR'''' THEN A.RATING_CODE END)                                     
-    -- LEFT JOIN ' || V_TABLEINSERT3 || ' E ON A.MASTERID = E.MASTERID
-    -- LEFT JOIN IFRS_IMP_AVG_EIR F ON A.DOWNLOAD_DATE = F.DOWNLOAD_DATE AND A.EIR_SEGMENT = F.EIR_SEGMENT                                            
-    -- LEFT JOIN ' || V_TABLEINSERT4 || ' G ON A.SEGMENTATION_ID = G.SEGMENTATION_ID
-    -- WHERE B.PKID = '' || COALESCE(CAST(A.SEGMENTATION_ID AS INT), 1) || ''                                                      
-    --     AND  A.DOWNLOAD_DATE = ''''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''''                                
-    --     AND B.SEGMENT_TYPE = ''''PORTFOLIO_SEGMENT''''                                                           
-    --     AND A.ACCOUNT_STATUS = ''''A''''                                           
-    --     AND COALESCE(A.IFRS9_CLASS,' || '''''''''' || ') <> ''''FVTPL''''
-    -- ''' || ' AS QRY 
-    -- FROM TMP_IFRS_ECL_MODEL_' || P_RUNID || ' A;';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE TMP_QRY AS
+    SELECT ROW_NUMBER() OVER (ORDER BY A.ECL_MODEL_ID) AS RN, 
+    ' || '''
+    SELECT                                        
+    A.DOWNLOAD_DATE,                                                          
+    A.MASTERID,                                                          
+    A.GROUP_SEGMENT,                                                          
+    A.SEGMENT,
+    A.SUB_SEGMENT, 
+    '' || COALESCE(CAST(A.SEGMENTATION_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS SEGMENTATION_ID, 
+    A.ACCOUNT_NUMBER,                                                     
+    A.CUSTOMER_NUMBER, 
+    '' || COALESCE(CAST(A.SICR_RULE_ID AS VARCHAR(10)),' || '''''''0''''''' || ') || '' AS SICR_RULE_ID,                                                          
+    ''''0'''' AS SICR_FLAG,                                                                  
+    A.DPD_CIF,
+    A.PRODUCT_ENTITY,                                                    
+    A.DATA_SOURCE,                                                   
+    A.PRODUCT_CODE,                                                   
+    A.PRODUCT_TYPE,                                                      
+    A.PRODUCT_GROUP,                                                   
+    A.STAFF_LOAN_FLAG,
+    A.IS_IMPAIRED,
+    '' || COALESCE('''''''' || A.SUB_SEGMENT_PD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_PD,
+    '' || COALESCE('''''''' || A.SUB_SEGMENT_LGD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_LGD,
+    '' || COALESCE('''''''' || A.SUB_SEGMENT_EAD || '''''''',' || '''''''''''''' || ') || '' AS SUB_SEGMENT_EAD,
+    COALESCE(E.ECL_AMOUNT,0) AS PREV_ECL_AMOUNT,
+    '' || COALESCE('''''''' || A.BUCKET_GROUP || '''''''',' || '''''''''''''' || ') || '' AS BUCKET_GROUP,
+    D.BUCKET_ID,                                                      
+    A.REVOLVING_FLAG,                                                          
+    CASE WHEN COALESCE(A.EIR, 0) <> 0 THEN A.EIR WHEN COALESCE(A.INTEREST_RATE, 0) <> 0 THEN A.INTEREST_RATE ELSE F.AVG_EIR * 100.00 END AS EIR ,                                                      
+    A.OUTSTANDING,                                                          
+    COALESCE(A.UNAMORT_COST_AMT,0) AS UNAMORT_COST_AMT,                                                          
+    COALESCE(A.UNAMORT_FEE_AMT,0) AS UNAMORT_FEE_AMT,           
+    COALESCE(CASE WHEN A.INTEREST_ACCRUED < 0 THEN 0 ELSE A.INTEREST_ACCRUED END, 0) AS INTEREST_ACCRUED,                                            
+    COALESCE(A.UNUSED_AMOUNT,0) AS UNUSED_AMOUNT,                                                          
+    COALESCE(A.FAIR_VALUE_AMOUNT,0) AS FAIR_VALUE_AMOUNT,
+    CASE WHEN A.PRODUCT_TYPE_1 <> ''''PRK'''' AND A.DATA_SOURCE NOT IN  (''''LIMIT'''',''''LIMIT_T24'''') THEN
+    COALESCE(CASE WHEN A.BI_COLLECTABILITY >= 3 THEN '' || CASE
+    WHEN A.EAD_BALANCE LIKE ''%A.INTEREST_ACCRUED%'' THEN
+        REPLACE(REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0''), ''A.INTEREST_ACCRUED'', ''0'')
+    ELSE
+        REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0'')
+    END || '' ELSE '' || REPLACE(
+    CASE
+        WHEN A.EAD_BALANCE LIKE ''%UNUSED_AMOUNT%'' THEN
+            A.EAD_BALANCE
+        ELSE
+            REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0'')
+    END,
+    ''A.INTEREST_ACCRUED'',
+    ''CASE WHEN A.INTEREST_ACCRUED < 0 THEN   0 ELSE A.INTEREST_ACCRUED END'') || '' END, 0)                                       
+    ELSE                                                      
+    COALESCE(CASE WHEN A.BI_COLLECTABILITY >= 3 THEN '' || CASE
+    WHEN A.EAD_BALANCE LIKE ''%A.INTEREST_ACCRUED%'' THEN
+        REPLACE(REPLACE(A.EAD_BALANCE, ''A.INTEREST_ACCRUED'', ''0''), ''A.UNUSED_AMOUNT'', ''0'')
+    ELSE
+        REPLACE(A.EAD_BALANCE, ''A.UNUSED_AMOUNT'', ''0'')
+    END || '' WHEN A.DPD_FINAL > 30 THEN '' || REPLACE(REPLACE(A.EAD_BALANCE,
+    ''A.UNUSED_AMOUNT'',
+    ''0''),
+    ''A.INTEREST_ACCRUED'',
+    ''CASE WHEN A.INTEREST_ACCRUED < 0 THEN 0 ELSE A.INTEREST_ACCRUED END'') ||
+    '' ELSE '' || REPLACE(A.EAD_BALANCE,
+    ''A.INTEREST_ACCRUED'',
+    ''CASE WHEN A.INTEREST_ACCRUED < 0 THEN 0 ELSE A.INTEREST_ACCRUED END'') || '' END, 0)                                                          
+    END AS EAD_BALANCE,
+    COALESCE(A.PLAFOND,0) PLAFOND, 
+    '' || COALESCE(CAST(A.ECL_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS ECL_MODEL_ID, 
+    '' || COALESCE(CAST(A.EAD_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS EAD_MODEL_ID, 
+    '' || COALESCE(CAST(A.CCF_FLAG AS VARCHAR(10)),' || '''''''1''''''' || ') || '' AS CCF_FLAG, 
+    '' || COALESCE(CAST(A.CCF_RULES_ID AS VARCHAR(10)),''NULL'') || '' AS CCF_RULE_ID, 
+    '' || COALESCE(CAST(A.LGD_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS LGD_MODEL_ID, 
+    '' || COALESCE(CAST(A.PD_MODEL_ID AS VARCHAR(10)),' || '''''''''''''' || ') || '' AS PD_MODEL_ID, 
+    '' || COALESCE(CAST(A.PD_ME_MODEL_ID AS VARCHAR(10)),' || '''''''0''''''' || ') || '' AS PD_ME_MODEL_ID,                                                           
+    CASE WHEN G.LIFETIME_OVERRIDE IS NULL OR G.LIFETIME_OVERRIDE = 0 THEN CASE             
+    WHEN A.PRODUCT_TYPE_1 = ''''PRK'''' AND A.REMAINING_TENOR <= 0 THEN 12               
+    WHEN A.DATA_SOURCE = ''''LOAN_T24'''' AND COALESCE(A.REVOLVING_FLAG,''''1'''') = ''''1'''' AND A.REMAINING_TENOR <= 0 THEN 12              
+    ELSE A.REMAINING_TENOR             
+    END
+	ELSE G.LIFETIME_OVERRIDE END AS LIFETIME,
+    '' || COALESCE(CAST(A.DEFAULT_RULE_ID AS VARCHAR(10)),''NULL'') || '' AS DEFAULT_RULE_ID,
+    A.DPD_FINAL,                                                           
+    A.BI_COLLECTABILITY,                                                           
+    A.DPD_FINAL_CIF,                                              
+    A.BI_COLLECT_CIF,                                        
+    A.RESTRUCTURE_COLLECT_FLAG,                                                
+    A.PRODUCT_TYPE_1,                                                
+    NULL AS CCF,                                               
+    '''''' || CAST(COALESCE(A.CCF_EFF_DATE, DATE(CURRENT_TIMESTAMP)) AS VARCHAR(20)) || '''''' AS CCF_EFF_DATE,
+    A.RESTRUCTURE_COLLECT_FLAG_CIF,                                    
+    A.IMPAIRED_FLAG,
+    A.INITIAL_RATING_CODE                                
+    ,A.RATING_CODE                                
+    ,A.RATING_DOWNGRADE                                
+    ,A.PD_INITIAL_RATE                                
+    ,A.WATCHLIST_FLAG                                
+    ,A.PD_CURRENT_RATE                                
+    ,A.PD_CHANGE             
+    ,A.COLL_AMOUNT                    
+    ,A.EXT_RATING_AGENCY                    
+    ,A.EXT_RATING_CODE                    
+    ,A.EXT_INIT_RATING_CODE                    
+    ,A.EXT_RATING_DOWNGRADE
+    ,A.SEGMENT_FLAG
+    FROM ' || V_TABLEINSERT2 || ' A                                                           
+    JOIN IFRS_MSTR_SEGMENT_RULES_HEADER B ON A.GROUP_SEGMENT = B.GROUP_SEGMENT                                                        
+    AND A.SEGMENT = B.SEGMENT                              
+    AND A.SUB_SEGMENT = B.SUB_SEGMENT
+    JOIN IFRS_BUCKET_HEADER C ON '''''' || COALESCE(A.BUCKET_GROUP,' || '''''''1''''''' || ') || '''''' = C.BUCKET_GROUP                                                   
+    JOIN IFRS_BUCKET_DETAIL D ON C.BUCKET_GROUP = D.BUCKET_GROUP
+    AND ((CASE WHEN C.OPTION_GROUPING = ''''DPD''''                       
+    THEN A.DAY_PAST_DUE                                                                 
+    WHEN C.OPTION_GROUPING = ''''DPD_CIF''''                                                     
+    THEN A.DPD_CIF                                                       
+    WHEN C.OPTION_GROUPING = ''''DPD_FINAL''''                                   
+    THEN A.DPD_FINAL                                                                   
+    WHEN C.OPTION_GROUPING = ''''DPD_FINAL_CIF''''                                        
+    THEN A.DPD_FINAL_CIF                                                     
+    WHEN C.OPTION_GROUPING = ''''BIC''''                                                     
+    THEN A.BI_COLLECTABILITY                                            
+    END) BETWEEN D.RANGE_START AND D.RANGE_END OR C.OPTION_GROUPING  IN (''''IR'''',''''ER'''') AND  D.SUB_BUCKET_GROUP = CASE WHEN C.OPTION_GROUPING = ''''ER'''' THEN A.EXT_RATING_CODE WHEN C.OPTION_GROUPING = ''''IR'''' THEN A.RATING_CODE END)                                     
+    LEFT JOIN ' || V_TABLEINSERT3 || ' E ON A.MASTERID = E.MASTERID
+    LEFT JOIN IFRS_IMP_AVG_EIR F ON A.DOWNLOAD_DATE = F.DOWNLOAD_DATE AND A.EIR_SEGMENT = F.EIR_SEGMENT                                            
+    LEFT JOIN ' || V_TABLEINSERT4 || ' G ON A.SEGMENTATION_ID = G.SEGMENTATION_ID
+    WHERE B.PKID = '' || COALESCE(CAST(A.SEGMENTATION_ID AS INT), 1) || ''                                                      
+        AND  A.DOWNLOAD_DATE = ''''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''''                                
+        AND B.SEGMENT_TYPE = ''''PORTFOLIO_SEGMENT''''                                                           
+        AND A.ACCOUNT_STATUS = ''''A''''                                           
+        AND COALESCE(A.IFRS9_CLASS,' || '''''''''' || ') <> ''''FVTPL''''
+    ''' || ' AS QRY 
+    FROM TMP_IFRS_ECL_MODEL_' || P_RUNID || ' A;';
+    EXECUTE (V_STR_QUERY);
 
-    -- ----====== LOOP INSERT
-    -- FOR QRY_RN IN 1..(
-    --     SELECT
-    --         COUNT(*)
-    --     FROM
-    --         TMP_QRY
-    -- ) LOOP
+    ----====== LOOP INSERT
+    FOR QRY_RN IN 1..(
+        SELECT
+            COUNT(*)
+        FROM
+            TMP_QRY
+    ) LOOP
     
-    -- EXECUTE 'INSERT INTO ' || V_TABLEINSERT1 || ' (DOWNLOAD_DATE        
-    --     ,MASTERID        
-    --     ,GROUP_SEGMENT        
-    --     ,SEGMENT        
-    --     ,SUB_SEGMENT        
-    --     ,SEGMENTATION_ID        
-    --     ,ACCOUNT_NUMBER        
-    --     ,CUSTOMER_NUMBER        
-    --     ,SICR_RULE_ID        
-    --     ,SICR_FLAG        
-    --     ,DPD_CIF        
-    --     ,PRODUCT_ENTITY        
-    --     ,DATA_SOURCE        
-    --     ,PRODUCT_CODE        
-    --     ,PRODUCT_TYPE        
-    --     ,PRODUCT_GROUP        
-    --     ,STAFF_LOAN_FLAG        
-    --     ,IS_IMPAIRED        
-    --     ,PD_SEGMENT        
-    --     ,LGD_SEGMENT        
-    --     ,EAD_SEGMENT        
-    --     ,PREV_ECL_AMOUNT        
-    --     ,BUCKET_GROUP        
-    --     ,BUCKET_ID        
-    --     ,REVOLVING_FLAG        
-    --     ,EIR        
-    --     ,OUTSTANDING        
-    --     ,UNAMORT_COST_AMT        
-    --     ,UNAMORT_FEE_AMT        
-    --     ,INTEREST_ACCRUED        
-    --     ,UNUSED_AMOUNT        
-    --     ,FAIR_VALUE_AMOUNT        
-    --     ,EAD_BALANCE        
-    --     ,PLAFOND        
-    --     ,ECL_MODEL_ID        
-    --     ,EAD_MODEL_ID        
-    --     ,CCF_FLAG        
-    --     ,CCF_RULES_ID        
-    --     ,LGD_MODEL_ID        
-    --     ,PD_MODEL_ID        
-    --     ,PD_ME_MODEL_ID        
-    --     ,LIFETIME        
-    --     ,DEFAULT_RULE_ID        
-    --     ,DPD_FINAL        
-    --     ,BI_COLLECTABILITY        
-    --     ,DPD_FINAL_CIF        
-    --     ,BI_COLLECT_CIF        
-    --     ,RESTRUCTURE_COLLECT_FLAG        
-    --     ,PRODUCT_TYPE_1        
-    --     ,CCF        
-    --     ,CCF_EFF_DATE        
-    --     ,RESTRUCTURE_COLLECT_FLAG_CIF        
-    --     ,IMPAIRED_FLAG        
-    --     ,INITIAL_RATING_CODE        
-    --     ,RATING_CODE        
-    --     ,RATING_DOWNGRADE        
-    --     ,PD_INITIAL_RATE        
-    --     ,WATCHLIST_FLAG        
-    --     ,PD_CURRENT_RATE        
-    --     ,PD_CHANGE        
-    --     ,COLL_AMOUNT        
-    --     ,EXT_RATING_AGENCY        
-    --     ,EXT_RATING_CODE        
-    --     ,EXT_INIT_RATING_CODE        
-    --     ,EXT_RATING_DOWNGRADE
-    --     ,SEGMENT_FLAG) '
-    --         || (
-    --     SELECT
-    --         QRY
-    --     FROM
-    --         TMP_QRY
-    --     WHERE
-    --         RN = QRY_RN
-    -- );
+    EXECUTE 'INSERT INTO ' || V_TABLEINSERT1 || ' (DOWNLOAD_DATE        
+        ,MASTERID        
+        ,GROUP_SEGMENT        
+        ,SEGMENT        
+        ,SUB_SEGMENT        
+        ,SEGMENTATION_ID        
+        ,ACCOUNT_NUMBER        
+        ,CUSTOMER_NUMBER        
+        ,SICR_RULE_ID        
+        ,SICR_FLAG        
+        ,DPD_CIF        
+        ,PRODUCT_ENTITY        
+        ,DATA_SOURCE        
+        ,PRODUCT_CODE        
+        ,PRODUCT_TYPE        
+        ,PRODUCT_GROUP        
+        ,STAFF_LOAN_FLAG        
+        ,IS_IMPAIRED        
+        ,PD_SEGMENT        
+        ,LGD_SEGMENT        
+        ,EAD_SEGMENT        
+        ,PREV_ECL_AMOUNT        
+        ,BUCKET_GROUP        
+        ,BUCKET_ID        
+        ,REVOLVING_FLAG        
+        ,EIR        
+        ,OUTSTANDING        
+        ,UNAMORT_COST_AMT        
+        ,UNAMORT_FEE_AMT        
+        ,INTEREST_ACCRUED        
+        ,UNUSED_AMOUNT        
+        ,FAIR_VALUE_AMOUNT        
+        ,EAD_BALANCE        
+        ,PLAFOND        
+        ,ECL_MODEL_ID        
+        ,EAD_MODEL_ID        
+        ,CCF_FLAG        
+        ,CCF_RULES_ID        
+        ,LGD_MODEL_ID        
+        ,PD_MODEL_ID        
+        ,PD_ME_MODEL_ID        
+        ,LIFETIME        
+        ,DEFAULT_RULE_ID        
+        ,DPD_FINAL        
+        ,BI_COLLECTABILITY        
+        ,DPD_FINAL_CIF        
+        ,BI_COLLECT_CIF        
+        ,RESTRUCTURE_COLLECT_FLAG        
+        ,PRODUCT_TYPE_1        
+        ,CCF        
+        ,CCF_EFF_DATE        
+        ,RESTRUCTURE_COLLECT_FLAG_CIF        
+        ,IMPAIRED_FLAG        
+        ,INITIAL_RATING_CODE        
+        ,RATING_CODE        
+        ,RATING_DOWNGRADE        
+        ,PD_INITIAL_RATE        
+        ,WATCHLIST_FLAG        
+        ,PD_CURRENT_RATE        
+        ,PD_CHANGE        
+        ,COLL_AMOUNT        
+        ,EXT_RATING_AGENCY        
+        ,EXT_RATING_CODE        
+        ,EXT_INIT_RATING_CODE        
+        ,EXT_RATING_DOWNGRADE
+        ,SEGMENT_FLAG) '
+            || (
+        SELECT
+            QRY
+        FROM
+            TMP_QRY
+        WHERE
+            RN = QRY_RN
+    );
 
-    -- GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
-    -- V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
-    -- V_RETURNROWS := 0;
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 	
-    -- END LOOP;
-    -- ----====== END LOOP INSERT
+    END LOOP;
+    ----====== END LOOP INSERT
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'DROP INDEX IF EXISTS NCI_' || V_TABLEINSERT1 || '';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DROP INDEX IF EXISTS NCI_' || V_TABLEINSERT1 || '';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'CREATE INDEX IF NOT EXISTS NCI_' || V_TABLEINSERT1 || '
-    -- ON ' || V_TABLEINSERT1 || ' USING BTREE
-    -- (PRODUCT_CODE ASC NULLS LAST, MASTERID ASC NULLS LAST, CCF_RULES_ID ASC NULLS LAST)
-    -- TABLESPACE PG_DEFAULT';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'CREATE INDEX IF NOT EXISTS NCI_' || V_TABLEINSERT1 || '
+    ON ' || V_TABLEINSERT1 || ' USING BTREE
+    (PRODUCT_CODE ASC NULLS LAST, MASTERID ASC NULLS LAST, CCF_RULES_ID ASC NULLS LAST)
+    TABLESPACE PG_DEFAULT';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT1 || ' A
-    -- SET LIFETIME = CASE WHEN CAST(VALUE2 AS SMALLINT) <= LIFETIME THEN CAST(VALUE2 AS SMALLINT) ELSE LIFETIME END 
-    -- FROM TBLM_COMMONCODEDETAIL B
-    -- WHERE A.PRODUCT_CODE = B.VALUE1
-    -- AND B.COMMONCODE = ''RVW_PERIOD'';';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT1 || ' A
+    SET LIFETIME = CASE WHEN CAST(VALUE2 AS SMALLINT) <= LIFETIME THEN CAST(VALUE2 AS SMALLINT) ELSE LIFETIME END 
+    FROM TBLM_COMMONCODEDETAIL B
+    WHERE A.PRODUCT_CODE = B.VALUE1
+    AND B.COMMONCODE = ''RVW_PERIOD'';';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS UPDATE_TMP_IFRS_ECL_IMA';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DROP TABLE IF EXISTS UPDATE_TMP_IFRS_ECL_IMA';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE UPDATE_TMP_IFRS_ECL_IMA AS
-    -- SELECT A.MASTERID, A.CCF_RULES_ID, A.CCF_EFF_DATE, COALESCE(B.CCF,0) AS CCF, CASE WHEN A.EAD_BALANCE < 0 THEN 0 ELSE COALESCE(A.EAD_BALANCE,0) END AS EAD_BALANCE
-    -- FROM ' || V_TABLEINSERT1 || ' A
-    -- LEFT JOIN TMP_IFRS_ECL_MODEL_' || P_RUNID || ' B USING (CCF_RULES_ID,CCF_EFF_DATE) 
-    -- WHERE B.CCF_RULES_ID IS NULL
-    -- AND B.CCF_EFF_DATE IS NULL';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE UPDATE_TMP_IFRS_ECL_IMA AS
+    SELECT A.MASTERID, A.CCF_RULES_ID, A.CCF_EFF_DATE, COALESCE(B.CCF,0) AS CCF, CASE WHEN A.EAD_BALANCE < 0 THEN 0 ELSE COALESCE(A.EAD_BALANCE,0) END AS EAD_BALANCE
+    FROM ' || V_TABLEINSERT1 || ' A
+    LEFT JOIN TMP_IFRS_ECL_MODEL_' || P_RUNID || ' B USING (CCF_RULES_ID,CCF_EFF_DATE) 
+    WHERE B.CCF_RULES_ID IS NULL
+    AND B.CCF_EFF_DATE IS NULL';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'DROP INDEX IF EXISTS IDX_UPDATE_TMP_IFRS_ECL_IMA';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DROP INDEX IF EXISTS IDX_UPDATE_TMP_IFRS_ECL_IMA';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'CREATE INDEX IF NOT EXISTS IDX_UPDATE_TMP_IFRS_ECL_IMA
-    -- ON UPDATE_TMP_IFRS_ECL_IMA USING BTREE
-    -- (MASTERID ASC NULLS LAST, CCF_RULES_ID ASC NULLS LAST)
-    -- TABLESPACE PG_DEFAULT';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'CREATE INDEX IF NOT EXISTS IDX_UPDATE_TMP_IFRS_ECL_IMA
+    ON UPDATE_TMP_IFRS_ECL_IMA USING BTREE
+    (MASTERID ASC NULLS LAST, CCF_RULES_ID ASC NULLS LAST)
+    TABLESPACE PG_DEFAULT';
+    EXECUTE (V_STR_QUERY);
     
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT1 || ' A
-    -- SET CCF = B.CCF,
-    -- EAD_BALANCE = B.EAD_BALANCE
-    -- FROM UPDATE_TMP_IFRS_ECL_IMA B
-    -- WHERE A.MASTERID = B.MASTERID
-    -- AND A.CCF_RULES_ID = B.CCF_RULES_ID';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT1 || ' A
+    SET CCF = B.CCF,
+    EAD_BALANCE = B.EAD_BALANCE
+    FROM UPDATE_TMP_IFRS_ECL_IMA B
+    WHERE A.MASTERID = B.MASTERID
+    AND A.CCF_RULES_ID = B.CCF_RULES_ID';
+    EXECUTE (V_STR_QUERY);
 
-    -- ----===== INSERT HISTORY ECL CONFIG
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_ECL_MODEL_CONFIG_HIST 
-    -- WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' ';
-    -- EXECUTE (V_STR_QUERY);
+    ----===== INSERT HISTORY ECL CONFIG
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM IFRS_ECL_MODEL_CONFIG_HIST 
+    WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' ';
+    EXECUTE (V_STR_QUERY);
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ECL_MODEL_CONFIG_HIST (          
-    -- DOWNLOAD_DATE          
-    -- ,ECL_MODEL_ID           
-    -- ,ECL_MODEL_NAME          
-    -- ,SEGMENTATION_ID          
-    -- ,SEGMENTATION_NAME          
-    -- ,EAD_MODEL_ID          
-    -- ,SUB_SEGMENT_EAD          
-    -- ,PD_MODEL_ID          
-    -- ,PD_ME_MODEL_ID          
-    -- ,PD_EFF_DATE          
-    -- ,SUB_SEGMENT_PD          
-    -- ,BUCKET_GROUP          
-    -- ,LGD_MODEL_ID          
-    -- ,LGD_ME_MODEL_ID          
-    -- ,SUB_SEGMENT_LGD          
-    -- ,LGD_EFF_DATE          
-    -- ,CCF_RULES_ID          
-    -- ,CCF_FLAG          
-    -- ,CCF_EFF_DATE_OPTION          
-    -- ,CCF_EFF_DATE          
-    -- ,CCF          
-    -- ,AVERAGE_METHOD          
-    -- ,SICR_RULE_ID         
-    -- ,DEFAULT_RULE_ID          
-    -- ,EAD_BALANCE          
-    -- ,LT_RULE_ID          
-    -- ,EXPECTED_LIFE          
-    -- ,SEGMENT          
-    -- ,SUB_SEGMENT          
-    -- ,GROUP_SEGMENT          
-    -- )   
-    -- SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' AS DOWNLOAD_DATE,
-    -- ECL_MODEL_ID,
-    -- ECL_MODEL_NAME,
-    -- SEGMENTATION_ID,
-    -- SEGMENTATION_NAME,
-    -- EAD_MODEL_ID,
-    -- SUB_SEGMENT_EAD,
-    -- PD_MODEL_ID,
-    -- PD_ME_MODEL_ID,
-    -- PD_EFF_DATE,
-    -- SUB_SEGMENT_PD,
-    -- BUCKET_GROUP,
-    -- LGD_MODEL_ID,
-    -- LGD_ME_MODEL_ID,
-    -- SUB_SEGMENT_LGD,
-    -- LGD_EFF_DATE,
-    -- CCF_RULES_ID,
-    -- CCF_FLAG,
-    -- CCF_EFF_DATE_OPTION,
-    -- CCF_EFF_DATE,
-    -- CCF,
-    -- AVERAGE_METHOD,
-    -- SICR_RULE_ID,
-    -- DEFAULT_RULE_ID,
-    -- EAD_BALANCE,
-    -- LT_RULE_ID,
-    -- EXPECTED_LIFE,
-    -- SEGMENT,
-    -- SUB_SEGMENT,
-    -- GROUP_SEGMENT
-    -- FROM TMP_IFRS_ECL_MODEL_' || P_RUNID || ' ';
-    -- EXECUTE (V_STR_QUERY);
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'INSERT INTO IFRS_ECL_MODEL_CONFIG_HIST (          
+    DOWNLOAD_DATE          
+    ,ECL_MODEL_ID           
+    ,ECL_MODEL_NAME          
+    ,SEGMENTATION_ID          
+    ,SEGMENTATION_NAME          
+    ,EAD_MODEL_ID          
+    ,SUB_SEGMENT_EAD          
+    ,PD_MODEL_ID          
+    ,PD_ME_MODEL_ID          
+    ,PD_EFF_DATE          
+    ,SUB_SEGMENT_PD          
+    ,BUCKET_GROUP          
+    ,LGD_MODEL_ID          
+    ,LGD_ME_MODEL_ID          
+    ,SUB_SEGMENT_LGD          
+    ,LGD_EFF_DATE          
+    ,CCF_RULES_ID          
+    ,CCF_FLAG          
+    ,CCF_EFF_DATE_OPTION          
+    ,CCF_EFF_DATE          
+    ,CCF          
+    ,AVERAGE_METHOD          
+    ,SICR_RULE_ID         
+    ,DEFAULT_RULE_ID          
+    ,EAD_BALANCE          
+    ,LT_RULE_ID          
+    ,EXPECTED_LIFE          
+    ,SEGMENT          
+    ,SUB_SEGMENT          
+    ,GROUP_SEGMENT          
+    )   
+    SELECT ''' || CAST(V_CURRDATE AS VARCHAR(10)) || ''' AS DOWNLOAD_DATE,
+    ECL_MODEL_ID,
+    ECL_MODEL_NAME,
+    SEGMENTATION_ID,
+    SEGMENTATION_NAME,
+    EAD_MODEL_ID,
+    SUB_SEGMENT_EAD,
+    PD_MODEL_ID,
+    PD_ME_MODEL_ID,
+    PD_EFF_DATE,
+    SUB_SEGMENT_PD,
+    BUCKET_GROUP,
+    LGD_MODEL_ID,
+    LGD_ME_MODEL_ID,
+    SUB_SEGMENT_LGD,
+    LGD_EFF_DATE,
+    CCF_RULES_ID,
+    CCF_FLAG,
+    CCF_EFF_DATE_OPTION,
+    CCF_EFF_DATE,
+    CCF,
+    AVERAGE_METHOD,
+    SICR_RULE_ID,
+    DEFAULT_RULE_ID,
+    EAD_BALANCE,
+    LT_RULE_ID,
+    EXPECTED_LIFE,
+    SEGMENT,
+    SUB_SEGMENT,
+    GROUP_SEGMENT
+    FROM TMP_IFRS_ECL_MODEL_' || P_RUNID || ' ';
+    EXECUTE (V_STR_QUERY);
 
-    -- GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
-    -- V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
-    -- V_RETURNROWS := 0;
+    GET DIAGNOSTICS V_RETURNROWS = ROW_COUNT;
+    V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
+    V_RETURNROWS := 0;
 
-    -- -------- INSERT HISTORY ECL CONFIG
+    -------- INSERT HISTORY ECL CONFIG
 
-    -- -------- START UPDATE CCF TO TABLE IFRS_CCF_OVERRIDE --------
-    -- IF P_PRC = 'P' THEN
-    --     V_STR_QUERY := '';
-    --     V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT4 || ' ';
-    --     EXECUTE (V_STR_QUERY);
+    -------- START UPDATE CCF TO TABLE IFRS_CCF_OVERRIDE --------
+    IF P_PRC = 'P' THEN
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'TRUNCATE TABLE ' || V_TABLEINSERT4 || ' ';
+        EXECUTE (V_STR_QUERY);
 
-    --     V_STR_QUERY := '';
-    --     V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT4 || ' (LIFETIME_CONFIGURATION,
-    --     SEGMENTATION_ID,
-    --     SEGMENTATION,
-    --     DOWNLOAD_DATE,
-    --     LIFETIME_RATE,
-    --     LIFETIME_OVERRIDE)
-    --     SELECT * FROM ' || V_TABLEVIEWLIFETIME || '';
-    --     EXECUTE (V_STR_QUERY);
-    -- END IF;
-    -- -------- END UPDATE CCF TO TABLE IFRS_CCF_OVERRIDE --------
+        V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'INSERT INTO ' || V_TABLEINSERT4 || ' (LIFETIME_CONFIGURATION,
+        SEGMENTATION_ID,
+        SEGMENTATION,
+        DOWNLOAD_DATE,
+        LIFETIME_RATE,
+        LIFETIME_OVERRIDE)
+        SELECT * FROM ' || V_TABLEVIEWLIFETIME || '';
+        EXECUTE (V_STR_QUERY);
+    END IF;
+    -------- END UPDATE CCF TO TABLE IFRS_CCF_OVERRIDE --------
 
-    -- RAISE NOTICE 'SP_IFRS_IMP_ECL_GENERATE_IMA | AFFECTED RECORD : %', V_RETURNROWS2;
+    RAISE NOTICE 'SP_IFRS_IMP_ECL_GENERATE_IMA | AFFECTED RECORD : %', V_RETURNROWS2;
 
-    -- -------- ====== LOG ======
-    -- V_TABLEDEST = V_TABLEINSERT1;
-    -- V_COLUMNDEST = '-';
-    -- V_SPNAME = 'SP_IFRS_IMP_ECL_GENERATE_IMA';
-    -- V_OPERATION = 'INSERT';
+    -------- ====== LOG ======
+    V_TABLEDEST = V_TABLEINSERT1;
+    V_COLUMNDEST = '-';
+    V_SPNAME = 'SP_IFRS_IMP_ECL_GENERATE_IMA';
+    V_OPERATION = 'INSERT';
     
-    -- CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
-    -- -------- ====== LOG ======
+    CALL SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, V_RETURNROWS2, P_RUNID);
+    -------- ====== LOG ======
 
-    -- -------- ====== RESULT ======
-    -- V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT1 || '';
-    -- CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
-    -- -------- ====== RESULT ======
+    -------- ====== RESULT ======
+    V_QUERYS = 'SELECT * FROM ' || V_TABLEINSERT1 || '';
+    CALL SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, V_RETURNROWS2, P_RUNID);
+    -------- ====== RESULT ======
 
 END;
 
