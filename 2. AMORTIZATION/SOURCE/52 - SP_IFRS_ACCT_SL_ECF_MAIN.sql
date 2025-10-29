@@ -677,7 +677,7 @@ BEGIN
         WHERE ID IN (    
             SELECT A.ID    
             FROM ' || V_TABLEINSERT8 || ' A    
-            JOIN ' || 'VW_LAST_SL_CF_PREV' || ' B    
+            JOIN VW_LAST_SL_CF_PREV B    
                 ON A.MASTERID = B.MASTERID
                 AND A.SEQ = B.SEQ
                 AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE
@@ -722,7 +722,7 @@ BEGIN
         WHERE ID IN (    
             SELECT A.ID    
             FROM ' || V_TABLEINSERT8 || ' A    
-            JOIN ' || 'VW_LAST_SL_CF_PREV' || ' B    
+            JOIN VW_LAST_SL_CF_PREV B    
                 ON A.MASTERID = B.MASTERID
                 AND A.SEQ = B.SEQ
                 AND A.DOWNLOAD_DATE = B.DOWNLOAD_DATE
@@ -1568,7 +1568,7 @@ BEGIN
             ,C.PRDTYPE    
             ,C.CF_ID    
         FROM ' || V_TABLEINSERT8 || ' C    
-        JOIN ' || 'VW_LAST_SL_CF_PREV' || ' X 
+        JOIN VW_LAST_SL_CF_PREV X 
             ON X.MASTERID = C.MASTERID    
             AND X.DOWNLOAD_DATE = C.DOWNLOAD_DATE    
             AND C.SEQ = X.SEQ    

@@ -1727,7 +1727,7 @@ BEGIN
             ,''ITRCG_SL''
             ,A.CF_ID
         FROM ' || V_TABLEINSERT6 || ' A -- 20130722 ADD JOIN COND TO PICK LATEST CF PREV
-        JOIN ' || 'VW_LAST_SL_CF_PREV' || ' C 
+        JOIN VW_LAST_SL_CF_PREV C 
             ON C.MASTERID = A.MASTERID
             AND C.DOWNLOAD_DATE = A.DOWNLOAD_DATE
             AND COALESCE(C.SEQ, '''') = COALESCE(A.SEQ, '''')

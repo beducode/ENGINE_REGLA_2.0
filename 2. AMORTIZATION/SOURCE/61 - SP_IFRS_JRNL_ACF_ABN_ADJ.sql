@@ -413,7 +413,7 @@ BEGIN
             ,B.CF_ID
             ,B.METHOD
         FROM ' || V_TABLEINSERT12 || ' A
-        JOIN ' || 'VW_LAST_SL_CF_PREV' || ' C 
+        JOIN VW_LAST_SL_CF_PREV C 
             ON C.DOWNLOAD_DATE = A.DOWNLOAD_DATE
             AND C.MASTERID = A.MASTERID
         JOIN ' || V_TABLEINSERT10 || ' B ON B.CF_ID = A.CF_ID
