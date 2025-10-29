@@ -99,7 +99,7 @@ GRANT USAGE ON FOREIGN SERVER link_db_ifrs9_demo_access TO postgres;
 CREATE USER MAPPING
 FOR postgres
 SERVER link_db_ifrs9_demo_access
-OPTIONS (user 'reglaalloy01', password 'ynJlX2nPkXCCrXRdP70k0L7');
+OPTIONS (user 'nttalloydb01', password 'oF8k675ecIv1bzPHL0DZSy3');
 
 SELECT dblink_connect('conn_db_link', 'link_db_ifrs9_demo_access');
 
