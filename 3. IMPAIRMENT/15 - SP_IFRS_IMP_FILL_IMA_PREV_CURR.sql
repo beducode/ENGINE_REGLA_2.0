@@ -394,9 +394,9 @@ BEGIN
     ,ENDING_BALANCE                                
     ,WRITEBACK_AMOUNT                                
     ,CHARGE_AMOUNT                                
-    ,CREATEDBY                                
-    ,CREATEDDATE                                
-    ,CREATEDHOST                                
+    ,''ADMIN'' AS CREATEDBY                                
+    ,CURRENT_DATE AS CREATEDDATE                                
+    ,''LOCALHOST'' AS CREATEDHOST                                
     ,UPDATEDBY                                
     ,UPDATEDDATE                                
     ,UPDATEDHOST                                
@@ -797,9 +797,9 @@ BEGIN
     ,ENDING_BALANCE                  
     ,WRITEBACK_AMOUNT                                
     ,CHARGE_AMOUNT                                
-    ,CREATEDBY                                
-    ,CREATEDDATE                                
-    ,CREATEDHOST                                
+    ,''ADMIN'' AS CREATEDBY                                
+    ,CURRENT_DATE AS CREATEDDATE                                
+    ,''LOCALHOST'' AS CREATEDHOST                                
     ,UPDATEDBY                                
     ,UPDATEDDATE                                
     ,UPDATEDHOST                                
@@ -1166,9 +1166,9 @@ BEGIN
     ,ENDING_BALANCE                                
     ,WRITEBACK_AMOUNT                                
     ,CHARGE_AMOUNT                                
-    ,CREATEDBY                                
-    ,CREATEDDATE                                
-    ,CREATEDHOST                                
+    ,''ADMIN'' AS CREATEDBY                                
+    ,CURRENT_DATE AS CREATEDDATE                                
+    ,''LOCALHOST'' AS CREATEDHOST                               
     ,UPDATEDBY                                
     ,UPDATEDDATE                                
     ,UPDATEDHOST                                
