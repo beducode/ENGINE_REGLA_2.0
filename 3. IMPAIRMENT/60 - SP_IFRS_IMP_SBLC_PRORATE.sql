@@ -396,28 +396,6 @@ BEGIN
     V_RETURNROWS2 := V_RETURNROWS2 + V_RETURNROWS;
     V_RETURNROWS := 0;
 
-    -- V_STR_QUERY := '';
-    -- V_STR_QUERY := V_STR_QUERY || 'UPDATE ' || V_TABLEINSERT2 || ' 
-    --     SET SBLC_AMOUNT = COALESCE(C.AGUNAN_AMOUNT,0) + CAST(COALESCE(B.PRORATE_COLLATERAL_LCY, 0) AS DOUBLE PRECISION) / CAST(A.EXCHANGE_RATE AS DOUBLE PRECISION)           
-    --     FROM ' || V_TABLEINSERT2 || ' A                  
-    --     JOIN ' || V_TABLEINSERT1 || ' B                   
-    --         ON A.DOWNLOAD_DATE = B.DOWNLOAD_DATE                  
-    --         AND A.MASTERID = B.MASTERID      
-    --     JOIN (
-    --         SELECT DOWNLOAD_DATE, AGUNAN_AMOUNT, MASTER_ID 
-    --         FROM DBLINK(''ifrs9_stg'', ''SELECT * FROM DOWNLOAD_DATE, AGUNAN_AMOUNT, MASTER_ID STG_IFRS_MASTER_ACCOUNT_TF'') 
-    --         AS STG_IFRS_MASTER_ACCOUNT_TF (
-    --             DOWNLOAD_DATE   DATE
-    --             ,AGUNAN_AMOUNT  NUMERIC(18,3)
-    --             ,MASTER_ID      VARCHAR(50)
-    --         ) WHERE DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE 
-    --         AND AGUNAN_AMOUNT > 1     
-    --     ) C
-    --     ON A.DOWNLOAD_DATE = C.DOWNLOAD_DATE                  
-    --     AND A.MASTERID = C.MASTER_ID                           
-    --     WHERE A.DOWNLOAD_DATE = ''' || CAST(V_CURRDATE AS VARCHAR(10)) || '''::DATE ';
-    -- EXECUTE (V_STR_QUERY);
-
     RAISE NOTICE 'SP_IFRS_IMP_SBLC_PRORATE | AFFECTED RECORD : %', V_RETURNROWS2;
     ---------- ====== BODY ======
 
