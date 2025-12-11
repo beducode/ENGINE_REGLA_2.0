@@ -145,7 +145,6 @@ BEGIN
 			,LGD_MODEL_ID
 			,ME_MODEL_ID
 			,EFF_DATE_OPTION
-			,EFF_DATE
 			,IS_DELETE
 			,CREATEDBY
 			,CREATEDDATE
@@ -159,7 +158,6 @@ BEGIN
 			,LGD_MODEL_ID
 			,ME_MODEL_ID
 			,EFF_DATE_OPTION
-			,EFF_DATE
 			,IS_DELETE
 			,CREATEDBY
 			,CREATEDDATE
@@ -378,7 +376,6 @@ BEGIN
             ,EXPECTED_LIFE
             ,INCREMENT_PERIOD
             ,HISTORICAL_DATA
-            ,CUT_OFF_DATE
             ,ACTIVE_FLAG
             ,IS_DELETE
             ,CREATEDBY
@@ -395,7 +392,6 @@ BEGIN
             ,EXPECTED_LIFE
             ,INCREMENT_PERIOD
             ,HISTORICAL_DATA
-            ,CUT_OFF_DATE
             ,ACTIVE_FLAG
             ,IS_DELETE
             ,CREATEDBY
@@ -436,9 +432,6 @@ BEGIN
             ,LGD_METHOD
             ,LGW_HISTORICAL_DATA
             ,WORKOUT_PERIOD
-            ,MIN_VALUE
-            ,MAX_VALUE
-            ,CUT_OFF_DATE
             ,ACTIVE_FLAG
             ,IS_DELETE
             ,CREATEDBY
@@ -453,9 +446,6 @@ BEGIN
             ,LGD_METHOD
             ,LGW_HISTORICAL_DATA
             ,WORKOUT_PERIOD
-            ,MIN_VALUE
-            ,MAX_VALUE
-            ,CUT_OFF_DATE
             ,ACTIVE_FLAG
             ,IS_DELETE
             ,CREATEDBY
@@ -547,7 +537,6 @@ BEGIN
             ,CALC_METHOD
             ,AVERAGE_METHOD
             ,DEFAULT_RULE_ID
-            ,CUT_OFF_DATE
             ,CCF_OVERRIDE
             ,ACTIVE_FLAG
             ,IS_DELETE
@@ -562,7 +551,6 @@ BEGIN
             ,CALC_METHOD
             ,AVERAGE_METHOD
             ,DEFAULT_RULE_ID
-            ,CUT_OFF_DATE
             ,CCF_OVERRIDE
             ,ACTIVE_FLAG
             ,IS_DELETE
