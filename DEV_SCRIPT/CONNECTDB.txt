@@ -24,3 +24,36 @@ Host: postgre-archive.dev.regla.cloud
 Port: 8432
 U: postgres
 P: iHRqwlfC7BfqB34YE0hvNb0
+
+#Update
+#QA
+#BSI
+
+Gaesss....
+porta.bsi.qa.regla.cloud sudah bisa di access ya.
+
+hanya perlu update tambahan dari sisi Appsettings dan config db Mas @⁨Yanto NTT⁩ @⁨NTT Imron⁩ 
+
+# AppSetting
+Branch: qa/oracle/psak413/bsi
+https://getlab.regla.cloud/project-edelweiss/operations/vault/appsettings
+
+#Oracle Config
+Host : oracle-config.bsi.qa.regla.cloud:11521
+Docker:  regla-qa-bsi-oracle-config:11521
+Database: REGLA_DEV_BSI_CONFIG
+User: REGLAAPPS
+Pass: Gp8USXo48nTCIb7U1kSgsB2
+
+#Oracle Analytic
+Host : oracle-analytic.bsi.qa.regla.cloud:21521
+Docker: regla-qa-bsi-oracle-analytic:21521
+Database: REGLA_DEV_BSI_ANALYTIC
+User: system
+Pass: Jq3YNGZREB4PLxDEWeCwfl0
+
+
+Thank You
+cc @⁨Amanda NTT⁩ @⁨Nerissa NTT⁩ @⁨NTT Yosua⁩ @⁨Evelyn NTT⁩ @⁨~⠀⁩
+
+
