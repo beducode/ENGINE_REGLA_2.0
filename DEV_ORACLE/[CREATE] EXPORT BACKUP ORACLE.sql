@@ -1,0 +1,10 @@
+----- EXECUTE DARI COMMAND PROMPT AS ADMINISTRATOR
+
+----- EXPORT DUMP FILE UNTUK MIGRASI KE VERSI ORACLE 19
+expdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.qa.regla.cloud:21521/REGLA_DEV_BSI_ANALYTIC schemas=PSAK413 directory=DATA_PUMP_DIR dumpfile=PSAK413_01012026_V19.dmp logfile=PSAK413_01012026_V19.log parallel=8 version=19
+
+----- LOGIN AS SYSDBA KE SQL PLUS VIA CMD, LALU CHECK DENGAN QUERY INI UNTUK MELIHAT EXISTING DIRECTORY / FOLDER BACKUP
+SELECT directory_name, directory_path FROM dba_directoriesWHERE directory_name = 'DATA_PUMP_DIR';
+
+----- EXPORT DUMP NORMAL
+expdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.qa.regla.cloud:21521/REGLA_DEV_BSI_ANALYTIC schemas=PSAK413 directory=DATA_PUMP_DIR dumpfile=PSAK413_01012026.dmp logfile=PSAK413_01012026.log parallel=8
