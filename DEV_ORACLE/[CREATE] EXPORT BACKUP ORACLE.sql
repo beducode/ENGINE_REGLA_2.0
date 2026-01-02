@@ -42,7 +42,7 @@ sqlplus system/Gp8USXo48nTCIb7U1kSgsB2@oracle-config.bsi.qa.regla.cloud:11521/RE
 -- NORMAL PROCESS
 ------ ## REGLA_DEV_BSI_ANALYTIC
 -- ## VERSION 19
-expdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.qa.regla.cloud:21521/REGLA_DEV_BSI_ANALYTIC schemas=PSAK413 directory=DATA_PUMP_DIR dumpfile=PSAK413_01012026_V2_FOR_ORACLE_19.dmp logfile=PSAK413_01012026_V2_FOR_ORACLE_19.log version=19
+expdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.qa.regla.cloud:21521/REGLA_DEV_BSI_ANALYTIC schemas=PSAK413 directory=DATA_PUMP_DIR dumpfile=PSAK413_02012026_V2_FOR_ORACLE_19.dmp logfile=PSAK413_02012026_V2_FOR_ORACLE_19.log version=19
 -- ## NON VERSION
 expdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.qa.regla.cloud:21521/REGLA_DEV_BSI_ANALYTIC schemas=PSAK413 directory=DATA_PUMP_DIR dumpfile=PSAK413_01012026_V2.dmp logfile=PSAK413_01012026_V2.log
 
@@ -67,3 +67,129 @@ expdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle-config.bsi.qa.regla.cloud:11521/REGL
 -- FILENAME : PSAK413_CONFIG_01012026_V3_FOR_ORACLE_19.dmp
 -- -- #### NON VERSION
 -- FILENAME : PSAK413_CONFIG_01012026_V3.dmp
+
+
+------- STEP BY STEP REMOVE
+
+--- DROP
+DROP DIRECTORY DATA_PUMP_PSAK_CONFIG;
+--- CEK
+SELECT * FROM dba_directories WHERE directory_name = 'DATA_PUMP_PSAK_CONFIG';
+
+---- CEK KONEKSI
+SHOW CON_NAME;
+
+---- PINDAH KE CB$ROOT
+ALTER SESSION SET CONTAINER = CDB$ROOT;
+---- PINDAH LAGI KE PDB
+ALTER SESSION SET CONTAINER = REGLA_DEV_BSI_CONFIG;
+
+---- CEK ALL FOLDER
+SELECT directory_name, directory_path FROM dba_directories ORDER BY directory_name;
+
+
+------ STEP BY STEP CREATE
+-- #1
+ALTER SESSION SET CONTAINER = CDB$ROOT;
+-- #2
+SHOW CON_NAME;
+-- #3
+CREATE DIRECTORY DATA_PUMP_PSAK_CONFIG AS '/opt/oracle/admin/REGLADEV/dpdump';
+-- #4
+GRANT READ, WRITE ON DIRECTORY DATA_PUMP_PSAK_CONFIG TO SYS;
+-- #55
+SELECT * FROM dba_directories WHERE directory_name = 'DATA_PUMP_PSAK_CONFIG';
+-- #6
+SELECT * FROM dba_tab_privs WHERE table_name='DATA_PUMP_PSAK_CONFIG';
+-- #7
+ALTER SESSION SET CONTAINER = REGLA_DEV_BSI_CONFIG;
+-- #8
+SHOW CON_NAME;
+-- #9
+CREATE DIRECTORY DATA_PUMP_PSAK_CONFIG AS '/opt/oracle/admin/REGLADEV/dpdump';
+-- #10
+GRANT READ, WRITE ON DIRECTORY DATA_PUMP_PSAK_CONFIG TO SYS;
+-- #11
+SELECT * FROM dba_directories WHERE directory_name = 'DATA_PUMP_PSAK_CONFIG';
+-- #12
+SELECT * FROM dba_tab_privs WHERE table_name='DATA_PUMP_PSAK_CONFIG';
+-- #13
+DECLARE
+  f UTL_FILE.FILE_TYPE;
+BEGIN
+  f := UTL_FILE.FOPEN('DATA_PUMP_PSAK_CONFIG', 'test_write.log', 'W');
+  UTL_FILE.PUT_LINE(f, 'TEST WRITE OK');
+  UTL_FILE.FCLOSE(f);
+END;
+/
+
+-- $14
+expdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle-config.bsi.qa.regla.cloud:11521/REGLA_DEV_BSI_CONFIG schemas=NTT_APPROVAL,NTT_AUDIT,NTT_CUSTOM_REPORT,NTT_DATA_MANAGENENT,NTT_EMAIL_NOTIFICATION,NTT_FILE_MANAGER,NTT_HANGFIRE,NTT_JOURNAL,NTT_PARAMETER,NTT_PLATFORM_SETTING,NTT_PSAK413_IMPAIRMENT,NTT_RISK_MODELLING,NTT_USER,NTT_WORKFLOW,REGLAAPPS directory=DATA_PUMP_PSAK_CONFIG dumpfile=TEST.dmp logfile=TEST.log version=19
+
+
+
+-- CREATE DIRECTORY DATA_PUMP_DIR AS '/opt/oracle/admin/REGLADEV/dpdump';
+
+-- /opt/oracle/admin/REGLADEV/dpdump/417060FE045A0A20E0634F13020A02AE/PSAK413_CONFIG_02012026.dmp
+
+-- CREATE DIRECTORY DATA_PUMP_PSAK_ANALYTIC AS '/opt/oracle/admin/REGLADEV/dpdump/u01/backup/datapump_psak413_analytic';
+
+
+-- SELECT directory_name, directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_PSAK_ANALYTIC';
+
+-- SELECT directory_name, directory_path FROM dba_directories ORDER BY directory_name;
+
+
+
+-- Path:
+-- /opt/oracle/admin/REGLADEV/dpdump/u01/backup/datapump_psak413_analytic
+
+-- /opt/oracle/admin/REGLADEV/dpdump/u01/backup/datapump_psak413_config
+
+-- SELECT * FROM dba_tab_privs WHERE table_name = 'DATA_PUMP_PSAK_ANALYTIC';
+
+-- CREATE DIRECTORY DATA_PUMP_PSAK_CONFIG AS '/opt/oracle/admin/REGLADEV/dpdump/u01/backup/datapump_psak413_config';
+
+-- /opt/oracle/admin/REGLADEV/dpdump/
+
+
+-- GRANT READ, WRITE ON DIRECTORY DATA_PUMP_PSAK_ANALYTIC TO SYS;
+
+-- GRANT READ, WRITE ON DIRECTORY DATA_PUMP_PSAK_CONFIG TO SYS;
+
+-- SELECT * FROM dba_directories WHERE directory_name = 'DATA_PUMP_PSAK_CONFIG';
+
+-- GRANT READ, WRITE ON DIRECTORY DATA_PUMP_PSAK_CONFIG TO SYS;
+
+-- CREATE DIRECTORY DATA_PUMP_PSAK_ANALYTIC AS '/u01/backup/datapump_psak_analytic';
+
+-- DROP DIRECTORY DATA_PUMP_PSAK_ANALYTIC;
+
+-- ALTER SESSION SET CONTAINER = REGLA_DEV_BSI_CONFIG;
+
+-- SHOW CON_NAME;
+
+-- SELECT * FROM dba_directories WHERE directory_name='DATA_PUMP_DIR';
+
+-- SELECT * FROM dba_tab_privs WHERE table_name='DATA_PUMP_DIR';
+
+
+-- expdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle-config.bsi.qa.regla.cloud:11521/REGLA_DEV_BSI_CONFIG schemas=NTT_APPROVAL,NTT_AUDIT,NTT_CUSTOM_REPORT,NTT_DATA_MANAGENENT,NTT_EMAIL_NOTIFICATION,NTT_FILE_MANAGER,NTT_HANGFIRE,NTT_JOURNAL,NTT_PARAMETER,NTT_PLATFORM_SETTING,NTT_PSAK413_IMPAIRMENT,NTT_RISK_MODELLING,NTT_USER,NTT_WORKFLOW,REGLAAPPS directory=DATA_PUMP_PSAK_CONFIG dumpfile=TEST.dmp logfile=TEST.log version=19
+
+-- DROP DIRECTORY DATA_PUMP_PSAK_CONFIG;
+
+-- CREATE DIRECTORY DATA_PUMP_PSAK_CONFIG AS '/opt/oracle/admin/REGLADEV/dpdump';
+
+
+-- DECLARE
+--   f UTL_FILE.FILE_TYPE;
+-- BEGIN
+--   f := UTL_FILE.FOPEN('DATA_PUMP_PSAK_CONFIG', 'test_write.log', 'W');
+--   UTL_FILE.PUT_LINE(f, 'TEST WRITE OK');
+--   UTL_FILE.FCLOSE(f);
+-- END;
+-- /
+
+
+
+-- SELECT owner, table_name FROM dba_tables WHERE table_name LIKE 'SYS_EXPORT%';
