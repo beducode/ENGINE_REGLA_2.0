@@ -62,3 +62,17 @@ Host : oracle-analytic.bsi.qa.regla.cloud:21521
 Database: REGLA_DEV_BSI_ANALYTIC
 User: PSAK413
 Pass: Y2LKNliFw4W0joiwh8Eu4Sk
+
+#Oracle Config DEV REGLAAPPS
+Host : oracle-config.bsi.regla.cloud
+DB : REGLA_DEV_BSI_CONFIG
+Port : 1521
+U : REGLAAPPS
+P : Gp8USXo48nTCIb7U1kSgsB2
+
+#Oracle Config QA REGLAAPPS
+Host : oracle-config.bsi.qa.regla.cloud
+DB : REGLA_DEV_BSI_CONFIG
+Port : 11521
+U : REGLAAPPS
+P : Gp8USXo48nTCIb7U1kSgsB2
