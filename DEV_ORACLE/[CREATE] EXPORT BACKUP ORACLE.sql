@@ -193,3 +193,21 @@ expdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle-config.bsi.qa.regla.cloud:11521/REGL
 
 
 -- SELECT owner, table_name FROM dba_tables WHERE table_name LIKE 'SYS_EXPORT%';
+
+
+---- REGLA_DEV_BSI_ANALYTIC
+sqlplus system/Jq3YNGZREB4PLxDEWeCwfl0@oracle19-analytic.bsi.qa.regla.cloud:22521/REGLA_DEV_BSI_ANALYTIC
+
+---> QUERY CEK DIRECTORY
+SELECT directory_name, directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
+
+expdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle19-analytic.bsi.qa.regla.cloud:22521/REGLA_DEV_BSI_ANALYTIC schemas=PSAK413 directory=DATA_PUMP_DIR dumpfile=PSAK413_ANALYTIC_11012026_V1.dmp logfile=PSAK413_ANALYTIC_11012026_V1.log content=ALL
+
+
+---- REGLA_DEV_BSI_ANALYTIC
+sqlplus system/Gp8USXo48nTCIb7U1kSgsB2@oracle19-config.bsi.qa.regla.cloud:12521/REGLA_DEV_BSI_CONFIG
+
+---> QUERY CEK DIRECTORY
+SELECT directory_name, directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
+
+expdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle19-config.bsi.qa.regla.cloud:12521/REGLA_DEV_BSI_CONFIG schemas=NTT_APPROVAL,NTT_AUDIT,NTT_CUSTOM_REPORT,NTT_DATA_MANAGENENT,NTT_EMAIL_NOTIFICATION,NTT_FILE_MANAGER,NTT_HANGFIRE,NTT_JOURNAL,NTT_PARAMETER,NTT_PLATFORM_SETTING,NTT_PSAK413_IMPAIRMENT,NTT_RISK_MODELLING,NTT_USER,NTT_WORKFLOW,REGLAAPPS directory=DATA_PUMP_DIR dumpfile=PSAK413_CONFIG_11012026_V1.dmp logfile=PSAK413_CONFIG_11012026_V1.log content=ALL

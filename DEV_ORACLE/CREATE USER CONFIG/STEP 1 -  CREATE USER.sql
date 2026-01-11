@@ -21,13 +21,15 @@ DECLARE
 
   -- Nama user admin yang akan akses semua schema
   v_admin_user VARCHAR2(50) := 'REGLAAPPS';
-  v_admin_pass VARCHAR2(50) := 'Gp8USXo48nTCIb7U1kSgsB2';
+  v_admin_pass VARCHAR2(50) := '583C045kstz3eUqx2a6eOUt';
   v_sql VARCHAR2(4000);
 BEGIN
   -- 1️⃣ Buat user admin jika belum ada
   BEGIN
-    v_sql := 'CREATE USER ' || v_admin_user || ' IDENTIFIED BY ' || v_admin_pass ||
-             ' DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp QUOTA UNLIMITED ON users';
+    v_sql := 'CREATE USER ' || v_admin_user ||
+            ' IDENTIFIED BY "' || v_admin_pass || '"' ||
+            ' DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp QUOTA UNLIMITED ON users';
+
     EXECUTE IMMEDIATE v_sql;
   EXCEPTION
     WHEN OTHERS THEN
@@ -46,20 +48,6 @@ BEGIN
 
   -- 2️⃣ Loop: buat semua schema dari daftar
   FOR i IN 1 .. v_schemas.COUNT LOOP
-    BEGIN
-      v_sql := 'CREATE USER ' || v_schemas(i) || ' IDENTIFIED BY ' || LOWER(v_schemas(i)) ||
-               ' DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp QUOTA UNLIMITED ON users';
-      EXECUTE IMMEDIATE v_sql;
-      DBMS_OUTPUT.PUT_LINE('User/schema ' || v_schemas(i) || ' berhasil dibuat.');
-    EXCEPTION
-      WHEN OTHERS THEN
-        IF SQLCODE = -01920 THEN
-          DBMS_OUTPUT.PUT_LINE('User/schema ' || v_schemas(i) || ' sudah ada.');
-        ELSE
-          DBMS_OUTPUT.PUT_LINE('Error buat ' || v_schemas(i) || ': ' || SQLERRM);
-        END IF;
-    END;
-
     -- Berikan hak akses dasar untuk tiap schema
     BEGIN
       EXECUTE IMMEDIATE 'GRANT CREATE SESSION, CREATE TABLE, CREATE VIEW, CREATE SEQUENCE TO ' || v_schemas(i);
@@ -77,5 +65,5 @@ BEGIN
     END;
   END LOOP;
 
-  DBMS_OUTPUT.PUT_LINE('Selesai membuat schema dan memberikan akses.');
+  DBMS_OUTPUT.PUT_LINE('Selesai memberikan akses.');
 END;
