@@ -214,3 +214,7 @@ expdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle19-config.bsi.qa.regla.cloud:12521/RE
 
 ---- IMPORT SQL FILE
 impdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle19-config.bsi.qa.regla.cloud:12521/REGLA_DEV_BSI_CONFIG directory=DATA_PUMP_DIR dumpfile=PSAK413_CONFIG_11012026_V1.dmp sqlfile=SQL_PSAK413_CONFIG_11012026_V1.sql
+
+
+----- IMPORT
+impdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle-config.bsi.regla.cloud:1521/REGLA_DEV_BSI_CONFIG directory=DATA_PUMP_DIR dumpfile=XXXX.dmp logfile=XXX.log
