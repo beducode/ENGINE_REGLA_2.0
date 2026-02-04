@@ -1,2 +1,4 @@
 *.dmp
 DB_IMPORT_BSI/_archive/
+*.dmp
+DB_IMPORT_BSI/_archive/
