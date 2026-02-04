@@ -218,3 +218,18 @@ impdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle19-config.bsi.qa.regla.cloud:12521/RE
 
 ----- IMPORT
 impdp system/Gp8USXo48nTCIb7U1kSgsB2@oracle-config.bsi.regla.cloud:1521/REGLA_DEV_BSI_CONFIG directory=DATA_PUMP_DIR dumpfile=XXXX.dmp logfile=XXX.log
+
+
+
+
+sqlplus system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.regla.cloud:1521/REGLA_DEV_BSI_ANALYTIC
+
+-- IFRS9 TO IFRS9_OLD
+expdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.regla.cloud:1521/REGLA_DEV_BSI_ANALYTIC schemas=IFRS9 directory=DATA_PUMP_DIR dumpfile=IFRS9_05022026.dmp logfile=IFRS9_05022026.log content=ALL
+
+impdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.regla.cloud:1521/REGLA_DEV_BSI_ANALYTIC directory=DATA_PUMP_DIR dumpfile=IFRS9_05022026.dmp logfile=IFRS9_IMP_05022026.log remap_schema=IFRS9:IFRS9
+
+-- IFRS9_BCA TO IFRS9
+expdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.regla.cloud:1521/REGLA_DEV_BSI_ANALYTIC schemas=IFRS9_BCA directory=DATA_PUMP_DIR dumpfile=IFRS9_BCA_05022026.dmp logfile=IFRS9_BCA_05022026.log content=ALL
+
+impdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.regla.cloud:1521/REGLA_DEV_BSI_ANALYTIC directory=DATA_PUMP_DIR dumpfile=IFRS9_BCA_05022026.dmp logfile=IFRS9_BCA_IMP_05022026.log remap_schema=IFRS9_BCA:IFRS9
