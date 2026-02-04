@@ -1,0 +1,13 @@
+CREATE OR REPLACE PROCEDURE USPS_GETCOMMONUSAGE
+(
+    V_CommonCode VARCHAR2 DEFAULT ' ',
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+OPEN Cur_out FOR
+SELECT CommonUsage
+    FROM tblM_CommonCodeHeader TMCCH
+    WHERE CommonCode = V_CommonCode;
+
+END;

@@ -1,0 +1,11 @@
+CREATE OR REPLACE PROCEDURE USPS_PIVOTHEADER
+(
+    V_Pivotid VARCHAR2 DEFAULT ' ',
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+OPEN Cur_out FOR
+SELECT * FROM tblS_PivotHeader nolock where PivotID = V_Pivotid;
+
+END;

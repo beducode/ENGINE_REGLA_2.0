@@ -1,0 +1,37 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_JOURNAL_STAT(
+    v_DOWNLOADDATECUR DATE DEFAULT ('1-JAN-1900'),
+    v_DOWNLOADDATEPREV DATE DEFAULT ('1-JAN-1900'))
+AS
+    V_CURRDATE DATE;
+    V_PREVDATE DATE;
+    V_SPNAME   VARCHAR2(200);
+BEGIN
+    IF v_DOWNLOADDATECUR = '1-JAN-1900'
+    THEN
+        SELECT CURRDATE INTO V_CURRDATE FROM IFRS_PRC_DATE;
+    ELSE
+        V_CURRDATE := v_DOWNLOADDATECUR;
+    END IF;
+
+    IF v_DOWNLOADDATEPREV = '1-JAN-1900'
+    THEN
+        SELECT PREVDATE INTO V_PREVDATE FROM IFRS_PRC_DATE;
+    ELSE
+        V_PREVDATE := v_DOWNLOADDATEPREV;
+    END IF;
+
+    /**
+    RAL Added to tunning jurnal process 22 April 2022 - No release 600036831
+    **/
+    V_SPNAME := 'SP_IFRS_INSERT_TMP_IMA_GL (' || '''' || TO_CHAR(V_CURRDATE, 'dd-mon-yyyy') || '''' || ')';
+    SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME, 'REPORT', 'Y');
+
+    V_SPNAME := 'SP_IFRS_IMPC_JOURNAL_DATA (' || ''''|| TO_CHAR(V_CURRDATE, 'dd-mon-yyyy')|| ''''|| ','|| ''''|| TO_CHAR(V_PREVDATE, 'dd-mon-yyyy')|| ''''|| ')';
+    SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME, 'REPORT', 'Y');
+
+    V_SPNAME :='SP_IFRS_IMPI_JOURNAL_DATA ('|| ''''|| TO_CHAR(V_CURRDATE, 'dd-mon-yyyy')|| ''''|| ','|| ''''|| TO_CHAR(V_PREVDATE, 'dd-mon-yyyy')|| ''''|| ')';
+    SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME, 'REPORT', 'Y');
+
+    V_SPNAME :='SP_IFRS_ACCT_AMORT_RPT_REKON ('|| ''''|| TO_CHAR(V_CURRDATE, 'dd-mon-yyyy')|| ''''|| ','|| ''''|| TO_CHAR(V_PREVDATE, 'dd-mon-yyyy')|| ''''|| ')';
+    SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME, 'REPORT', 'Y');
+END;

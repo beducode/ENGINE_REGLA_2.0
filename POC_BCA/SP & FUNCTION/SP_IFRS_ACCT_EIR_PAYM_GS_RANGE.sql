@@ -1,0 +1,97 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_PAYM_GS_RANGE
+(P_ID1 NUMBER , P_ID2 NUMBER)
+AS
+    V_CURRDATE DATE;
+    V_PREVDATE DATE;
+
+BEGIN
+
+    SELECT  MAX(CURRDATE), MAX(PREVDATE)
+    INTO V_CURRDATE, V_PREVDATE
+    FROM IFRS_PRC_DATE_AMORT ;
+
+
+    INSERT INTO IFRS_AMORT_LOG ( DOWNLOAD_DATE ,DTM , OPS ,PROCNAME ,REMARK )
+    VALUES( V_CURRDATE ,SYSTIMESTAMP ,'START' ,'SP_IFRS_ACCT_EIR_PAYM_GS_RANGE' ,'');
+
+    COMMIT;
+
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE IFRS_ACCT_EIR_PAYM_GS'  ;
+
+    INSERT /*+ PARALLEL(12) */ INTO IFRS_ACCT_EIR_PAYM_GS
+    ( MASTERID ,
+      N_INT_RATE ,
+      INTCALCCODE ,
+      PREV_PMT_DATE ,
+      PMT_DATE ,
+      I_DAYS ,
+      COUNTER ,
+      N_OSPRN_PREV ,
+      N_PRN_PAYMENT ,
+      N_INT_PAYMENT ,
+      N_OSPRN ,
+      DISB_PERCENTAGE ,
+      DISB_AMOUNT ,
+      N_CALC_MFLAT_INT_AMT ,
+      M ,
+      PERIOD
+    )
+    SELECT  /*+ PARALLEL(12) */ A.MASTERID ,
+            A.N_INT_RATE ,
+            A.INTCALCCODE ,
+            A.PREV_PMT_DATE ,
+            A.PMT_DATE ,
+            A.I_DAYS ,
+            A.COUNTER ,
+            A.N_OSPRN_PREV ,
+            A.N_PRN_PAYMENT ,
+            A.N_INT_PAYMENT ,
+            A.N_OSPRN ,
+            A.DISB_PERCENTAGE ,
+            A.DISB_AMOUNT ,
+            A.N_CALC_MFLAT_INT_AMT ,
+            A.M ,
+            A.PERIOD
+    FROM    IFRS_ACCT_EIR_PAYM A
+    JOIN IFRS_GS_MASTERID B
+      ON B.MASTERID = A.MASTERID
+      AND B.ID >= P_ID1
+      AND B.ID <= P_ID2
+    WHERE   A.PREV_PMT_DATE <> A.PMT_DATE;
+
+    COMMIT;
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE IFRS_ACCT_EIR_PAYM_GS_DATE'  ;
+
+    INSERT /*+ PARALLEL(12) */ INTO IFRS_ACCT_EIR_PAYM_GS_DATE
+    ( MASTERID ,
+      DTMIN ,
+      DTMAX ,
+      CNTMIN ,
+      CNTMAX ,
+      PERIOD
+    )
+    SELECT  /*+ PARALLEL(12) */ A.MASTERID ,
+            A.DTMIN ,
+            A.DTMAX ,
+            A.CNTMIN ,
+            A.CNTMAX ,
+            A.PERIOD
+    FROM    ( SELECT MASTERID ,
+                     MIN(PMT_DATE) DTMIN ,
+                     MAX(PMT_DATE) DTMAX ,
+                     MIN(COUNTER) CNTMIN ,
+                     MAX(COUNTER) CNTMAX ,
+                     MAX(PERIOD) PERIOD
+              FROM      IFRS_ACCT_EIR_PAYM_GS
+              GROUP BY  MASTERID
+            ) A;
+
+
+    INSERT  INTO IFRS_AMORT_LOG ( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK )
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP , 'END' ,'SP_IFRS_ACCT_EIR_PAYM_GS_RANGE' ,'' );
+
+    COMMIT;
+
+END;

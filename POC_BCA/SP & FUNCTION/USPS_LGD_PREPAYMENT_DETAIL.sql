@@ -1,0 +1,22 @@
+CREATE OR REPLACE PROCEDURE  USPS_LGD_PREPAYMENT_DETAIL
+(
+    V_PERIOD DATE DEFAULT '2000-01-01',
+    V_SegementationId Number DEFAULT 0,
+    V_Duration Number DEFAULT 0,
+    V_MasterId Number Default 0,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+
+    OPEN Cur_out FOR
+
+    Select REPORT_DATE as PERIOD, ACCOUNT_NUMBER as ACCOUNT_NUMBER,
+            OUTSTANDING as OUTSTANDING, SCHEDULE as SCHEDULE_PAYMENT,
+            ACTUAL as ACTUAL_PAYMENT, PREPAYMENT as PREPAYMENT
+            From IFRS_PREPAYMENT_DETAIL
+            Where REPORT_DATE=V_PERIOD and SEGMENTATION_ID=V_SegementationId
+                  and DURATION=V_Duration and MASTERID=V_MasterId;
+
+
+END;

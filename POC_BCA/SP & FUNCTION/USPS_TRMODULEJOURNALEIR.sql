@@ -1,0 +1,41 @@
+CREATE OR REPLACE PROCEDURE  USPS_TRMODULEJOURNALEIR
+(
+    V_DDATE_MAID VARCHAR2 DEFAULT ' ',
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+    v_DATE DATE;
+    v_MASTERID NUMBER(18);
+BEGIN
+
+    v_DATE := TO_DATE(SUBSTR(V_DDATE_MAID, 1, 10), 'yyyy/MM/dd');
+    v_MASTERID := TO_NUMBER(SUBSTR(V_DDATE_MAID, 11, INSTR(V_DDATE_MAID, '*', 1) - 11));
+
+    OPEN Cur_out FOR
+        SELECT DOWNLOAD_DATE,
+            ACCTNO,
+            FLAG_CF,
+            GLNO AS GL_ACCOUNT,
+            CASE WHEN JOURNALCODE = 'AMORT' THEN
+                JOURNALCODE
+            ELSE
+                JOURNALCODE2
+            END AS JOURNAL_TYPE,
+            JOURNAL_DESC,
+            CCY,
+            DRCR AS DB_CR,
+            REVERSE,
+            N_AMOUNT AS AMOUNT,
+            MASTERID AS MASTER_ACCOUNT_ID
+        FROM IFRS_ACCT_JOURNAL_DATA
+        WHERE MASTERID = v_MASTERID
+            AND DOWNLOAD_DATE <= v_DATE
+        ORDER BY DOWNLOAD_DATE DESC,
+            REVERSE DESC,
+            N_AMOUNT DESC,
+            CCY ASC,
+            JOURNALCODE DESC,
+            DRCR DESC,
+            NOREF ASC;
+
+END;

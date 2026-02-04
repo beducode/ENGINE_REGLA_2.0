@@ -1,0 +1,36 @@
+CREATE OR REPLACE PROCEDURE USPS_SERVICEJOBSLIST
+(
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+
+    OPEN Cur_out FOR
+
+        SELECT
+        A.PKID,
+        B.THREADID,
+        A.JOBNAME,
+        A.STATUS,
+        A.MESSAGE,
+        A.SHORTMESSAGE,
+        A.JOBNO,
+        A.SCREENID,
+        A.CREATEDBY,
+        A.CREATEDDATE,
+        A.CREATEDHOST,
+        A.UPDATEDBY,
+        A.UPDATEDDATE,
+        A.UPDATEDHOST,
+        B.START_TIME,
+        B.FINISH_TIME,
+        B.JOBID
+        -- B.* , A.*
+        FROM TBLT_SERVICEJOBSHEADER A
+        LEFT JOIN TBLT_APPLICATIONLOG B
+        ON A.PKID=B.JOBID
+        LEFT JOIN TBLM_JOBSACTIVATOR C
+        ON C.NAME = A.JOBNAME
+        WHERE C.JOBMONITORING_FLAG = 1;
+
+END;

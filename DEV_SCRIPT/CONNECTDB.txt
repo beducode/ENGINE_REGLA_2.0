@@ -45,10 +45,10 @@ Database: REGLA_DEV_BSI_CONFIG
 User: REGLAAPPS
 Pass: Gp8USXo48nTCIb7U1kSgsB2
 
-#Oracle Analytic DEV
+#Oracle Analytic DEV IFRS9
 Host : oracle-analytic.bsi.regla.cloud:1521
 Database: REGLA_DEV_BSI_ANALYTIC
-User: system
+User: IFRS9
 Pass: Jq3YNGZREB4PLxDEWeCwfl0
 
 #Oracle Analytic DEV PSAK413

@@ -1,0 +1,108 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_CHECK_AMORT
+AS
+  V_CURRDATE DATE;
+  V_PREVDATE DATE  ;
+  V_VCNT NUMBER(10);
+BEGIN
+
+    /******************************************************************************
+    01. DECLARE VARIABLE
+    *******************************************************************************/
+    SELECT MAX(CURRDATE), MAX(PREVDATE)
+    INTO V_CURRDATE, V_PREVDATE
+    FROM IFRS_PRC_DATE_AMORT;
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'START','SP_IFRS_CHECK_AMORT','');
+
+    EXECUTE IMMEDIATE 'truncate table IFRS_CHECK_AMORT'  ;
+    EXECUTE IMMEDIATE 'truncate table TMP_X'  ;
+
+    COMMIT;
+
+    /******************************************************************************
+    02. INSERT INTO TEMP
+    *******************************************************************************/
+    INSERT /*+ PARALLEL(12) */ INTO TMP_X(DOWNLOAD_DATE,CCY,MASTERID,ACCTNO,JOURNALCODE,AMOUNT)
+    SELECT /*+ PARALLEL(12) */ DOWNLOAD_DATE,CCY,MASTERID, ACCTNO
+         , CASE WHEN JOURNALCODE IN('ACCRU','ACCRU_SL')THEN 'AMORT' ELSE  JOURNALCODE END AS JOURNALCODE
+         , SUM(CASE WHEN REVERSE='Y' THEN -1 * N_AMOUNT ELSE N_AMOUNT END) AS AMOUNT
+    FROM IFRS_ACCT_JOURNAL_INTM_SUMM
+    WHERE DOWNLOAD_DATE=V_CURRDATE AND  JOURNALCODE NOT IN ('ACRU4','AMRT4')
+    GROUP BY DOWNLOAD_DATE,CCY
+    , CASE WHEN JOURNALCODE IN('ACCRU', 'ACCRU_SL')  THEN 'AMORT' ELSE  JOURNALCODE END,MASTERID, ACCTNO;
+
+    COMMIT;
+
+
+    EXECUTE IMMEDIATE 'truncate table TMP_X1'  ;
+    INSERT /*+ PARALLEL(12) */ INTO TMP_X1(DOWNLOAD_DATE,CCY,MASTERID,ACCTNO,JOURNALCODE,AMOUNT)
+    SELECT /*+ PARALLEL(12) */ DOWNLOAD_DATE,CCY,MASTERID,ACCTNO,JOURNALCODE,AMOUNT FROM TMP_X WHERE JOURNALCODE='DEFA0';
+
+    COMMIT;
+
+    EXECUTE IMMEDIATE 'truncate table TMP_X2'  ;
+    INSERT /*+ PARALLEL(12) */ INTO TMP_X2(DOWNLOAD_DATE,CCY,MASTERID,ACCTNO,JOURNALCODE,AMOUNT)
+    SELECT /*+ PARALLEL(12) */ DOWNLOAD_DATE,CCY,MASTERID,ACCTNO,JOURNALCODE,AMOUNT FROM TMP_X WHERE JOURNALCODE!='DEFA0';
+
+    COMMIT;
+
+    /******************************************************************************
+    03. INSERT CHECK AMORT
+    *******************************************************************************/
+    INSERT /*+ PARALLEL(12) */ INTO IFRS_CHECK_AMORT
+    (
+    DOWNLOAD_DATE,MASTERID,CCY,DEFA0_AMT,AMORT_AMT,UNAMORT_AMT,ACCOUNT_NUMBER
+    )
+    SELECT /*+ PARALLEL(12) */
+    NVL(A.DOWNLOAD_DATE,B.DOWNLOAD_DATE) AS DOWNLOAD_DATE2
+    , NVL(A.MASTERID,B.MASTERID) AS MASTERID2
+    , NVL(A.CCY,B.CCY) AS CCY
+    , A.AMOUNT AS DEFA0_AMT
+    , B.AMOUNT AS AMORT_AMT
+    , NVL(A.AMOUNT,0) + NVL(B.AMOUNT,0) AS UNAMORT_AMT
+    , A.ACCTNO
+    FROM TMP_X1 A
+    FULL OUTER JOIN TMP_X2 B ON B.MASTERID=A.MASTERID AND A.CCY=B.CCY AND A.ACCTNO = B.ACCTNO;
+
+    COMMIT;
+
+    /******************************************************************************
+    04. UPDATE CHECK AMORT
+    *******************************************************************************/
+    MERGE INTO IFRS_CHECK_AMORT A
+    USING IFRS_MASTER_ACCOUNT B
+    ON (B.MASTERID=A.MASTERID
+              AND  B.ACCOUNT_NUMBER = A.ACCOUNT_NUMBER
+            AND B.DOWNLOAD_DATE=V_CURRDATE
+       )
+    WHEN MATCHED THEN
+    UPDATE
+    SET  A.IMA_UNAMORT_AMT = NVL(B.UNAMORT_FEE_AMT,0) + NVL(B.UNAMORT_COST_AMT,0) + NVL(B.UNAMORT_BENEFIT,0)
+        ,A.IMA_OUTSTANDING = B.OUTSTANDING
+        ,A.CONTROL_AMT = NVL(A.DEFA0_AMT,0) + NVL(A.AMORT_AMT,0) - (NVL(B.UNAMORT_FEE_AMT,0) + NVL(B.UNAMORT_COST_AMT,0) + NVL(B.UNAMORT_BENEFIT,0)) ;
+    COMMIT;
+
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'END','SP_IFRS_CHECK_AMORT','');
+    --/*remark by adam
+    COMMIT;
+
+    /******************************************************************************
+    05. IF ERROR
+    *******************************************************************************/
+    SELECT COUNT (*)
+    INTO V_VCNT
+    FROM IFRS_CHECK_AMORT
+    WHERE ABS (CONTROL_AMT) > 1;
+
+    --Temporary remark Kaiser 4 Dec 2018
+--    IF V_VCNT > 0
+--    THEN  RAISE_APPLICATION_ERROR (-20002,'CHECK AMORT ERROR!');
+--       --   RETURN;
+--    END IF;
+
+    COMMIT;
+
+END;

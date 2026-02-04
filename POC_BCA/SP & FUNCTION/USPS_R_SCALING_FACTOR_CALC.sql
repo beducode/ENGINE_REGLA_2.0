@@ -1,0 +1,101 @@
+CREATE OR REPLACE PROCEDURE USPS_R_SCALING_FACTOR_CALC
+(
+    v_MODEL_ID NUMBER,
+    v_MODEL_SEQ NUMBER,
+    v_FL_YEAR NUMBER,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+    v_status NUMBER(10);
+BEGIN
+
+    SELECT STATUS
+    INTO v_status
+    FROM IFRS_FL_MODEL_VAR
+    WHERE PKID = v_MODEL_ID;
+
+    IF v_status = 1 THEN
+        OPEN Cur_out FOR
+        SELECT F.BUCKET_NAME,
+            SUM(B.CALC_AMOUNT) AS SUM_OUTSTANDING,
+            ROUND(C.TTC,6),
+            CASE WHEN 1-TTC = 0 THEN NULL ELSE ROUND(LN(TTC/(1-TTC)),6) END AS LOGIT_TTC,
+            ROUND(D.PIT,6),
+            CASE WHEN 1-PIT = 0 THEN NULL ELSE ROUND(LN(D.PIT/(1-D.PIT)),6) END AS LOGIT_PIT,
+            ROUND(E.CUMULATIVE_PD,6) CUMULATIVE_PD
+        FROM IFRS_FL_MODEL_VAR A
+        JOIN IFRS_PD_MIG_ENR B
+        ON A.PKID = v_MODEL_ID
+            AND A.DEPENDENT_VAR_VALUE = B.PD_RULE_ID
+        JOIN IFRS_PD_MIG_TTC C
+        ON B.EFF_DATE = C.EFF_DATE
+            AND B.PD_RULE_ID = C.PD_RULE_ID
+            AND A.PKID = C.MODEL_ID
+            AND B.BUCKET_FROM = C.BUCKET_ID
+        JOIN R_PD_PIT D
+        ON A.PKID = D.MODEL_ID
+            AND B.EFF_DATE = D.EFF_DATE
+            AND B.PD_RULE_ID = D.PD_RULE_ID
+            AND B.BUCKET_FROM = D.BUCKET_ID
+            AND D.MODEL_SEQ = v_MODEL_SEQ
+            AND D.FL_YEAR = v_FL_YEAR
+        JOIN R_PD_CUMULATIVE E
+        ON B.EFF_DATE = E.EFF_DATE
+            AND B.PD_RULE_ID = E.PD_RULE_ID
+            AND B.BUCKET_FROM = E.BUCKET_ID
+            AND D.MODEL_ID = E.MODEL_ID
+            AND D.MODEL_SEQ = E.MODEL_SEQ
+            AND D.FL_YEAR = E.FL_YEAR
+        JOIN IFRS_BUCKET_DETAIL F
+        ON B.BUCKET_GROUP = F.BUCKET_GROUP
+            AND B.BUCKET_FROM = F.BUCKET_ID
+        GROUP BY F.BUCKET_NAME,
+            B.BUCKET_FROM,
+            C.TTC,
+            D.PIT,
+            E.CUMULATIVE_PD
+        ORDER BY B.BUCKET_FROM;
+    ELSE
+        OPEN Cur_out FOR
+        SELECT F.BUCKET_NAME,
+            SUM(B.CALC_AMOUNT) AS SUM_OUTSTANDING,
+            ROUND(C.TTC,6),
+            CASE WHEN 1-TTC = 0 THEN NULL ELSE ROUND(LN(TTC/(1-TTC)),6) END AS LOGIT_TTC,
+            ROUND(D.PIT,6),
+            CASE WHEN 1-PIT = 0 THEN NULL ELSE ROUND(LN(D.PIT/(1-D.PIT)),6) END AS LOGIT_PIT,
+            ROUND(E.CUMULATIVE_PD,6) CUMULATIVE_PD
+        FROM IFRS_FL_MODEL_VAR A
+        JOIN IFRS_PD_MIG_ENR B
+        ON A.PKID = v_MODEL_ID
+            AND A.DEPENDENT_VAR_VALUE = B.PD_RULE_ID
+        JOIN IFRS_PD_MIG_TTC C
+        ON B.EFF_DATE = C.EFF_DATE
+            AND B.PD_RULE_ID = C.PD_RULE_ID
+            AND A.PKID = C.MODEL_ID
+            AND B.BUCKET_FROM = C.BUCKET_ID
+        JOIN R_PD_PIT_PEN D
+        ON A.PKID = D.MODEL_ID
+            AND B.EFF_DATE = D.EFF_DATE
+            AND B.PD_RULE_ID = D.PD_RULE_ID
+            AND B.BUCKET_FROM = D.BUCKET_ID
+            AND D.MODEL_SEQ = v_MODEL_SEQ
+            AND D.FL_YEAR = v_FL_YEAR
+        JOIN R_PD_CUMULATIVE_PEN E
+        ON B.EFF_DATE = E.EFF_DATE
+            AND B.PD_RULE_ID = E.PD_RULE_ID
+            AND B.BUCKET_FROM = E.BUCKET_ID
+            AND D.MODEL_ID = E.MODEL_ID
+            AND D.MODEL_SEQ = E.MODEL_SEQ
+            AND D.FL_YEAR = E.FL_YEAR
+        JOIN IFRS_BUCKET_DETAIL F
+        ON B.BUCKET_GROUP = F.BUCKET_GROUP
+            AND B.BUCKET_FROM = F.BUCKET_ID
+        GROUP BY F.BUCKET_NAME,
+            B.BUCKET_FROM,
+            C.TTC,
+            D.PIT,
+            E.CUMULATIVE_PD
+        ORDER BY B.BUCKET_FROM;
+    END IF;
+
+END;

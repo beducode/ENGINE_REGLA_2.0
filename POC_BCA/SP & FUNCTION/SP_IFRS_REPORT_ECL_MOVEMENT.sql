@@ -1,0 +1,2923 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_REPORT_ECL_MOVEMENT
+(
+  V_STARTDATE DATE DEFAULT '1-JAN-2019',
+  V_ENDDATE   DATE DEFAULT '1-JAN-2019'
+) AS
+  V_CURRDATE    DATE;
+  V_PREVDATE    DATE;
+  V_REPORTSTART DATE;
+  V_REPORTEND   DATE;
+BEGIN
+  IF V_STARTDATE = '1-JAN-2019' AND V_ENDDATE = '1-JAN-2019'
+  THEN
+    SELECT CURRDATE INTO V_CURRDATE FROM IFRS_PRC_DATE;
+
+    V_REPORTEND   := V_CURRDATE;
+    V_REPORTSTART := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
+  ELSE
+    V_CURRDATE    := V_STARTDATE;
+    V_REPORTEND   := V_ENDDATE;
+    V_REPORTSTART := V_STARTDATE;
+  END IF;
+
+  V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
+
+  /*
+     DELETE FROM IFRS_REPORT_ECL_MOVEMENT_DTL
+           WHERE REPORT_DATE BETWEEN V_REPORTSTART AND V_REPORTEND;
+     COMMIT;
+  */
+
+  WHILE V_CURRDATE <= V_REPORTEND
+  LOOP
+
+    SP_IFRS_INS_GTMP_NOMI_CUR_PRE (V_CURRDATE);
+
+    MERGE INTO GTMP_NOMINATIVE_CURR_PREV nomi
+    USING (SELECT *
+             FROM (SELECT CASE WHEN DATA_SOURCE = 'CRD'
+                               THEN NVL(A.RESERVED_AMOUNT_6, 0)
+                               WHEN DATA_SOURCE = 'BTRD' AND ACCOUNT_STATUS = 'A' AND
+                                    A.BI_CODE <> 0
+                               THEN NVL(A.RESERVED_AMOUNT_6, 0)
+                               WHEN DATA_SOURCE = 'BTRD' AND ACCOUNT_STATUS = 'A' AND
+                                    A.BI_CODE = 0
+                               THEN 0
+                               WHEN DATA_SOURCE NOT IN ('CRD', 'BTRD') AND
+                                    ACCOUNT_STATUS = 'A'
+                               THEN NVL(A.RESERVED_AMOUNT_6, 0)
+                               ELSE 0
+                          END AS CARRY_AMOUNT,
+                          a.*
+                     FROM GTMP_NOMINATIVE_CURR_PREV a
+                    WHERE (report_date = V_CURRDATE OR report_date = V_PREVDATE)) b
+            WHERE CARRY_AMOUNT <> RESERVED_AMOUNT_6) car
+    ON (nomi.masterid = car.masterid AND nomi.report_date = car.report_date)
+    WHEN MATCHED THEN
+      UPDATE SET RESERVED_AMOUNT_6 = carry_amount;
+    COMMIT;
+
+
+    MERGE INTO GTMP_NOMINATIVE_CURR_PREV nomi
+    USING (SELECT *
+             FROM (SELECT CASE WHEN DATA_SOURCE = 'CRD'
+                               THEN NVL(A.UNUSED_AMT_LCL, 0)
+                               WHEN DATA_SOURCE = 'BTRD' AND ACCOUNT_STATUS = 'A' AND
+                                    A.BI_CODE <> 0
+                               THEN NVL(A.UNUSED_AMT_LCL, 0)
+                               WHEN DATA_SOURCE = 'BTRD' AND ACCOUNT_STATUS = 'A' AND
+                                    A.BI_CODE = 0
+                               THEN 0
+                               WHEN DATA_SOURCE NOT IN ('CRD', 'BTRD') AND
+                                    ACCOUNT_STATUS = 'A'
+                               THEN NVL(A.UNUSED_AMT_LCL, 0)
+                               ELSE 0
+                          END AS UNUSED_AMOUNT,
+                          a.*
+                     FROM GTMP_NOMINATIVE_CURR_PREV a
+                    WHERE (report_date = V_CURRDATE OR report_date = V_PREVDATE)) b
+            WHERE UNUSED_AMOUNT <> UNUSED_AMT_LCL) car
+    ON (nomi.masterid = car.masterid AND nomi.report_date = car.report_date)
+    WHEN MATCHED THEN
+      UPDATE SET UNUSED_AMT_LCL = UNUSED_AMOUNT;
+    COMMIT;
+
+    MERGE INTO GTMP_NOMINATIVE_CURR_PREV nomi
+    USING (SELECT *
+             FROM (SELECT CASE WHEN DATA_SOURCE = 'CRD'
+                               THEN NVL(A.OUTSTANDING_ON_BS_LCL, 0)
+                               WHEN DATA_SOURCE = 'BTRD' AND ACCOUNT_STATUS = 'A' AND
+                                    A.BI_CODE <> 0
+                               THEN NVL(A.OUTSTANDING_ON_BS_LCL, 0)
+                               WHEN DATA_SOURCE = 'BTRD' AND ACCOUNT_STATUS = 'A' AND
+                                    A.BI_CODE = 0
+                               THEN 0
+                               WHEN DATA_SOURCE NOT IN ('CRD', 'BTRD') AND
+                                    ACCOUNT_STATUS = 'A'
+                               THEN NVL(A.OUTSTANDING_ON_BS_LCL, 0)
+                               ELSE 0
+                          END AS OUTSTANDING_ON_BS,
+                          a.*
+                     FROM GTMP_NOMINATIVE_CURR_PREV a
+                    WHERE (report_date = V_CURRDATE OR report_date = V_PREVDATE)) b
+            WHERE OUTSTANDING_ON_BS <> OUTSTANDING_ON_BS_LCL) car
+    ON (nomi.masterid = car.masterid AND nomi.report_date = car.report_date)
+    WHEN MATCHED THEN
+      UPDATE SET OUTSTANDING_ON_BS_LCL = OUTSTANDING_ON_BS;
+    COMMIT;
+
+---- UPDATE NILAI UNTUK WO CRD 2022-08-18
+      SP_IFRS_MOVEMENT_CRD_WO  (V_CURRDATE);
+
+      MERGE INTO GTMP_NOMINATIVE_CURR_PREV UPD
+      USING (SELECT IMACRD.DOWNLOAD_DATE REPORT_DATE,
+                    curr.MASTERID,
+                    NVL(IMACRD.OUTSTANDING_WO, 0) WRITEOFF_AMOUNT
+               FROM ifrs_stg_crd_ima IMACRD, GTMP_NOMINATIVE_CURR_PREV CURR
+              WHERE IMACRD.DOWNLOAD_DATE = V_CURRDATE
+                AND CURR.REPORT_DATE = V_CURRDATE
+                AND CURR.CUSTOMER_NUMBER = IMACRD.Customer_Number
+                and curr.account_number = IMACRD.account_number
+                and nvl(IMACRD.OUTSTANDING_WO, 0) <> 0
+                and (CURR.DATA_SOURCE = 'CRD' AND
+                    (CURR.WRITEOFF_FLAG = 'Y' OR CURR.ACCOUNT_STATUS = 'W') AND
+                    (NVL(CURR.outstanding_on_bs_ccy, 0) = 0))) DAT
+      ON (UPD.MASTERID = DAT.MASTERID AND UPD.REPORT_DATE = DAT.REPORT_DATE)
+      WHEN MATCHED THEN
+        UPDATE
+           SET OUTSTANDING_ON_BS_CCY = DAT.WRITEOFF_AMOUNT,
+               --ECL_TOTAL_CCY = DAT.WRITEOFF_AMOUNT,
+               --ECL_OFF_BS_LCL = DAT.WRITEOFF_AMOUNT,
+               --ECL_OFF_BS_CCY = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_2 = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_3 = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_4 = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_5 = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_6 = DAT.WRITEOFF_AMOUNT,
+               RESERVED_AMOUNT_6_CCY = DAT.WRITEOFF_AMOUNT;
+               --UNUSED_AMT_CCY = DAT.WRITEOFF_AMOUNT,
+               --UNUSED_AMT_LCL = DAT.WRITEOFF_AMOUNT,
+               --OUTSTANDING_ON_BS_LCL = DAT.WRITEOFF_AMOUNT,
+               --OUTSTANDING_OFF_BS_LCL = DAT.WRITEOFF_AMOUNT,
+               --OUTSTANDING_OFF_BS_CCY = DAT.WRITEOFF_AMOUNT,
+               --UNAMORT_FEE_AMT_CCY = DAT.WRITEOFF_AMOUNT,
+               --UNAMORT_FEE_AMT_LCL = DAT.WRITEOFF_AMOUNT,
+               --UNAMORT_FEE_AMT_ILS_CCY = DAT.WRITEOFF_AMOUNT,
+               --UNAMORT_FEE_AMT_ILS_LCL = DAT.WRITEOFF_AMOUNT,
+               --IA_UNWINDING_INTEREST_CCY = DAT.WRITEOFF_AMOUNT,
+               --IA_UNWINDING_INTEREST_LCL = DAT.WRITEOFF_AMOUNT;
+      commit;
+
+/*  Diremark karena isu konfrimasi email tanggal 06 feb 2023
+      MERGE INTO GTMP_NOMINATIVE_CURR_PREV UPD
+      USING (select CURR.MASTERID,
+                    CURR.REPORT_DATE,
+                    NVL(PREV.OUTSTANDING_ON_BS_CCY,0) OUTSTANDING_ON_BS_CCY,
+                    NVL(PREV.ECL_TOTAL_CCY,0) ECL_TOTAL_CCY,
+                    NVL(PREV.ECL_OFF_BS_LCL,0) ECL_OFF_BS_LCL,
+                    NVL(PREV.ECL_OFF_BS_CCY,0) ECL_OFF_BS_CCY,
+                    NVL(PREV.RESERVED_AMOUNT_2,0) RESERVED_AMOUNT_2,
+                    NVL(PREV.RESERVED_AMOUNT_3,0) RESERVED_AMOUNT_3,
+                    NVL(PREV.RESERVED_AMOUNT_4,0) RESERVED_AMOUNT_4,
+                    NVL(PREV.RESERVED_AMOUNT_5,0) RESERVED_AMOUNT_5,
+                    NVL(PREV.RESERVED_AMOUNT_6,0) RESERVED_AMOUNT_6,
+                    NVL(PREV.RESERVED_AMOUNT_6_CCY,0) RESERVED_AMOUNT_6_CCY,
+                    NVL(PREV.UNUSED_AMT_CCY,0) UNUSED_AMT_CCY,
+                    NVL(PREV.UNUSED_AMT_LCL,0) UNUSED_AMT_LCL,
+                    NVL(PREV.OUTSTANDING_ON_BS_LCL,0) OUTSTANDING_ON_BS_LCL,
+                    NVL(PREV.OUTSTANDING_OFF_BS_LCL,0) OUTSTANDING_OFF_BS_LCL,
+                    NVL(PREV.OUTSTANDING_OFF_BS_CCY,0) OUTSTANDING_OFF_BS_CCY,
+                    NVL(PREV.UNAMORT_FEE_AMT_CCY,0) UNAMORT_FEE_AMT_CCY,
+                    NVL(PREV.UNAMORT_FEE_AMT_LCL,0) UNAMORT_FEE_AMT_LCL,
+                    NVL(PREV.UNAMORT_FEE_AMT_ILS_CCY,0) UNAMORT_FEE_AMT_ILS_CCY,
+                    NVL(PREV.UNAMORT_FEE_AMT_ILS_LCL,0) UNAMORT_FEE_AMT_ILS_LCL,
+                    NVL(PREV.IA_UNWINDING_INTEREST_CCY,0) IA_UNWINDING_INTEREST_CCY,
+                    NVL(PREV.IA_UNWINDING_INTEREST_LCL,0) IA_UNWINDING_INTEREST_LCL
+               from GTMP_NOMINATIVE_CURR_PREV CURR,
+                    GTMP_NOMINATIVE_CURR_PREV PREV
+              where CURR.MASTERID = PREV.MASTERID
+                AND PREV.REPORT_DATE = V_PREVDATE
+                AND CURR.report_date = V_CURRDATE
+                and (CURR.DATA_SOURCE = 'CRD' AND
+                    (CURR.WRITEOFF_FLAG = 'Y' OR CURR.ACCOUNT_STATUS = 'W') AND
+                    (NVL(CURR.outstanding_on_bs_ccy, 0) = 0))
+                AND NOT EXISTS
+              (SELECT 1
+                       FROM IFRS_MASTER_WO_CRD_CHARGE STG
+                      WHERE STG.DOWNLOAD_DATE = V_CURRDATE
+                        AND CURR.ACCOUNT_NUMBER = STG.CUSTOMER_NUMBER
+                            )) DAT
+      ON (UPD.MASTERID = DAT.MASTERID AND UPD.REPORT_DATE = DAT.REPORT_DATE)
+      WHEN MATCHED THEN
+        UPDATE
+           SET OUTSTANDING_ON_BS_CCY = DAT.OUTSTANDING_ON_BS_CCY,
+               --ECL_TOTAL_CCY = DAT.ECL_TOTAL_CCY,
+               --ECL_OFF_BS_LCL = DAT.ECL_OFF_BS_LCL,
+               --ECL_OFF_BS_CCY = DAT.ECL_OFF_BS_CCY,
+               --RESERVED_AMOUNT_2 = DAT.RESERVED_AMOUNT_2,
+               --RESERVED_AMOUNT_3 = DAT.RESERVED_AMOUNT_3,
+               --RESERVED_AMOUNT_4 = DAT.RESERVED_AMOUNT_4,
+               --RESERVED_AMOUNT_5 = DAT.RESERVED_AMOUNT_5,
+               --RESERVED_AMOUNT_6 = DAT.RESERVED_AMOUNT_6,
+               RESERVED_AMOUNT_6_CCY = DAT.RESERVED_AMOUNT_6_CCY;
+               --UNUSED_AMT_CCY = DAT.UNUSED_AMT_CCY,
+               --UNUSED_AMT_LCL = DAT.UNUSED_AMT_LCL,
+               --OUTSTANDING_ON_BS_LCL = DAT.OUTSTANDING_ON_BS_LCL,
+               --OUTSTANDING_OFF_BS_LCL = DAT.OUTSTANDING_OFF_BS_LCL,
+               --OUTSTANDING_OFF_BS_CCY = DAT.OUTSTANDING_OFF_BS_CCY,
+               --UNAMORT_FEE_AMT_CCY = DAT.UNAMORT_FEE_AMT_CCY,
+               --UNAMORT_FEE_AMT_LCL = DAT.UNAMORT_FEE_AMT_LCL,
+               --UNAMORT_FEE_AMT_ILS_CCY = DAT.UNAMORT_FEE_AMT_ILS_CCY,
+               --UNAMORT_FEE_AMT_ILS_LCL = DAT.UNAMORT_FEE_AMT_ILS_LCL,
+               --IA_UNWINDING_INTEREST_CCY = DAT.IA_UNWINDING_INTEREST_CCY,
+               --IA_UNWINDING_INTEREST_LCL = DAT.IA_UNWINDING_INTEREST_LCL;
+
+      commit;
+*/
+
+      INSERT INTO GTMP_NOMINATIVE_CURR_PREV
+        (REPORT_DATE,
+         MASTERID,
+         CUSTOMER_NUMBER,
+         CUSTOMER_NAME,
+         ACCOUNT_NUMBER,
+         FACILITY_NUMBER,
+         ACCOUNT_STATUS,
+         DATA_SOURCE,
+         SUB_SEGMENT,
+         POCI_FLAG,
+         STAGE,
+         CURRENCY,
+         EXCHANGE_RATE,
+         WRITEOFF_FLAG,
+         IMPAIRED_FLAG,
+         SPECIAL_REASON,
+         OUTSTANDING_ON_BS_CCY,
+         ECL_TOTAL_CCY,
+         ECL_OFF_BS_LCL,
+         ECL_OFF_BS_CCY,
+         RESERVED_AMOUNT_2,
+         RESERVED_AMOUNT_3,
+         RESERVED_AMOUNT_4,
+         RESERVED_AMOUNT_5,
+         RESERVED_AMOUNT_6,
+         RESERVED_AMOUNT_6_CCY,
+         UNUSED_AMT_CCY,
+         UNUSED_AMT_LCL,
+         PRODUCT_CODE,
+         RESERVED_VARCHAR_2,
+         RESERVED_VARCHAR_5,
+         BI_CODE,
+         RESERVED_FLAG_1,
+         RESERVED_FLAG_2,
+         OUTSTANDING_ON_BS_LCL,
+         OUTSTANDING_OFF_BS_LCL,
+         OUTSTANDING_OFF_BS_CCY,
+         UNAMORT_FEE_AMT_CCY,
+         UNAMORT_FEE_AMT_LCL,
+         UNAMORT_FEE_AMT_ILS_CCY,
+         UNAMORT_FEE_AMT_ILS_LCL,
+         IA_UNWINDING_INTEREST_CCY,
+         IA_UNWINDING_INTEREST_LCL)
+        SELECT V_CURRDATE REPORT_DATE,
+               MASTERID,
+               CUSTOMER_NUMBER,
+               CUSTOMER_NAME,
+               ACCOUNT_NUMBER,
+               FACILITY_NUMBER,
+               'W' ACCOUNT_STATUS,
+               DATA_SOURCE,
+               SUB_SEGMENT,
+               POCI_FLAG,
+               STAGE,
+               CURRENCY,
+               EXCHANGE_RATE,
+               'Y' WRITEOFF_FLAG,
+               IMPAIRED_FLAG,
+               SPECIAL_REASON,
+               OUTSTANDING_ON_BS_CCY,
+               0 ECL_TOTAL_CCY,
+               0 ECL_OFF_BS_LCL,
+               0 ECL_OFF_BS_CCY,
+               0 RESERVED_AMOUNT_2,
+               0 RESERVED_AMOUNT_3,
+               0 RESERVED_AMOUNT_4,
+               0 RESERVED_AMOUNT_5,
+               0 RESERVED_AMOUNT_6,
+               RESERVED_AMOUNT_6_CCY,
+               0 UNUSED_AMT_CCY,
+               0 UNUSED_AMT_LCL,
+               PRODUCT_CODE,
+               RESERVED_VARCHAR_2,
+               RESERVED_VARCHAR_5,
+               BI_CODE,
+               RESERVED_FLAG_1,
+               RESERVED_FLAG_2,
+               0 OUTSTANDING_ON_BS_LCL,
+               0 OUTSTANDING_OFF_BS_LCL,
+               0 OUTSTANDING_OFF_BS_CCY,
+               0 UNAMORT_FEE_AMT_CCY,
+               0 UNAMORT_FEE_AMT_LCL,
+               0 UNAMORT_FEE_AMT_ILS_CCY,
+               0 UNAMORT_FEE_AMT_ILS_LCL,
+               0 IA_UNWINDING_INTEREST_CCY,
+               0 IA_UNWINDING_INTEREST_LCL
+          FROM GTMP_NOMINATIVE_CURR_PREV PREV
+         WHERE PREV.REPORT_DATE = V_PREVDATE
+           AND PREV.DATA_SOURCE = 'CRD'
+           AND (PREV.ACCOUNT_STATUS = 'A' OR PREV.OUTSTANDING_ON_BS_CCY > 0)
+           AND NOT EXISTS (SELECT 1
+                  FROM GTMP_NOMINATIVE_CURR_PREV CURR
+                 WHERE CURR.REPORT_DATE = V_CURRDATE
+                   AND CURR.MASTERID = PREV.MASTERID)
+           AND EXISTS
+         (SELECT 1
+                  FROM IFRS_MASTER_WO_CRD_CHARGE CRD
+                 WHERE CRD.DOWNLOAD_DATE = V_CURRDATE
+                   AND CRD.CUSTOMER_NUMBER = PREV.ACCOUNT_NUMBER);
+
+      COMMIT;
+
+      MERGE INTO GTMP_NOMINATIVE_CURR_PREV UPD
+      USING (SELECT STG.DOWNLOAD_DATE REPORT_DATE,
+             PREV.MASTERID,
+             NVL(STG.WRITEOFF_AMOUNT, 0) WRITEOFF_AMOUNT
+               FROM IFRS_MASTER_WO_CRD_CHARGE STG, GTMP_NOMINATIVE_CURR_PREV PREV
+              WHERE STG.DOWNLOAD_DATE = V_CURRDATE
+                AND PREV.REPORT_DATE = V_PREVDATE
+                AND PREV.ACCOUNT_NUMBER = STG.CUSTOMER_NUMBER
+                --PREV.CUSTOMER_NUMBER = SUBSTR(STG.customer_number, 6, 11)
+                AND (PREV.DATA_SOURCE = 'CRD' AND
+                    (PREV.WRITEOFF_FLAG = 'Y' OR PREV.ACCOUNT_STATUS = 'W') AND
+                    (NVL(PREV.outstanding_on_bs_ccy, 0) = 0))) DAT
+      ON (UPD.MASTERID = DAT.MASTERID AND UPD.REPORT_DATE = DAT.REPORT_DATE)
+      WHEN MATCHED THEN
+        UPDATE
+           SET OUTSTANDING_ON_BS_CCY = DAT.WRITEOFF_AMOUNT,
+               --ECL_TOTAL_CCY = DAT.WRITEOFF_AMOUNT,
+               --ECL_OFF_BS_LCL = DAT.WRITEOFF_AMOUNT,
+               --ECL_OFF_BS_CCY = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_2 = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_3 = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_4 = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_5 = DAT.WRITEOFF_AMOUNT,
+               --RESERVED_AMOUNT_6 = DAT.WRITEOFF_AMOUNT,
+               RESERVED_AMOUNT_6_CCY = DAT.WRITEOFF_AMOUNT;
+               --UNUSED_AMT_CCY = DAT.WRITEOFF_AMOUNT,
+               --UNUSED_AMT_LCL = DAT.WRITEOFF_AMOUNT,
+               --OUTSTANDING_ON_BS_LCL = DAT.WRITEOFF_AMOUNT,
+               --OUTSTANDING_OFF_BS_LCL = DAT.WRITEOFF_AMOUNT,
+               --OUTSTANDING_OFF_BS_CCY = DAT.WRITEOFF_AMOUNT,
+               --UNAMORT_FEE_AMT_CCY = DAT.WRITEOFF_AMOUNT,
+               --UNAMORT_FEE_AMT_LCL = DAT.WRITEOFF_AMOUNT,
+               --UNAMORT_FEE_AMT_ILS_CCY = DAT.WRITEOFF_AMOUNT,
+               --UNAMORT_FEE_AMT_ILS_LCL = DAT.WRITEOFF_AMOUNT,
+               --IA_UNWINDING_INTEREST_CCY = DAT.WRITEOFF_AMOUNT,
+               --IA_UNWINDING_INTEREST_LCL = DAT.WRITEOFF_AMOUNT;
+
+     commit;
+---- END UPDATE NILAI UNTUK WO CRD
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_IFRS_ECL_MOVEMENT_DTL';
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TEMP_RPT_NOMINATIVE_CURR_PREV';
+
+    INSERT INTO TEMP_RPT_NOMINATIVE_CURR_PREV
+    SELECT * FROM GTMP_NOMINATIVE_CURR_PREV;
+
+    COMMIT;
+
+    DELETE FROM IFRS_REPORT_ECL_MOVEMENT_DTL WHERE REPORT_DATE = V_CURRDATE;
+
+    COMMIT;
+
+    /****************************************************
+    OPENING BALANCE
+    ****************************************************/
+    /*
+    SELECT * FROM (
+    SELECT
+    'Balance at 1 January' AS IMP_CHANGE_REASON,
+    A.STAGE, A.ECL_TOTAL_LCL
+     FROM GTMP_NOMINATIVE_CURR_PREV A
+    WHERE A.REPORT_DATE = '30-SEP-2019'
+    )
+    PIVOT(
+        SUM(ECL_TOTAL_LCL)
+        FOR (STAGE)
+        IN (1 AS "STAGE1",2 AS "STAGE2",3 AS "STAGE3")
+    )
+    UNION ALL
+    */
+
+    INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+      (REPORT_DATE,
+       MASTERID,
+       DATA_SOURCE,
+       SUB_SEGMENT,
+       SEQ_NO,
+       IMP_CHANGE_REASON,
+       ECL_ON_BS,
+       ECL_OFF_BS,
+       ECL_TOTAL,
+       CARRY_AMOUNT,
+       UNUSED_AMT,
+       CURRENCY,
+       EXCHANGE_RATE,
+       STAGE,
+       WRITEOFF_FLAG,
+       SPECIAL_REASON,
+       OUTSTANDING_ON_BS,
+       OUTSTANDING_OFF_BS,
+       NILAI_TERCATAT_ON_BS)
+      SELECT REPORT_DATE,
+             MASTERID,
+             DATA_SOURCE,
+             SUB_SEGMENT,
+             SEQ_NO,
+             IMP_CHANGE_REASON,
+             SUM(ECL_ON_BS),
+             SUM(ECL_OFF_BS),
+             SUM(ECL_TOTAL) AS ECL_TOTAL,
+             SUM(CARRY_AMOUNT) AS CARRY_AMOUNT,
+             SUM(UNUSED_AMT) AS UNUSED_AMT,
+             CURRENCY,
+             EXCHANGE_RATE,
+             STAGE,
+             WRITEOFF_FLAG,
+             SPECIAL_REASON,
+             SUM(OUTSTANDING_ON_BS_LCL) OUTSTANDING_ON_BS_LCL,
+             SUM(OUTSTANDING_OFF_BS_LCL) OUTSTANDING_ON_BS_LCL,
+             SUM(NILAI_TERCATAT_ON_BS) NILAI_TERCATAT_ON_BS
+        FROM (SELECT V_CURRDATE AS REPORT_DATE,
+                     0 AS MASTERID,
+                     '' AS DATA_SOURCE,
+                     A.SUB_SEGMENT AS SUB_SEGMENT,
+                     0 AS SEQ_NO,
+                     'BALANCE AT 1 ' || TO_CHAR(V_CURRDATE, 'MON YYYY') AS IMP_CHANGE_REASON,
+                     NVL(A.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+                     NVL(A.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+                     NVL(A.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+                     NVL(A.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+                     NVL(A.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+                     '' AS CURRENCY,
+                     1 AS EXCHANGE_RATE,
+                     CASE WHEN A.POCI_FLAG = 'Y'
+                          THEN 'POCI'
+                          ELSE NVL(A.STAGE, '1')
+                     END AS STAGE,
+                     0 AS WRITEOFF_FLAG,
+                     '' AS SPECIAL_REASON,
+                     NVL(OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+                     NVL(OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+                     (NVL(OUTSTANDING_ON_BS_LCL, 0) - NVL(UNAMORT_FEE_AMT_LCL, 0) + NVL(IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+                FROM TEMP_RPT_NOMINATIVE_CURR_PREV A
+               WHERE A.REPORT_DATE = V_PREVDATE)
+       GROUP BY REPORT_DATE,
+                MASTERID,
+                DATA_SOURCE,
+                SUB_SEGMENT,
+                SEQ_NO,
+                IMP_CHANGE_REASON,
+                CURRENCY,
+                EXCHANGE_RATE,
+                STAGE,
+                WRITEOFF_FLAG,
+                SPECIAL_REASON;
+
+    COMMIT;
+
+
+    /****************************************************
+    ECL STAGE TRANSFER
+    ****************************************************/
+    INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+      (REPORT_DATE,
+       MASTERID,
+       CUSTOMER_NUMBER,
+       CUSTOMER_NAME,
+       ACCOUNT_NUMBER,
+       DATA_SOURCE,
+       SUB_SEGMENT,
+       SEQ_NO,
+       IMP_CHANGE_REASON,
+       ECL_ON_BS,
+       ECL_OFF_BS,
+       ECL_TOTAL,
+       CARRY_AMOUNT,
+       UNUSED_AMT,
+       CURRENCY,
+       EXCHANGE_RATE,
+       STAGE,
+       WRITEOFF_FLAG,
+       SPECIAL_REASON,
+       PRODUCT_CODE,
+       TRA,
+       ASET_KEUANGAN,
+       OUTSTANDING_ON_BS,
+       OUTSTANDING_OFF_BS,
+       NILAI_TERCATAT_ON_BS)
+      SELECT V_CURRDATE AS REPORT_DATE,
+             A.MASTERID AS MASTERID,
+             A.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+             A.CUSTOMER_NAME AS CUSTOMER_NAME,
+             A.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+             A.DATA_SOURCE AS DATA_SOURCE,
+             A.SUB_SEGMENT AS SUB_SEGMENT,
+             1 AS SEQ_NO,
+             'TRANSFER FROM STAGE ' || NVL(B.STAGE, '1') || ' TO STAGE ' || nvl(A.STAGE,1) AS IMP_CHANGE_REASON,
+             NVL(A.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+             NVL(A.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+             NVL(A.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+             NVL(A.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+             NVL(A.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+             A.CURRENCY AS CURRENCY,
+             A.EXCHANGE_RATE AS EXCHANGE_RATE,
+             CASE WHEN A.POCI_FLAG = 'Y'
+                  THEN 'POCI'
+                  ELSE NVL(A.STAGE, '1')
+             END AS STAGE,
+             A.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+             A.SPECIAL_REASON AS SPECIAL_REASON,
+             A.PRODUCT_CODE AS PRODUCT_CODE,
+             A.RESERVED_VARCHAR_2 AS TRA,
+             A.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+             NVL(A.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+             NVL(A.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+             (NVL(A.OUTSTANDING_ON_BS_LCL, 0) - NVL(A.UNAMORT_FEE_AMT_LCL, 0) +
+              NVL(A.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV A
+       INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV B
+          ON A.MASTERID = B.MASTERID
+         AND B.REPORT_DATE = V_PREVDATE
+       WHERE A.REPORT_DATE = V_CURRDATE
+         AND NVL(A.STAGE, '1') <> NVL(B.STAGE, '1')
+         AND ((A.DATA_SOURCE <> 'CRD' AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS AND
+             A.ACCOUNT_STATUS = 'A') OR
+             (A.DATA_SOURCE = 'CRD' AND
+             --(A.ACCOUNT_STATUS = 'A' OR NVL(A.outstanding_on_bs_ccy, 0) > 0) AND
+             (A.ACCOUNT_STATUS = 'A' AND NVL(A.outstanding_on_bs_ccy, 0) > 0) AND
+             (B.ACCOUNT_STATUS = 'A' OR NVL(B.outstanding_on_bs_ccy, 0) > 0)))
+      UNION ALL
+      SELECT V_CURRDATE AS REPORT_DATE,
+             A.MASTERID AS MASTERID,
+             A.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+             A.CUSTOMER_NAME AS CUSTOMER_NAME,
+             A.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+             A.DATA_SOURCE AS DATA_SOURCE,
+             B.SUB_SEGMENT AS SUB_SEGMENT,
+             1 AS SEQ_NO,
+             'TRANSFER FROM STAGE ' || NVL(B.STAGE, '1') || ' TO STAGE ' || nvl(A.STAGE,1) AS IMP_CHANGE_REASON,
+             -1 * NVL(B.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+             -1 * NVL(B.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+             -1 * NVL(B.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+             -1 * NVL(B.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+             -1 * NVL(B.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+             A.CURRENCY AS CURRENCY,
+             A.EXCHANGE_RATE AS EXCHANGE_RATE,
+             CASE WHEN A.POCI_FLAG = 'Y'
+                  THEN 'POCI'
+                  ELSE NVL(B.STAGE, '1')
+             END AS STAGE,
+             A.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+             A.SPECIAL_REASON AS SPECIAL_REASON,
+             B.PRODUCT_CODE AS PRODUCT_CODE,
+             B.RESERVED_VARCHAR_2 AS TRA,
+             B.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+             -1 * NVL(B.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+             -1 * NVL(B.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+             -1 * (NVL(B.OUTSTANDING_ON_BS_LCL, 0) - NVL(B.UNAMORT_FEE_AMT_LCL, 0) +
+                   NVL(B.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV A
+       INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV B
+          ON A.MASTERID = B.MASTERID
+         AND B.REPORT_DATE = V_PREVDATE
+       WHERE A.REPORT_DATE = V_CURRDATE
+         AND NVL(A.STAGE, '1') <> NVL(B.STAGE, '1')
+         AND ((A.DATA_SOURCE <> 'CRD' AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS AND
+             A.ACCOUNT_STATUS = 'A') OR
+             (A.DATA_SOURCE = 'CRD' AND
+             --(A.ACCOUNT_STATUS = 'A' OR NVL(A.outstanding_on_bs_ccy, 0) > 0) AND
+             (A.ACCOUNT_STATUS = 'A' AND NVL(A.outstanding_on_bs_ccy, 0) > 0) AND
+             (B.ACCOUNT_STATUS = 'A' OR NVL(B.outstanding_on_bs_ccy, 0) > 0)));
+
+    COMMIT;
+    --UNION ALL
+
+
+    DELETE FROM TEMP_RPT_NOMINATIVE_CURR_PREV a
+     WHERE EXISTS (SELECT 1
+              FROM TMP_IFRS_ECL_MOVEMENT_DTL b
+             where SEQ_NO = '1'
+               AND REPORT_DATE = V_CURRDATE
+               and a.MASTERID = b.MASTERID);
+    COMMIT;
+
+
+    /****************************************************
+    New financial assets originated or purchased
+    ****************************************************/
+  INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL --2
+    (REPORT_DATE,
+     MASTERID,
+     CUSTOMER_NUMBER,
+     CUSTOMER_NAME,
+     ACCOUNT_NUMBER,
+     DATA_SOURCE,
+     SUB_SEGMENT,
+     SEQ_NO,
+     IMP_CHANGE_REASON,
+     ECL_ON_BS,
+     ECL_OFF_BS,
+     ECL_TOTAL,
+     CARRY_AMOUNT,
+     UNUSED_AMT,
+     CURRENCY,
+     EXCHANGE_RATE,
+     STAGE,
+     WRITEOFF_FLAG,
+     SPECIAL_REASON,
+     PRODUCT_CODE,
+     TRA,
+     ASET_KEUANGAN,
+     OUTSTANDING_ON_BS,
+     OUTSTANDING_OFF_BS,
+     NILAI_TERCATAT_ON_BS)
+    SELECT V_CURRDATE AS REPORT_DATE,
+       CURR.MASTERID AS MASTERID,
+       CURR.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       CURR.CUSTOMER_NAME AS CUSTOMER_NAME,
+       CURR.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       CURR.DATA_SOURCE AS DATA_SOURCE,
+       CURR.SUB_SEGMENT AS SUB_SEGMENT,
+       2 AS SEQ_NO,
+       'NEW FINANCIAL ASSETS ORIGINATED OR PURCHASED' AS IMP_CHANGE_REASON,
+       NVL(CURR.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+       NVL(CURR.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+       NVL(CURR.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+       NVL(CURR.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+       NVL(CURR.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+       CURR.CURRENCY AS CURRENCY,
+       CURR.EXCHANGE_RATE AS EXCHANGE_RATE,
+       CASE WHEN CURR.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(CURR.STAGE, '1')
+       END AS STAGE,
+       CURR.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       CURR.SPECIAL_REASON AS SPECIAL_REASON,
+       CURR.PRODUCT_CODE AS PRODUCT_CODE,
+       CURR.RESERVED_VARCHAR_2 AS TRA,
+       CURR.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+       NVL(CURR.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+       NVL(CURR.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+       (NVL(CURR.OUTSTANDING_ON_BS_LCL, 0) - NVL(CURR.UNAMORT_FEE_AMT_LCL, 0) +
+        NVL(CURR.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+    FROM TEMP_RPT_NOMINATIVE_CURR_PREV CURR
+     WHERE CURR.REPORT_DATE = V_CURRDATE
+     AND (CURR.RESERVED_FLAG_1 <> 1 AND CURR.RESERVED_FLAG_2 <> 1)
+     AND ((CURR.DATA_SOURCE <> 'CRD' AND CURR.ACCOUNT_STATUS = 'A') OR
+       (CURR.DATA_SOURCE = 'CRD' AND
+       (CURR.ACCOUNT_STATUS = 'A' OR
+       NVL(CURR.outstanding_on_bs_ccy, 0) > 0)))
+     AND NOT EXISTS
+     (SELECT 1
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+         WHERE PREV.REPORT_DATE = V_PREVDATE
+         AND PREV.MASTERID = CURR.MASTERID
+          --AND PREV.DATA_SOURCE = CURR.DATA_SOURCE
+         AND ((PREV.DATA_SOURCE <> 'CRD' AND PREV.ACCOUNT_STATUS = 'A') OR
+           (PREV.DATA_SOURCE = 'CRD' AND
+           (PREV.ACCOUNT_STATUS = 'A' OR
+           NVL(PREV.outstanding_on_bs_ccy, 0) > 0))))
+    /*          AND NOT EXISTS
+             (SELECT 1
+              FROM TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+             WHERE     PREV.REPORT_DATE = V_PREVDATE
+                 AND PREV.ACCOUNT_NUMBER = CURR.FACILITY_NUMBER
+                 AND PREV.DATA_SOURCE = 'LIMIT'
+                 AND NVL (PREV.RESERVED_AMOUNT_5, 0) <> 0
+                 AND (   (    PREV.DATA_SOURCE <> 'CRD'
+                    AND PREV.ACCOUNT_STATUS = 'A')
+                  OR (    PREV.DATA_SOURCE = 'CRD'
+                    AND (   PREV.ACCOUNT_STATUS = 'A'
+                       OR NVL (PREV.outstanding_on_bs_ccy, 0) >
+                           0))))
+    */
+    UNION
+    SELECT V_CURRDATE AS REPORT_DATE,
+       CURR.MASTERID AS MASTERID,
+       CURR.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       CURR.CUSTOMER_NAME AS CUSTOMER_NAME,
+       CURR.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       CURR.DATA_SOURCE AS DATA_SOURCE,
+       CURR.SUB_SEGMENT AS SUB_SEGMENT,
+       2 AS SEQ_NO,
+       'NEW FINANCIAL ASSETS ORIGINATED OR PURCHASED' AS IMP_CHANGE_REASON,
+       NVL(CURR.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+       NVL(CURR.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+       NVL(CURR.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+       NVL(CURR.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+       NVL(CURR.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+       CURR.CURRENCY AS CURRENCY,
+       CURR.EXCHANGE_RATE AS EXCHANGE_RATE,
+       CASE WHEN CURR.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(CURR.STAGE, '1')
+       END AS STAGE,
+       CURR.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       CURR.SPECIAL_REASON AS SPECIAL_REASON,
+       CURR.PRODUCT_CODE AS PRODUCT_CODE,
+       CURR.RESERVED_VARCHAR_2 AS TRA,
+       CURR.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+       NVL(CURR.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+       NVL(CURR.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+       (NVL(CURR.OUTSTANDING_ON_BS_LCL, 0) -
+       NVL(CURR.UNAMORT_FEE_AMT_LCL, 0) +
+       NVL(CURR.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+    FROM TEMP_RPT_NOMINATIVE_CURR_PREV CURR
+     WHERE CURR.REPORT_DATE = V_CURRDATE
+     AND (CURR.RESERVED_FLAG_1 <> 1 AND CURR.RESERVED_FLAG_2 <> 1)
+     AND ((CURR.DATA_SOURCE <> 'CRD' AND CURR.ACCOUNT_STATUS = 'A') OR
+       (CURR.DATA_SOURCE = 'CRD' AND
+       (CURR.ACCOUNT_STATUS = 'A' OR
+       NVL(CURR.outstanding_on_bs_ccy, 0) > 0)))
+     AND NOT EXISTS
+     (SELECT 1
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+         WHERE PREV.REPORT_DATE = V_PREVDATE
+         AND PREV.MASTERID = CURR.MASTERID
+          --AND PREV.DATA_SOURCE = CURR.DATA_SOURCE
+         AND ((PREV.DATA_SOURCE <> 'CRD' AND PREV.ACCOUNT_STATUS = 'A') OR
+           (PREV.DATA_SOURCE = 'CRD' AND
+           (PREV.ACCOUNT_STATUS = 'A' OR
+           NVL(PREV.outstanding_on_bs_ccy, 0) > 0))))
+    /*          AND NOT EXISTS
+    (SELECT 1
+     FROM TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+    WHERE     PREV.REPORT_DATE = V_PREVDATE
+        AND PREV.ACCOUNT_NUMBER = CURR.FACILITY_NUMBER
+        AND PREV.DATA_SOURCE = 'LIMIT'
+        AND NVL (PREV.RESERVED_AMOUNT_6, 0) <> 0
+        AND (   (    PREV.DATA_SOURCE <> 'CRD'
+             AND PREV.ACCOUNT_STATUS = 'A')
+           OR (    PREV.DATA_SOURCE = 'CRD'
+             AND (   PREV.ACCOUNT_STATUS = 'A'
+              OR NVL (PREV.outstanding_on_bs_ccy, 0) >
+                  0))))*/
+    UNION
+    SELECT V_CURRDATE AS REPORT_DATE,
+       CURR.MASTERID AS MASTERID,
+       CURR.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       CURR.CUSTOMER_NAME AS CUSTOMER_NAME,
+       CURR.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       CURR.DATA_SOURCE AS DATA_SOURCE,
+       CURR.SUB_SEGMENT AS SUB_SEGMENT,
+       2 AS SEQ_NO,
+       'NEW FINANCIAL ASSETS ORIGINATED OR PURCHASED' AS IMP_CHANGE_REASON,
+       NVL(CURR.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+       NVL(CURR.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+       NVL(CURR.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+       NVL(CURR.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+       NVL(CURR.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+       CURR.CURRENCY AS CURRENCY,
+       CURR.EXCHANGE_RATE AS EXCHANGE_RATE,
+       CASE WHEN CURR.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(CURR.STAGE, '1')
+       END AS STAGE,
+       CURR.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       CURR.SPECIAL_REASON AS SPECIAL_REASON,
+       CURR.PRODUCT_CODE AS PRODUCT_CODE,
+       CURR.RESERVED_VARCHAR_2 AS TRA,
+       CURR.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+       NVL(CURR.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+       NVL(CURR.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+       (NVL(CURR.OUTSTANDING_ON_BS_LCL, 0) - NVL(CURR.UNAMORT_FEE_AMT_LCL, 0) +
+        NVL(CURR.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+    FROM TEMP_RPT_NOMINATIVE_CURR_PREV CURR
+     WHERE CURR.REPORT_DATE = V_CURRDATE
+     AND (CURR.RESERVED_FLAG_1 <> 1 AND CURR.RESERVED_FLAG_2 <> 1)
+     AND ((CURR.DATA_SOURCE <> 'CRD' AND CURR.ACCOUNT_STATUS = 'A') OR
+       (CURR.DATA_SOURCE = 'CRD' AND
+       (CURR.ACCOUNT_STATUS = 'A' OR
+       NVL(CURR.outstanding_on_bs_ccy, 0) > 0)))
+     AND NOT EXISTS
+     (SELECT 1
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+         WHERE PREV.REPORT_DATE = V_PREVDATE
+         AND PREV.MASTERID = CURR.MASTERID
+          --AND PREV.DATA_SOURCE = CURR.DATA_SOURCE
+         AND ((PREV.DATA_SOURCE <> 'CRD' AND PREV.ACCOUNT_STATUS = 'A') OR
+           (PREV.DATA_SOURCE = 'CRD' AND
+           (PREV.ACCOUNT_STATUS = 'A' OR
+           NVL(PREV.outstanding_on_bs_ccy, 0) > 0))));
+  /*          AND NOT EXISTS
+           (SELECT 1
+            FROM TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+             WHERE     PREV.REPORT_DATE = V_PREVDATE
+               AND PREV.ACCOUNT_NUMBER = CURR.FACILITY_NUMBER
+               AND PREV.DATA_SOURCE = 'LIMIT'
+               AND NVL (PREV.UNUSED_AMT_LCL, 0) <> 0
+               AND (   (    PREV.DATA_SOURCE <> 'CRD'
+                    AND PREV.ACCOUNT_STATUS = 'A')
+                  OR (    PREV.DATA_SOURCE = 'CRD'
+                    AND (   PREV.ACCOUNT_STATUS = 'A'
+                       OR NVL (PREV.outstanding_on_bs_ccy, 0) >
+                         0))));*/
+
+
+  COMMIT;
+    --UNION ALL
+
+  DELETE FROM TEMP_RPT_NOMINATIVE_CURR_PREV a
+  WHERE EXISTS
+      (SELECT 1 FROM TMP_IFRS_ECL_MOVEMENT_DTL b
+       where SEQ_NO = '2'
+       AND REPORT_DATE = V_CURRDATE
+       and a.MASTERID = b.MASTERID);
+  COMMIT;
+
+    /****************************************************
+    Write offs - WRITE OFF FLAG
+    ****************************************************/
+    INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+      (REPORT_DATE,
+       MASTERID,
+       CUSTOMER_NUMBER,
+       CUSTOMER_NAME,
+       ACCOUNT_NUMBER,
+       DATA_SOURCE,
+       SUB_SEGMENT,
+       SEQ_NO,
+       IMP_CHANGE_REASON,
+       ECL_ON_BS,
+       ECL_OFF_BS,
+       ECL_TOTAL,
+       CARRY_AMOUNT,
+       UNUSED_AMT,
+       CURRENCY,
+       EXCHANGE_RATE,
+       STAGE,
+       WRITEOFF_FLAG,
+       SPECIAL_REASON,
+       PRODUCT_CODE,
+       TRA,
+       ASET_KEUANGAN,
+       OUTSTANDING_ON_BS,
+       OUTSTANDING_OFF_BS,
+       NILAI_TERCATAT_ON_BS)
+      SELECT V_CURRDATE AS REPORT_DATE,
+             CURR.MASTERID AS MASTERID,
+             CURR.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+             CURR.CUSTOMER_NAME AS CUSTOMER_NAME,
+             CURR.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+             CURR.DATA_SOURCE AS DATA_SOURCE,
+             PREV.SUB_SEGMENT AS SUB_SEGMENT,
+             6 AS SEQ_NO,
+             'WRITE OFFS' AS IMP_CHANGE_REASON,
+
+             case when PREV.RESERVED_AMOUNT_3 = 0
+                  then 0
+                  else -1 * (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1))
+             end AS ECL_ON_BS,
+
+             case when PREV.ECL_OFF_BS_LCL = 0
+                  then 0
+                  else -1 * (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1))
+             end AS ECL_OFF_BS,
+
+             case when PREV.RESERVED_AMOUNT_5 = 0
+                  then 0
+                  else -1 * (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1))
+             end AS ECL_TOTAL,
+
+             case when PREV.RESERVED_AMOUNT_6 = 0
+                  then 0
+                  else -1 * (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1))
+             end AS CARRY_AMOUNT,
+
+             case when PREV.UNUSED_AMT_LCL = 0
+                  then 0
+                  else -1 * (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1))
+             end AS UNUSED_AMT,
+
+             CURR.CURRENCY      AS CURRENCY,
+             CURR.EXCHANGE_RATE AS EXCHANGE_RATE,
+
+             CASE WHEN PREV.POCI_FLAG = 'Y'
+                  THEN 'POCI'
+                  ELSE NVL(PREV.STAGE, '1')
+             END AS STAGE,
+
+             CURR.WRITEOFF_FLAG      AS WRITEOFF_FLAG,
+             CURR.SPECIAL_REASON     AS SPECIAL_REASON,
+             CURR.PRODUCT_CODE       AS PRODUCT_CODE,
+             PREV.RESERVED_VARCHAR_2 AS TRA,
+             PREV.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+
+             case when PREV.OUTSTANDING_ON_BS_LCL = 0
+                  then 0
+                  else -1 * (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1))
+             end AS OUTSTANDING_ON_BS_LCL,
+
+             case when PREV.OUTSTANDING_OFF_BS_LCL = 0
+                  then 0
+                  else -1 * (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1))
+             end AS OUTSTANDING_OFF_BS_LCL,
+
+             case when (NVL(PREV.OUTSTANDING_ON_BS_LCL, 0) -
+                        NVL(PREV.UNAMORT_FEE_AMT_LCL, 0) +
+                        NVL(PREV.IA_UNWINDING_INTEREST_LCL, 0)) = 0
+                  then 0
+                  else -1 * (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1))
+             end AS NILAI_TERCATAT_ON_BS
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV CURR
+       INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+          ON CURR.MASTERID = PREV.MASTERID
+         AND PREV.REPORT_DATE = V_PREVDATE
+       WHERE CURR.REPORT_DATE = V_CURRDATE
+         AND (CURR.ACCOUNT_STATUS = 'W' OR (CURR.WRITEOFF_FLAG = 'Y' AND
+             CURR.WRITEOFF_FLAG <> PREV.WRITEOFF_FLAG));
+
+    COMMIT;
+
+    INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+      (REPORT_DATE,
+       MASTERID,
+       CUSTOMER_NUMBER,
+       CUSTOMER_NAME,
+       ACCOUNT_NUMBER,
+       DATA_SOURCE,
+       SUB_SEGMENT,
+       SEQ_NO,
+       IMP_CHANGE_REASON,
+       ECL_ON_BS,
+       ECL_OFF_BS,
+       ECL_TOTAL,
+       CARRY_AMOUNT,
+       UNUSED_AMT,
+       CURRENCY,
+       EXCHANGE_RATE,
+       STAGE,
+       WRITEOFF_FLAG,
+       SPECIAL_REASON,
+       PRODUCT_CODE,
+       TRA,
+       ASET_KEUANGAN,
+       OUTSTANDING_ON_BS,
+       OUTSTANDING_OFF_BS,
+       NILAI_TERCATAT_ON_BS)
+      SELECT V_CURRDATE AS REPORT_DATE,
+       CURR.MASTERID AS MASTERID,
+       CURR.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       CURR.CUSTOMER_NAME AS CUSTOMER_NAME,
+       CURR.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       CURR.DATA_SOURCE AS DATA_SOURCE,
+       PREV.SUB_SEGMENT AS SUB_SEGMENT,
+       5 AS SEQ_NO,
+       'FINANCIAL ASSETS DERECOGNISED DURING THE PERIOD' AS IMP_CHANGE_REASON,
+       case when PREV.RESERVED_AMOUNT_3 = 0
+            then 0
+            else -1 * (NVL(PREV.RESERVED_AMOUNT_3, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS ECL_ON_BS,
+
+       case when PREV.ECL_OFF_BS_LCL = 0
+            then 0
+            else -1 * (NVL(PREV.ECL_OFF_BS_LCL, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS ECL_OFF_BS,
+
+       case when PREV.RESERVED_AMOUNT_5 = 0
+            then 0
+            else -1 * (NVL(PREV.RESERVED_AMOUNT_5, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS ECL_TOTAL,
+
+       case when PREV.RESERVED_AMOUNT_6 = 0
+            then 0
+            else -1 * (NVL(PREV.RESERVED_AMOUNT_6, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS CARRY_AMOUNT,
+
+       case when PREV.UNUSED_AMT_LCL = 0
+            then 0
+            else -1 * (NVL(PREV.UNUSED_AMT_LCL, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS UNUSED_AMT,
+
+       CURR.CURRENCY AS CURRENCY,
+       CURR.EXCHANGE_RATE AS EXCHANGE_RATE,
+
+       CASE WHEN PREV.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(PREV.STAGE, '1')
+       END AS STAGE,
+
+       CURR.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       CURR.SPECIAL_REASON AS SPECIAL_REASON,
+       CURR.PRODUCT_CODE AS PRODUCT_CODE,
+       PREV.RESERVED_VARCHAR_2 AS TRA,
+       PREV.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+
+       case when PREV.OUTSTANDING_ON_BS_LCL = 0
+            then 0
+            else -1 * (NVL(PREV.OUTSTANDING_ON_BS_LCL, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS OUTSTANDING_ON_BS_LCL,
+
+       case when PREV.OUTSTANDING_OFF_BS_LCL = 0
+            then 0
+            else -1 * (NVL(PREV.OUTSTANDING_OFF_BS_LCL, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS OUTSTANDING_OFF_BS_LCL,
+
+       case when (NVL(PREV.OUTSTANDING_ON_BS_LCL, 0) -
+                 NVL(PREV.UNAMORT_FEE_AMT_LCL, 0) +
+                 NVL(PREV.IA_UNWINDING_INTEREST_LCL, 0)) = 0
+            then 0
+            else -1 * ((NVL(PREV.OUTSTANDING_ON_BS_LCL, 0) -
+          NVL(PREV.UNAMORT_FEE_AMT_LCL, 0) +
+          NVL(PREV.IA_UNWINDING_INTEREST_LCL, 0)) -
+          (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0)) * NVL(CURR.EXCHANGE_RATE, 1))
+       end AS NILAI_TERCATAT_ON_BS
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV CURR
+       INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+          ON CURR.MASTERID = PREV.MASTERID
+         AND PREV.REPORT_DATE = V_PREVDATE
+       WHERE CURR.REPORT_DATE = V_CURRDATE
+         AND (CURR.ACCOUNT_STATUS = 'W' OR (CURR.WRITEOFF_FLAG = 'Y' AND
+             CURR.WRITEOFF_FLAG <> PREV.WRITEOFF_FLAG))
+         AND CURR.OUTSTANDING_ON_BS_LCL <> PREV.OUTSTANDING_ON_BS_LCL
+         AND PREV.ECL_TOTAL_CCY >= (CURR.OUTSTANDING_ON_BS_CCY * NVL(CURR.EXCHANGE_RATE, 1))
+         and PREV.ECL_TOTAL_CCY - (CURR.OUTSTANDING_ON_BS_CCY * NVL(CURR.EXCHANGE_RATE, 1)) <> 0;
+
+    COMMIT;
+
+    INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+      (REPORT_DATE,
+       MASTERID,
+       CUSTOMER_NUMBER,
+       CUSTOMER_NAME,
+       ACCOUNT_NUMBER,
+       DATA_SOURCE,
+       SUB_SEGMENT,
+       SEQ_NO,
+       IMP_CHANGE_REASON,
+       ECL_ON_BS,
+       ECL_OFF_BS,
+       ECL_TOTAL,
+       CARRY_AMOUNT,
+       UNUSED_AMT,
+       CURRENCY,
+       EXCHANGE_RATE,
+       STAGE,
+       WRITEOFF_FLAG,
+       SPECIAL_REASON,
+       PRODUCT_CODE,
+       TRA,
+       ASET_KEUANGAN,
+       OUTSTANDING_ON_BS,
+       OUTSTANDING_OFF_BS,
+       NILAI_TERCATAT_ON_BS)
+      SELECT V_CURRDATE AS REPORT_DATE,
+       CURR.MASTERID AS MASTERID,
+       CURR.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       CURR.CUSTOMER_NAME AS CUSTOMER_NAME,
+       CURR.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       CURR.DATA_SOURCE AS DATA_SOURCE,
+       PREV.SUB_SEGMENT AS SUB_SEGMENT,
+       3 AS SEQ_NO,
+       'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+       case when PREV.RESERVED_AMOUNT_3 = 0
+            then 0
+            else -1 * (NVL(PREV.RESERVED_AMOUNT_3, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS ECL_ON_BS,
+
+       case when PREV.ECL_OFF_BS_LCL = 0
+            then 0
+            else -1 * (NVL(PREV.ECL_OFF_BS_LCL, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS ECL_OFF_BS,
+
+       case when PREV.RESERVED_AMOUNT_5 = 0
+            then 0
+            else -1 * (NVL(PREV.RESERVED_AMOUNT_5, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS ECL_TOTAL,
+
+       case when PREV.RESERVED_AMOUNT_6 = 0
+            then 0
+            else -1 * (NVL(PREV.RESERVED_AMOUNT_6, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS CARRY_AMOUNT,
+
+       case when PREV.UNUSED_AMT_LCL = 0
+            then 0
+            else -1 * (NVL(PREV.UNUSED_AMT_LCL, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS UNUSED_AMT,
+
+       CURR.CURRENCY AS CURRENCY,
+       CURR.EXCHANGE_RATE AS EXCHANGE_RATE,
+
+       CASE WHEN PREV.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(PREV.STAGE, '1')
+       END AS STAGE,
+
+       CURR.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       CURR.SPECIAL_REASON AS SPECIAL_REASON,
+       CURR.PRODUCT_CODE AS PRODUCT_CODE,
+       PREV.RESERVED_VARCHAR_2 AS TRA,
+       PREV.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+
+       case when PREV.OUTSTANDING_ON_BS_LCL = 0
+            then 0
+            else -1 * (NVL(PREV.OUTSTANDING_ON_BS_LCL, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS OUTSTANDING_ON_BS_LCL,
+
+       case when PREV.OUTSTANDING_OFF_BS_LCL = 0
+            then 0
+            else -1 * (NVL(PREV.OUTSTANDING_OFF_BS_LCL, 0) -
+                (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0) * NVL(CURR.EXCHANGE_RATE, 1)))
+       end AS OUTSTANDING_OFF_BS_LCL,
+
+       case when (NVL(PREV.OUTSTANDING_ON_BS_LCL, 0) -
+                 NVL(PREV.UNAMORT_FEE_AMT_LCL, 0) +
+                 NVL(PREV.IA_UNWINDING_INTEREST_LCL, 0)) = 0
+            then 0
+            else -1 * ((NVL(PREV.OUTSTANDING_ON_BS_LCL, 0) -
+          NVL(PREV.UNAMORT_FEE_AMT_LCL, 0) +
+          NVL(PREV.IA_UNWINDING_INTEREST_LCL, 0)) -
+          (NVL(CURR.OUTSTANDING_ON_BS_CCY, 0)) * NVL(CURR.EXCHANGE_RATE, 1))
+       end AS NILAI_TERCATAT_ON_BS
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV CURR
+       INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+          ON CURR.MASTERID = PREV.MASTERID
+         AND PREV.REPORT_DATE = V_PREVDATE
+       WHERE CURR.REPORT_DATE = V_CURRDATE
+         AND (CURR.ACCOUNT_STATUS = 'W' OR (CURR.WRITEOFF_FLAG = 'Y' AND
+             CURR.WRITEOFF_FLAG <> PREV.WRITEOFF_FLAG))
+         AND CURR.OUTSTANDING_ON_BS_LCL <> PREV.OUTSTANDING_ON_BS_LCL
+         AND PREV.ECL_TOTAL_CCY < (CURR.OUTSTANDING_ON_BS_CCY * NVL(CURR.EXCHANGE_RATE, 1));
+
+/*
+  INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+    (REPORT_DATE,
+     MASTERID,
+     CUSTOMER_NUMBER,
+     CUSTOMER_NAME,
+     ACCOUNT_NUMBER,
+     DATA_SOURCE,
+     SUB_SEGMENT,
+     SEQ_NO,
+     IMP_CHANGE_REASON,
+     ECL_ON_BS,
+     ECL_OFF_BS,
+     ECL_TOTAL,
+     CARRY_AMOUNT,
+     UNUSED_AMT,
+     CURRENCY,
+     EXCHANGE_RATE,
+     STAGE,
+     WRITEOFF_FLAG,
+     SPECIAL_REASON,
+     PRODUCT_CODE,
+     TRA,
+     ASET_KEUANGAN,
+     OUTSTANDING_ON_BS,
+     OUTSTANDING_OFF_BS,
+     NILAI_TERCATAT_ON_BS)
+    SELECT V_CURRDATE AS REPORT_DATE,
+       B.MASTERID AS MASTERID,
+       B.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       B.CUSTOMER_NAME AS CUSTOMER_NAME,
+       B.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       B.DATA_SOURCE AS DATA_SOURCE,
+       B.SUB_SEGMENT AS SUB_SEGMENT,
+       6 AS SEQ_NO,
+       'WRITE OFFS' AS IMP_CHANGE_REASON,
+       -1 * NVL(B.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+       -1 * NVL(B.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+       -1 * NVL(B.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+       -1 * NVL(B.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+       -1 * NVL(B.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+       B.CURRENCY AS CURRENCY,
+       B.EXCHANGE_RATE AS EXCHANGE_RATE,
+       CASE WHEN B.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(B.STAGE, '1')
+       END AS STAGE,
+       B.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       B.SPECIAL_REASON AS SPECIAL_REASON,
+       B.PRODUCT_CODE AS PRODUCT_CODE,
+       B.RESERVED_VARCHAR_2 AS TRA,
+       B.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+       -1 * NVL(B.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+       -1 * NVL(B.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+       -1 * (NVL(B.OUTSTANDING_ON_BS_LCL, 0) - NVL(B.UNAMORT_FEE_AMT_LCL, 0) +
+             NVL(B.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+    FROM TEMP_RPT_NOMINATIVE_CURR_PREV A
+     INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV B
+      ON A.MASTERID = B.MASTERID
+     AND B.REPORT_DATE = V_PREVDATE
+     WHERE A.REPORT_DATE = V_CURRDATE
+     AND ((A.DATA_SOURCE <> 'CRD' AND A.WRITEOFF_FLAG = 'Y' AND
+       A.WRITEOFF_FLAG <> B.WRITEOFF_FLAG) OR
+       (A.DATA_SOURCE = 'CRD' AND
+       (A.WRITEOFF_FLAG = 'Y' OR A.ACCOUNT_STATUS = 'W') AND
+       (NVL(A.outstanding_on_bs_ccy, 0) = 0)));
+
+  COMMIT;
+
+  --UNION ALL
+*/
+
+  DELETE FROM TEMP_RPT_NOMINATIVE_CURR_PREV a
+   WHERE EXISTS (SELECT 1
+        FROM TMP_IFRS_ECL_MOVEMENT_DTL b
+       where SEQ_NO = '6'
+         AND REPORT_DATE = V_CURRDATE
+         and a.MASTERID = b.MASTERID);
+  COMMIT;
+
+
+
+    /****************************************************
+    Financial assets derecognised during the period
+    ****************************************************/
+  INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+    (REPORT_DATE,
+     MASTERID,
+     CUSTOMER_NUMBER,
+     CUSTOMER_NAME,
+     ACCOUNT_NUMBER,
+     DATA_SOURCE,
+     SUB_SEGMENT,
+     SEQ_NO,
+     IMP_CHANGE_REASON,
+     ECL_ON_BS,
+     ECL_OFF_BS,
+     ECL_TOTAL,
+     CARRY_AMOUNT,
+     UNUSED_AMT,
+     CURRENCY,
+     EXCHANGE_RATE,
+     STAGE,
+     WRITEOFF_FLAG,
+     SPECIAL_REASON,
+     PRODUCT_CODE,
+     TRA,
+     ASET_KEUANGAN,
+     OUTSTANDING_ON_BS,
+     OUTSTANDING_OFF_BS,
+     NILAI_TERCATAT_ON_BS)
+    SELECT V_CURRDATE AS REPORT_DATE,
+       PREV.MASTERID AS MASTERID,
+       PREV.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       PREV.CUSTOMER_NAME AS CUSTOMER_NAME,
+       PREV.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       PREV.DATA_SOURCE AS DATA_SOURCE,
+       PREV.SUB_SEGMENT AS SUB_SEGMENT,
+       5 AS SEQ_NO,
+       'FINANCIAL ASSETS DERECOGNISED DURING THE PERIOD' AS IMP_CHANGE_REASON,
+       -1 * NVL(PREV.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+       -1 * NVL(PREV.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+       -1 * NVL(PREV.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+       -1 * NVL(PREV.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+       -1 * NVL(PREV.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+       PREV.CURRENCY AS CURRENCY,
+       PREV.EXCHANGE_RATE AS EXCHANGE_RATE,
+       CASE WHEN PREV.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(PREV.STAGE, '1')
+       END AS STAGE,
+       PREV.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       '' AS SPECIAL_REASON,
+       PREV.PRODUCT_CODE AS PRODUCT_CODE,
+       PREV.RESERVED_VARCHAR_2 AS TRA,
+       PREV.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+       -1 * NVL(PREV.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+       -1 * NVL(PREV.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+       -1 * (NVL(PREV.OUTSTANDING_ON_BS_LCL, 0) - NVL(PREV.UNAMORT_FEE_AMT_LCL, 0) +
+             NVL(PREV.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+    FROM TEMP_RPT_NOMINATIVE_CURR_PREV PREV
+     WHERE PREV.REPORT_DATE = V_PREVDATE
+     AND ((PREV.DATA_SOURCE <> 'CRD' AND PREV.ACCOUNT_STATUS = 'A' AND
+       NVL(PREV.WRITEOFF_FLAG, 'N') = 'N') OR
+       (PREV.DATA_SOURCE = 'CRD' AND
+       (PREV.ACCOUNT_STATUS = 'A' OR
+       NVL(PREV.outstanding_on_bs_ccy, 0) > 0)))
+     AND NOT EXISTS (SELECT 1
+        FROM TMP_IFRS_ECL_MOVEMENT_DTL WO
+         WHERE WO.MASTERID = PREV.MASTERID
+         AND WO.REPORT_DATE = V_CURRDATE
+         AND WO.SEQ_NO = 6)
+      /*          AND NOT EXISTS
+               (SELECT 1
+                FROM TEMP_RPT_NOMINATIVE_CURR_PREV LIM
+                 WHERE     LIM.REPORT_DATE = V_CURRDATE
+                   AND LIM.DATA_SOURCE = 'LIMIT'
+                   AND LIM.ACCOUNT_NUMBER = PREV.FACILITY_NUMBER
+                   AND LIM.SUB_SEGMENT = PREV.SUB_SEGMENT--AND LIM.RESERVED_AMOUNT_5 <> 0
+              )
+      */
+     AND NOT EXISTS
+     (SELECT 1
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV CURR
+         WHERE CURR.REPORT_DATE = V_CURRDATE
+         AND PREV.MASTERID = CURR.MASTERID
+          --AND PREV.DATA_SOURCE = CURR.DATA_SOURCE
+         AND ((CURR.DATA_SOURCE <> 'CRD' AND
+           CURR.ACCOUNT_STATUS IN ('A', 'W')) OR
+           (CURR.DATA_SOURCE = 'CRD' AND
+           (CURR.ACCOUNT_STATUS = 'A' OR CURR.ACCOUNT_STATUS = 'W' OR
+           NVL(CURR.outstanding_on_bs_ccy, 0) > 0))));
+
+  COMMIT;
+  --UNION ALL
+
+  DELETE FROM TEMP_RPT_NOMINATIVE_CURR_PREV a
+   WHERE EXISTS (SELECT 1
+        FROM TMP_IFRS_ECL_MOVEMENT_DTL b
+       where SEQ_NO = '5'
+         AND REPORT_DATE = V_CURRDATE
+         and a.MASTERID = b.MASTERID);
+  COMMIT;
+
+
+    /****************************************************
+    Modification of contractual cash flows with no derecognition
+    ****************************************************/
+  INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+    (REPORT_DATE,
+     MASTERID,
+     CUSTOMER_NUMBER,
+     CUSTOMER_NAME,
+     ACCOUNT_NUMBER,
+     DATA_SOURCE,
+     SUB_SEGMENT,
+     SEQ_NO,
+     IMP_CHANGE_REASON,
+     ECL_ON_BS,
+     ECL_OFF_BS,
+     ECL_TOTAL,
+     CARRY_AMOUNT,
+     UNUSED_AMT,
+     CURRENCY,
+     EXCHANGE_RATE,
+     STAGE,
+     WRITEOFF_FLAG,
+     SPECIAL_REASON,
+     PRODUCT_CODE,
+     TRA,
+     ASET_KEUANGAN,
+     OUTSTANDING_ON_BS,
+     OUTSTANDING_OFF_BS,
+     NILAI_TERCATAT_ON_BS)
+    SELECT V_CURRDATE AS REPORT_DATE,
+       A.MASTERID AS MASTERID,
+       A.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       A.CUSTOMER_NAME AS CUSTOMER_NAME,
+       A.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       A.DATA_SOURCE AS DATA_SOURCE,
+       A.SUB_SEGMENT AS SUB_SEGMENT,
+       4 AS SEQ_NO,
+       'MODIFICATION OF CONTRACTUAL CASH FLOWS WITH NO DERECOGNITION' AS IMP_CHANGE_REASON,
+       NVL(A.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+       NVL(A.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+       NVL(A.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+       NVL(A.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+       NVL(A.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+       A.CURRENCY AS CURRENCY,
+       A.EXCHANGE_RATE AS EXCHANGE_RATE,
+       CASE WHEN A.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(A.STAGE, '1')
+       END AS STAGE,
+       A.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       A.SPECIAL_REASON AS SPECIAL_REASON,
+       A.PRODUCT_CODE AS PRODUCT_CODE,
+       A.RESERVED_VARCHAR_2 AS TRA,
+       A.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+       NVL(A.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+       NVL(A.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+       (NVL(A.OUTSTANDING_ON_BS_LCL, 0) - NVL(A.UNAMORT_FEE_AMT_LCL, 0) +
+        NVL(A.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+    FROM TEMP_RPT_NOMINATIVE_CURR_PREV A
+     INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV B
+      ON A.MASTERID = B.MASTERID
+     AND B.REPORT_DATE = V_PREVDATE
+     WHERE A.REPORT_DATE = V_CURRDATE
+     AND (A.RESERVED_FLAG_1 = 1 OR A.RESERVED_FLAG_2 = 1)
+     AND NVL(A.STAGE, '1') = NVL(B.STAGE, '1')
+     AND A.ACCOUNT_STATUS = 'A'
+     AND B.ACCOUNT_STATUS = 'A'
+    /* 14 maret 2022 CR ECL MOVEMENT
+      AND EXISTS
+         (SELECT 1
+          FROM TBLT_PAYMENTEXPECTED X
+           WHERE     X.MASTERID = A.MASTERID
+             AND X.EFFECTIVE_DATE = V_CURRDATE)
+    end 14 maret 2022 CR ECL MOVEMENT */
+    UNION
+    SELECT V_CURRDATE AS REPORT_DATE,
+       B.MASTERID AS MASTERID,
+       B.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       B.CUSTOMER_NAME AS CUSTOMER_NAME,
+       B.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       B.DATA_SOURCE AS DATA_SOURCE,
+       B.SUB_SEGMENT AS SUB_SEGMENT,
+       4 AS SEQ_NO,
+       'MODIFICATION OF CONTRACTUAL CASH FLOWS WITH NO DERECOGNITION' AS IMP_CHANGE_REASON,
+       -1 * NVL(B.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+       -1 * NVL(B.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+       -1 * NVL(B.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+       -1 * NVL(B.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+       -1 * NVL(B.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+       B.CURRENCY AS CURRENCY,
+       B.EXCHANGE_RATE AS EXCHANGE_RATE,
+       CASE WHEN B.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(B.STAGE, '1')
+       END AS STAGE,
+       A.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       A.SPECIAL_REASON AS SPECIAL_REASON,
+       A.PRODUCT_CODE AS PRODUCT_CODE,
+       A.RESERVED_VARCHAR_2 AS TRA,
+       A.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+       -1 * NVL(B.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+       -1 * NVL(B.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+       -1 * (NVL(B.OUTSTANDING_ON_BS_LCL, 0) - NVL(B.UNAMORT_FEE_AMT_LCL, 0) +
+             NVL(B.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+    FROM TEMP_RPT_NOMINATIVE_CURR_PREV A
+     INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV B
+      ON A.MASTERID = B.MASTERID
+     AND B.REPORT_DATE = V_PREVDATE
+     WHERE A.REPORT_DATE = V_CURRDATE
+     AND (A.RESERVED_FLAG_1 = 1 OR A.RESERVED_FLAG_2 = 1)
+     AND NVL(A.STAGE, '1') = NVL(B.STAGE, '1')
+     AND A.ACCOUNT_STATUS = 'A'
+     AND B.ACCOUNT_STATUS = 'A'
+    /* 14 maret 2022 CR ECL MOVEMENT
+    AND EXISTS
+          (SELECT 1
+           FROM TBLT_PAYMENTEXPECTED X
+          WHERE     X.MASTERID = A.MASTERID
+              AND X.EFFECTIVE_DATE = V_CURRDATE);
+        end 14 maret 2022 CR ECL MOVEMENT */
+    /* 14 maret 2022 CR ECL MOVEMENT */
+    UNION
+    SELECT V_CURRDATE AS REPORT_DATE,
+       A.MASTERID AS MASTERID,
+       A.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+       A.CUSTOMER_NAME AS CUSTOMER_NAME,
+       A.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+       A.DATA_SOURCE AS DATA_SOURCE,
+       A.SUB_SEGMENT AS SUB_SEGMENT,
+       4 AS SEQ_NO,
+       'MODIFICATION OF CONTRACTUAL CASH FLOWS WITH NO DERECOGNITION' AS IMP_CHANGE_REASON,
+       NVL(A.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+       NVL(A.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+       NVL(A.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+       NVL(A.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+       NVL(A.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+       A.CURRENCY AS CURRENCY,
+       A.EXCHANGE_RATE AS EXCHANGE_RATE,
+       CASE WHEN A.POCI_FLAG = 'Y'
+            THEN 'POCI'
+            ELSE NVL(A.STAGE, '1')
+       END AS STAGE,
+       A.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+       A.SPECIAL_REASON AS SPECIAL_REASON,
+       A.PRODUCT_CODE AS PRODUCT_CODE,
+       A.RESERVED_VARCHAR_2 AS TRA,
+       A.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+       NVL(A.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+       NVL(A.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+       (NVL(A.OUTSTANDING_ON_BS_LCL, 0) - NVL(A.UNAMORT_FEE_AMT_LCL, 0) +
+        NVL(A.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+    FROM TEMP_RPT_NOMINATIVE_CURR_PREV A
+     WHERE A.REPORT_DATE = V_CURRDATE
+     AND (A.RESERVED_FLAG_1 = 1 OR A.RESERVED_FLAG_2 = 1)
+     AND A.ACCOUNT_STATUS = 'A'
+     AND NOT EXISTS (SELECT 1
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV PREVPER
+         WHERE A.ACCOUNT_NUMBER = PREVPER.ACCOUNT_NUMBER
+         AND PREVPER.REPORT_DATE = V_PREVDATE);
+  /* end 14 maret 2022 CR ECL MOVEMENT */
+  /*  DIREMARK DAN DI GANTI LOGIC NYA UNTUK BEDA SEGMENT PER 31-MAY-2020
+      SELECT V_CURRDATE                                                     AS REPORT_DATE,
+         A.MASTERID                                                     AS MASTERID,
+         A.CUSTOMER_NUMBER                                              AS CUSTOMER_NUMBER,
+         A.CUSTOMER_NAME                                                AS CUSTOMER_NAME,
+         A.ACCOUNT_NUMBER                                               AS ACCOUNT_NUMBER,
+         A.DATA_SOURCE                                                  AS DATA_SOURCE,
+         A.SUB_SEGMENT                                                  AS SUB_SEGMENT,
+         4                                                              AS SEQ_NO,
+         'MODIFICATION OF CONTRACTUAL CASH FLOWS WITH NO DERECOGNITION' AS IMP_CHANGE_REASON,
+         NVL(A.RESERVED_AMOUNT_3, 0) - NVL(B.RESERVED_AMOUNT_3, 0)      AS ECL_ON_BS,
+         NVL(A.ECL_OFF_BS_LCL, 0) - NVL(B.ECL_OFF_BS_LCL, 0)            AS ECL_OFF_BS,
+         NVL(A.RESERVED_AMOUNT_5, 0) - NVL(B.RESERVED_AMOUNT_5, 0)      AS ECL_TOTAL,
+         NVL(A.RESERVED_AMOUNT_6, 0) - NVL(B.RESERVED_AMOUNT_6, 0)      AS CARRY_AMOUNT,
+         A.CURRENCY                                                     AS CURRENCY,
+         A.EXCHANGE_RATE                                                AS EXCHANGE_RATE,
+         CASE WHEN A.POCI_FLAG = 'Y' THEN
+          'POCI'
+           ELSE
+          NVL(A.STAGE, '1')
+         END                                                            AS STAGE,
+         A.WRITEOFF_FLAG                                                AS WRITEOFF_FLAG,
+         A.SPECIAL_REASON                                               AS SPECIAL_REASON
+      FROM GTMP_NOMINATIVE_CURR_PREV A
+       INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+        ON A.MASTERID = B.MASTERID
+       AND B.REPORT_DATE = V_PREVDATE
+       WHERE A.REPORT_DATE = V_CURRDATE
+       AND A.IMPAIRED_FLAG = 'I'
+       AND NVL(A.STAGE, '1') = NVL(B.STAGE, '1')
+       AND EXISTS (SELECT 1
+          FROM TBLT_PAYMENTEXPECTED X
+           WHERE X.MASTERID = A.MASTERID
+           AND X.EFFECTIVE_DATE = V_CURRDATE);
+  */
+  COMMIT;
+  --UNION ALL
+
+  DELETE FROM TEMP_RPT_NOMINATIVE_CURR_PREV a
+   WHERE EXISTS (SELECT 1
+        FROM TMP_IFRS_ECL_MOVEMENT_DTL b
+       where SEQ_NO = '4'
+         AND REPORT_DATE = V_CURRDATE
+         and a.MASTERID = b.MASTERID);
+  COMMIT;
+
+
+    /****************************************************
+    Foreign currencies effects and other movements
+    ****************************************************/
+  INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+    (REPORT_DATE,
+     MASTERID,
+     CUSTOMER_NUMBER,
+     CUSTOMER_NAME,
+     ACCOUNT_NUMBER,
+     DATA_SOURCE,
+     SUB_SEGMENT,
+     SEQ_NO,
+     IMP_CHANGE_REASON,
+     ECL_ON_BS,
+     ECL_OFF_BS,
+     ECL_TOTAL,
+     CARRY_AMOUNT,
+     UNUSED_AMT,
+     CURRENCY,
+     EXCHANGE_RATE,
+     STAGE,
+     WRITEOFF_FLAG,
+     SPECIAL_REASON,
+     PRODUCT_CODE,
+     TRA,
+     ASET_KEUANGAN,
+     OUTSTANDING_ON_BS,
+     OUTSTANDING_OFF_BS,
+     NILAI_TERCATAT_ON_BS)
+    SELECT REPORT_DATE,
+       MASTERID,
+       CUSTOMER_NUMBER,
+       CUSTOMER_NAME,
+       ACCOUNT_NUMBER,
+       DATA_SOURCE,
+       SUB_SEGMENT,
+       SEQ_NO,
+       IMP_CHANGE_REASON,
+       SUM(ECL_ON_BS) ECL_ON_BS,
+       SUM(ECL_OFF_BS) ECL_OFF_BS,
+       SUM(ECL_TOTAL) ECL_TOTAL,
+       SUM(CARRY_AMOUNT) CARRY_AMOUNT,
+       SUM(UNUSED_AMT) UNUSED_AMT,
+       CURRENCY,
+       EXCHANGE_RATE,
+       STAGE,
+       WRITEOFF_FLAG,
+       SPECIAL_REASON,
+       PRODUCT_CODE,
+       TRA,
+       ASET_KEUANGAN,
+       SUM(OUTSTANDING_ON_BS) OUTSTANDING_ON_BS,
+       SUM(OUTSTANDING_OFF_BS) OUTSTANDING_OFF_BS,
+       SUM(NILAI_TERCATAT_ON_BS) NILAI_TERCATAT_ON_BS
+    FROM (SELECT V_CURRDATE AS REPORT_DATE,
+           A.MASTERID AS MASTERID,
+           A.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+           A.CUSTOMER_NAME AS CUSTOMER_NAME,
+           A.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+           A.DATA_SOURCE AS DATA_SOURCE,
+           A.SUB_SEGMENT AS SUB_SEGMENT,
+           7 AS SEQ_NO,
+           'FOREIGN CURRENCIES EFFECTS AND OTHER MOVEMENTS' AS IMP_CHANGE_REASON,
+           NVL(A.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+           NVL(A.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+           NVL(A.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+           NVL(A.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+           NVL(A.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+           A.CURRENCY AS CURRENCY,
+           A.EXCHANGE_RATE AS EXCHANGE_RATE,
+           CASE WHEN A.POCI_FLAG = 'Y'
+                THEN 'POCI'
+                ELSE NVL(A.STAGE, '1')
+           END AS STAGE,
+           A.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+           A.SPECIAL_REASON AS SPECIAL_REASON,
+           A.PRODUCT_CODE AS PRODUCT_CODE,
+           A.RESERVED_VARCHAR_2 AS TRA,
+           A.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+           NVL(A.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS,
+           NVL(A.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS,
+           (NVL(A.OUTSTANDING_ON_BS_LCL, 0) - NVL(A.UNAMORT_FEE_AMT_LCL, 0) +
+            NVL(A.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV A
+         INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV B
+          ON A.MASTERID = B.MASTERID
+         AND B.REPORT_DATE = V_PREVDATE
+         WHERE A.REPORT_DATE = V_CURRDATE
+         AND A.ECL_TOTAL_CCY = B.ECL_TOTAL_CCY
+         AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS
+         AND A.ACCOUNT_STATUS = 'A'
+         AND A.STAGE = B.STAGE
+         AND A.EXCHANGE_RATE <> 1
+        UNION
+        SELECT V_CURRDATE AS REPORT_DATE,
+           B.MASTERID AS MASTERID,
+           B.CUSTOMER_NUMBER AS CUSTOMER_NUMBER,
+           B.CUSTOMER_NAME AS CUSTOMER_NAME,
+           B.ACCOUNT_NUMBER AS ACCOUNT_NUMBER,
+           B.DATA_SOURCE AS DATA_SOURCE,
+           B.SUB_SEGMENT AS SUB_SEGMENT,
+           7 AS SEQ_NO,
+           'FOREIGN CURRENCIES EFFECTS AND OTHER MOVEMENTS' AS IMP_CHANGE_REASON,
+           -1 * NVL(B.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+           -1 * NVL(B.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+           -1 * NVL(B.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+           -1 * NVL(B.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+           -1 * NVL(B.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+           B.CURRENCY AS CURRENCY,
+           B.EXCHANGE_RATE AS EXCHANGE_RATE,
+           CASE WHEN B.POCI_FLAG = 'Y'
+                THEN 'POCI'
+                ELSE NVL(B.STAGE, '1')
+           END AS STAGE,
+           B.WRITEOFF_FLAG AS WRITEOFF_FLAG,
+           B.SPECIAL_REASON AS SPECIAL_REASON,
+           B.PRODUCT_CODE AS PRODUCT_CODE,
+           B.RESERVED_VARCHAR_2 AS TRA,
+           B.RESERVED_VARCHAR_5 AS ASET_KEUANGAN,
+           -1 * NVL(B.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+           -1 * NVL(B.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+           -1 * (NVL(B.OUTSTANDING_ON_BS_LCL, 0) - NVL(B.UNAMORT_FEE_AMT_LCL, 0) +
+                 NVL(B.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV A
+         INNER JOIN TEMP_RPT_NOMINATIVE_CURR_PREV B
+          ON A.MASTERID = B.MASTERID
+         AND B.REPORT_DATE = V_PREVDATE
+         WHERE A.REPORT_DATE = V_CURRDATE
+         AND A.ECL_TOTAL_CCY = B.ECL_TOTAL_CCY
+         AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS
+         AND A.ACCOUNT_STATUS = 'A'
+         AND A.STAGE = B.STAGE
+         AND A.EXCHANGE_RATE <> 1) HASIL
+     GROUP BY REPORT_DATE,
+        MASTERID,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        ACCOUNT_NUMBER,
+        DATA_SOURCE,
+        SUB_SEGMENT,
+        SEQ_NO,
+        IMP_CHANGE_REASON,
+        CURRENCY,
+        EXCHANGE_RATE,
+        STAGE,
+        WRITEOFF_FLAG,
+        SPECIAL_REASON,
+        PRODUCT_CODE,
+        TRA,
+        ASET_KEUANGAN;
+
+  COMMIT;
+
+  DELETE FROM TEMP_RPT_NOMINATIVE_CURR_PREV a
+   WHERE EXISTS (SELECT 1
+        FROM TMP_IFRS_ECL_MOVEMENT_DTL b
+       where SEQ_NO = '7'
+         AND REPORT_DATE = V_CURRDATE
+         and a.MASTERID = b.MASTERID);
+  COMMIT;
+
+    /****************************************************
+    Changes in model/ risk parameters
+    ****************************************************/
+  INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+    (REPORT_DATE,
+     MASTERID,
+     CUSTOMER_NUMBER,
+     CUSTOMER_NAME,
+     ACCOUNT_NUMBER,
+     DATA_SOURCE,
+     SUB_SEGMENT,
+     SEQ_NO,
+     IMP_CHANGE_REASON,
+     ECL_ON_BS,
+     ECL_OFF_BS,
+     ECL_TOTAL,
+     CARRY_AMOUNT,
+     UNUSED_AMT,
+     CURRENCY,
+     EXCHANGE_RATE,
+     STAGE,
+     WRITEOFF_FLAG,
+     SPECIAL_REASON,
+     PRODUCT_CODE,
+     TRA,
+     ASET_KEUANGAN,
+     OUTSTANDING_ON_BS,
+     OUTSTANDING_OFF_BS,
+     NILAI_TERCATAT_ON_BS)
+    SELECT V_CURRDATE AS REPORT_DATE,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.MASTERID, prev.MASTERID)
+            ELSE NVL(prev.masterid, curr.masterid)
+       END AS MASTERID,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.CUSTOMER_NUMBER, prev.CUSTOMER_NUMBER)
+            ELSE NVL(prev.CUSTOMER_NUMBER, curr.CUSTOMER_NUMBER)
+       END AS CUSTOMER_NUMBER,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.CUSTOMER_NAME, prev.CUSTOMER_NAME)
+            ELSE NVL(prev.CUSTOMER_NAME, curr.CUSTOMER_NAME)
+       END AS CUSTOMER_NAME,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.ACCOUNT_NUMBER, prev.ACCOUNT_NUMBER)
+            ELSE NVL(prev.ACCOUNT_NUMBER, curr.ACCOUNT_NUMBER)
+       END AS ACCOUNT_NUMBER,
+       nvl(CURR.DATA_SOURCE, prev.DATA_SOURCE) DATA_SOURCE,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.SUB_SEGMENT, prev.SUB_SEGMENT)
+            ELSE NVL(prev.SUB_SEGMENT, curr.SUB_SEGMENT)
+       END AS SUB_SEGMENT,
+       3 AS SEQ_NO,
+       'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.RESERVED_AMOUNT_3, 0)
+            ELSE -1 * NVL(prev.RESERVED_AMOUNT_3, 0)
+       END AS ECL_ON_BS,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.ECL_OFF_BS_LCL, 0)
+            ELSE -1 * NVL(prev.ECL_OFF_BS_LCL, 0)
+       END AS ECL_OFF_BS,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.RESERVED_AMOUNT_5, 0)
+            ELSE -1 * NVL(prev.RESERVED_AMOUNT_5, 0)
+       END AS ECL_TOTAL,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.RESERVED_AMOUNT_6, 0)
+            ELSE -1 * NVL(prev.RESERVED_AMOUNT_6, 0)
+       END AS CARRY_AMOUNT,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.UNUSED_AMT_LCL, 0)
+            ELSE -1 * NVL(prev.UNUSED_AMT_LCL, 0)
+       END AS UNUSED_AMT,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.CURRENCY, prev.CURRENCY)
+            ELSE NVL(prev.CURRENCY, curr.CURRENCY)
+       END AS CURRENCY,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN curr.EXCHANGE_RATE
+            ELSE prev.EXCHANGE_RATE
+       END AS EXCHANGE_RATE,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN CASE WHEN curr.POCI_FLAG = 'Y'
+                    THEN 'POCI'
+                    ELSE NVL(curr.STAGE, '1')
+             END
+            ELSE CASE WHEN prev.POCI_FLAG = 'Y'
+                    THEN 'POCI'
+                    ELSE NVL(prev.STAGE, '1')
+               END
+       END AS STAGE,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN curr.WRITEOFF_FLAG
+            ELSE prev.WRITEOFF_FLAG
+       END AS WRITEOFF_FLAG,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN curr.SPECIAL_REASON
+            ELSE prev.SPECIAL_REASON
+       END AS SPECIAL_REASON,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN curr.PRODUCT_CODE
+            ELSE prev.PRODUCT_CODE
+       END AS PRODUCT_CODE,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN curr.RESERVED_VARCHAR_2
+            ELSE prev.RESERVED_VARCHAR_2
+       END AS TRA,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN curr.RESERVED_VARCHAR_5
+            ELSE prev.RESERVED_VARCHAR_5
+       END AS ASET_KEUANGAN,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.OUTSTANDING_ON_BS_LCL, 0)
+            ELSE -1 * NVL(prev.OUTSTANDING_ON_BS_LCL, 0)
+       END AS OUTSTANDING_ON_BS_LCL,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN NVL(curr.OUTSTANDING_OFF_BS_LCL, 0)
+            ELSE -1 * NVL(prev.OUTSTANDING_OFF_BS_LCL, 0)
+       END AS OUTSTANDING_OFF_BS_LCL,
+       CASE WHEN STS_BULAN = 'Curr'
+            THEN (NVL(curr.OUTSTANDING_ON_BS_LCL, 0) - NVL(curr.UNAMORT_FEE_AMT_LCL, 0) +
+                NVL(curr.IA_UNWINDING_INTEREST_LCL, 0))
+            ELSE -1 * (NVL(prev.OUTSTANDING_ON_BS_LCL, 0) - NVL(prev.UNAMORT_FEE_AMT_LCL, 0) +
+                     NVL(prev.IA_UNWINDING_INTEREST_LCL, 0))
+       END AS NILAI_TERCATAT_ON_BS
+    FROM (SELECT *
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV a
+         WHERE report_date = V_CURRDATE
+         AND NOT EXISTS (SELECT 1
+            FROM TMP_IFRS_ECL_MOVEMENT_DTL b
+             WHERE b.REPORT_DATE = V_CURRDATE
+             AND b.masterid = a.masterid
+             AND b.seq_no NOT IN (0, 99))) curr
+    FULL JOIN (SELECT *
+           FROM TEMP_RPT_NOMINATIVE_CURR_PREV a
+          WHERE report_date = V_PREVDATE
+            AND NOT EXISTS
+          (SELECT 1
+               FROM TMP_IFRS_ECL_MOVEMENT_DTL b
+              WHERE b.REPORT_DATE = V_CURRDATE
+                AND b.masterid = a.masterid
+                AND b.seq_no NOT IN (0, 99))) prev
+      ON curr.masterid = prev.masterid, (SELECT 'Curr' STS_BULAN
+        FROM DUAL
+        UNION
+        SELECT 'Prev' STS_BULAN
+        FROM DUAL)
+     WHERE ((prev.data_source <> 'CRD' and PREV.ACCOUNT_STATUS = 'A') or
+       (prev.data_source = 'CRD' and
+       (PREV.ACCOUNT_STATUS = 'A' or prev.outstanding_on_bs_ccy > 0)));
+
+  /*
+     SELECT *
+     FROM (SELECT V_CURRDATE                          AS REPORT_DATE,
+            A.MASTERID                          AS MASTERID,
+            A.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+            A.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+            A.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+            A.DATA_SOURCE                       AS DATA_SOURCE,
+            A.SUB_SEGMENT                       AS SUB_SEGMENT,
+            3                                   AS SEQ_NO,
+            'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+            NVL (A.RESERVED_AMOUNT_3, 0)        AS ECL_ON_BS,
+            NVL (A.ECL_OFF_BS_LCL, 0)           AS ECL_OFF_BS,
+            NVL (A.RESERVED_AMOUNT_5, 0)        AS ECL_TOTAL,
+            NVL (A.RESERVED_AMOUNT_6, 0)        AS CARRY_AMOUNT,
+            NVL (A.UNUSED_AMT_LCL, 0)           AS UNUSED_AMT,
+
+            A.CURRENCY                          AS CURRENCY,
+            A.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+            CASE
+             WHEN A.POCI_FLAG = 'Y' THEN 'POCI'
+             ELSE NVL (A.STAGE, '1')
+            END
+             AS STAGE,
+            A.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+            A.SPECIAL_REASON                    AS SPECIAL_REASON,
+            A.PRODUCT_CODE                AS PRODUCT_CODE,
+            A.RESERVED_VARCHAR_2                AS TRA,
+            A.RESERVED_VARCHAR_5                AS ASET_KEUANGAN
+        FROM TEMP_RPT_NOMINATIVE_CURR_PREV
+        WHERE REPORT_DATE = V_CURRDATE
+    GROUP BY REPORT_DATE,
+        MASTERID,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        ACCOUNT_NUMBER,
+        DATA_SOURCE,
+        SUB_SEGMENT,
+        SEQ_NO,
+        IMP_CHANGE_REASON,
+        CURRENCY,
+        EXCHANGE_RATE,
+        STAGE,
+        WRITEOFF_FLAG,
+        SPECIAL_REASON,
+        PRODUCT_CODE,
+        TRA,
+        ASET_KEUANGAN;
+  */
+  COMMIT;
+
+
+
+
+
+
+ /* take out change in model / risk parameter 21 april 22
+ FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.DATA_SOURCE = 'CRD'
+                  AND A.DATA_SOURCE = B.DATA_SOURCE
+                  AND (A.ACCOUNT_STATUS = 'A' OR A.outstanding_on_bs_ccy <> 0)
+                  AND (B.ACCOUNT_STATUS <> 'A' OR B.outstanding_on_bs_ccy = 0)
+                  AND NVL (A.Sub_Segment, ' ') = NVL (b.Sub_Segment, ' ')
+
+      UNION
+                  SELECT V_CURRDATE                          AS REPORT_DATE,
+                  A.MASTERID                          AS MASTERID,
+                  A.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+                  A.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+                  A.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+                  A.DATA_SOURCE                       AS DATA_SOURCE,
+                  B.SUB_SEGMENT                       AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  -1 * NVL (B.RESERVED_AMOUNT_3, 0)        AS ECL_ON_BS,
+                  -1 * NVL (B.ECL_OFF_BS_LCL, 0)           AS ECL_OFF_BS,
+                  -1 * NVL (B.RESERVED_AMOUNT_5, 0)        AS ECL_TOTAL,
+                  -1 * NVL (B.RESERVED_AMOUNT_6, 0)        AS CARRY_AMOUNT,
+                  -1 * NVL (B.UNUSED_AMT_LCL, 0)           AS UNUSED_AMT,
+                  B.CURRENCY                          AS CURRENCY,
+                  B.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+                  CASE
+                     WHEN B.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (B.STAGE, '1')
+                  END
+                     AS STAGE,
+                  B.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+                  B.SPECIAL_REASON                    AS SPECIAL_REASON,
+                  B.PRODUCT_CODE                AS PRODUCT_CODE,
+                  B.RESERVED_VARCHAR_2                AS TRA,
+                  B.RESERVED_VARCHAR_5                AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.DATA_SOURCE = 'CRD'
+                  AND A.DATA_SOURCE = B.DATA_SOURCE
+                  AND (A.ACCOUNT_STATUS = 'A' OR A.outstanding_on_bs_ccy <> 0)
+                  AND (B.ACCOUNT_STATUS <> 'A' OR B.outstanding_on_bs_ccy = 0)
+                  AND NVL (A.Sub_Segment, ' ') = NVL (b.Sub_Segment, ' ')
+           UNION
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  A.MASTERID                          AS MASTERID,
+                  A.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+                  A.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+                  A.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+                  A.DATA_SOURCE                       AS DATA_SOURCE,
+                  A.SUB_SEGMENT                       AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  NVL (A.RESERVED_AMOUNT_3, 0)        AS ECL_ON_BS,
+                  NVL (A.ECL_OFF_BS_LCL, 0)           AS ECL_OFF_BS,
+                  NVL (A.RESERVED_AMOUNT_5, 0)        AS ECL_TOTAL,
+                  NVL (A.RESERVED_AMOUNT_6, 0)        AS CARRY_AMOUNT,
+                  NVL (A.UNUSED_AMT_LCL, 0)           AS UNUSED_AMT,
+                  A.CURRENCY                          AS CURRENCY,
+                  A.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+                  CASE
+                     WHEN A.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (A.STAGE, '1')
+                  END
+                     AS STAGE,
+                  A.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+                  A.SPECIAL_REASON                    AS SPECIAL_REASON,
+                  A.PRODUCT_CODE                AS PRODUCT_CODE,
+                  A.RESERVED_VARCHAR_2                AS TRA,
+                  A.RESERVED_VARCHAR_5                AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.DATA_SOURCE = B.DATA_SOURCE
+                  AND (A.ACCOUNT_STATUS <> B.ACCOUNT_STATUS)
+                  AND B.outstanding_on_bs_ccy <> 0
+           UNION
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  A.MASTERID                          AS MASTERID,
+                  A.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+                  A.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+                  A.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+                  A.DATA_SOURCE                       AS DATA_SOURCE,
+                  B.SUB_SEGMENT                       AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  -1 * NVL (B.RESERVED_AMOUNT_3, 0)        AS ECL_ON_BS,
+                  -1 * NVL (B.ECL_OFF_BS_LCL, 0)           AS ECL_OFF_BS,
+                  -1 * NVL (B.RESERVED_AMOUNT_5, 0)        AS ECL_TOTAL,
+                  -1 * NVL (B.RESERVED_AMOUNT_6, 0)        AS CARRY_AMOUNT,
+                  -1 * NVL (B.UNUSED_AMT_LCL, 0)           AS UNUSED_AMT,
+                  B.CURRENCY                          AS CURRENCY,
+                  B.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+                  CASE
+                     WHEN B.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (B.STAGE, '1')
+                  END
+                     AS STAGE,
+                  B.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+                  B.SPECIAL_REASON                    AS SPECIAL_REASON,
+                  B.PRODUCT_CODE                AS PRODUCT_CODE,
+                  B.RESERVED_VARCHAR_2                AS TRA,
+                  B.RESERVED_VARCHAR_5                AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.DATA_SOURCE = B.DATA_SOURCE
+                  AND (A.ACCOUNT_STATUS <> B.ACCOUNT_STATUS)
+                  AND B.outstanding_on_bs_ccy <> 0
+
+           UNION
+           ---- 20201020
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  A.MASTERID                          AS MASTERID,
+                  A.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+                  A.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+                  A.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+                  A.DATA_SOURCE                       AS DATA_SOURCE,
+                  A.SUB_SEGMENT                       AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  NVL (A.RESERVED_AMOUNT_3, 0)        AS ECL_ON_BS,
+                  NVL (A.ECL_OFF_BS_LCL, 0)           AS ECL_OFF_BS,
+                  NVL (A.RESERVED_AMOUNT_5, 0)        AS ECL_TOTAL,
+                  NVL (A.RESERVED_AMOUNT_6, 0)        AS CARRY_AMOUNT,
+                  NVL (A.UNUSED_AMT_LCL, 0)           AS UNUSED_AMT,
+                  A.CURRENCY                          AS CURRENCY,
+                  A.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+                  CASE
+                     WHEN A.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (A.STAGE, '1')
+                  END
+                     AS STAGE,
+                  A.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+                  A.SPECIAL_REASON                    AS SPECIAL_REASON,
+                  A.PRODUCT_CODE                AS PRODUCT_CODE,
+                  A.RESERVED_VARCHAR_2                AS TRA,
+                  A.RESERVED_VARCHAR_5                AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS
+                  AND A.ACCOUNT_STATUS = 'A'
+                  AND NVL (A.Sub_Segment, ' ') = NVL (b.Sub_Segment, ' ')
+                  AND NOT EXISTS
+                         (SELECT 1
+                            FROM GTMP_NOMINATIVE_CURR_PREV CURR
+                           WHERE     CURR.REPORT_DATE = V_CURRDATE
+                                 AND A.ACCOUNT_NUMBER = CURR.FACILITY_NUMBER
+                                 AND CURR.ACCOUNT_STATUS = 'A'    --- 20200304
+                                 AND CURR.DATA_SOURCE = 'ILS')
+           UNION
+                                 SELECT V_CURRDATE                         AS REPORT_DATE,
+                  A.MASTERID                          AS MASTERID,
+                  A.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+                  A.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+                  A.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+                  A.DATA_SOURCE                       AS DATA_SOURCE,
+                  B.SUB_SEGMENT                       AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  -1 * NVL (B.RESERVED_AMOUNT_3, 0)        AS ECL_ON_BS,
+                  -1 * NVL (B.ECL_OFF_BS_LCL, 0)           AS ECL_OFF_BS,
+                  -1 * NVL (B.RESERVED_AMOUNT_5, 0)        AS ECL_TOTAL,
+                  -1 * NVL (B.RESERVED_AMOUNT_6, 0)        AS CARRY_AMOUNT,
+                  -1 * NVL (B.UNUSED_AMT_LCL, 0)           AS UNUSED_AMT,
+                  B.CURRENCY                          AS CURRENCY,
+                  B.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+                  CASE
+                     WHEN B.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (B.STAGE, '1')
+                  END
+                     AS STAGE,
+                  B.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+                  B.SPECIAL_REASON                    AS SPECIAL_REASON,
+                  B.PRODUCT_CODE                AS PRODUCT_CODE,
+                  B.RESERVED_VARCHAR_2                AS TRA,
+                  B.RESERVED_VARCHAR_5                AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS
+                  AND A.ACCOUNT_STATUS = 'A'
+                  AND NVL (A.Sub_Segment, ' ') = NVL (b.Sub_Segment, ' ')
+                  AND NOT EXISTS
+                         (SELECT 1
+                            FROM GTMP_NOMINATIVE_CURR_PREV CURR
+                           WHERE     CURR.REPORT_DATE = V_CURRDATE
+                                 AND A.ACCOUNT_NUMBER = CURR.FACILITY_NUMBER
+                                 AND CURR.ACCOUNT_STATUS = 'A'    --- 20200304
+                                 AND CURR.DATA_SOURCE = 'ILS')
+           ---- END 20201020
+           UNION
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  A.MASTERID                          AS MASTERID,
+                  A.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+                  A.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+                  A.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+                  A.DATA_SOURCE                       AS DATA_SOURCE,
+                  A.SUB_SEGMENT                       AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  NVL (A.RESERVED_AMOUNT_3, 0)        AS ECL_ON_BS,
+                  NVL (A.ECL_OFF_BS_LCL, 0)           AS ECL_OFF_BS,
+                  NVL (A.RESERVED_AMOUNT_5, 0)        AS ECL_TOTAL,
+                  NVL (A.RESERVED_AMOUNT_6, 0)        AS CARRY_AMOUNT,
+                  NVL (A.UNUSED_AMT_LCL, 0)           AS UNUSED_AMT,
+                  A.CURRENCY                          AS CURRENCY,
+                  A.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+                  CASE
+                     WHEN A.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (A.STAGE, '1')
+                  END
+                     AS STAGE,
+                  A.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+                  A.SPECIAL_REASON                    AS SPECIAL_REASON,
+                  A.PRODUCT_CODE                AS PRODUCT_CODE,
+                  A.RESERVED_VARCHAR_2                AS TRA,
+                  A.RESERVED_VARCHAR_5                AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS
+                  AND A.ACCOUNT_STATUS = 'A'
+                  AND A.DATA_SOURCE <> 'CRD'
+                  AND NVL (A.Sub_Segment, ' ') <> NVL (b.Sub_Segment, ' ')
+           UNION
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  B.MASTERID                          AS MASTERID,
+                  B.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+                  B.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+                  B.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+                  B.DATA_SOURCE                       AS DATA_SOURCE,
+                  B.SUB_SEGMENT                       AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  -1 * NVL (B.RESERVED_AMOUNT_3, 0)   AS ECL_ON_BS,
+                  -1 * NVL (B.ECL_OFF_BS_LCL, 0)      AS ECL_OFF_BS,
+                  -1 * NVL (B.RESERVED_AMOUNT_5, 0)   AS ECL_TOTAL,
+                  -1 * NVL (B.RESERVED_AMOUNT_6, 0)   AS CARRY_AMOUNT,
+                  -1 * NVL (B.UNUSED_AMT_LCL, 0)      AS UNUSED_AMT,
+                  B.CURRENCY                          AS CURRENCY,
+                  B.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+                  CASE
+                     WHEN B.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (B.STAGE, '1')
+                  END
+                     AS STAGE,
+                  B.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+                  B.SPECIAL_REASON                    AS SPECIAL_REASON,
+                  B.PRODUCT_CODE                AS PRODUCT_CODE,
+                  B.RESERVED_VARCHAR_2                AS TRA,
+                  B.RESERVED_VARCHAR_5                AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS
+                  AND A.ACCOUNT_STATUS = 'A'
+                  AND A.DATA_SOURCE <> 'CRD'
+                  AND NVL (A.Sub_Segment, ' ') <> NVL (b.Sub_Segment, ' ')
+           UNION
+           ------ 20201001
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  A.MASTERID                          AS MASTERID,
+                  A.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+                  A.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+                  A.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+                  A.DATA_SOURCE                       AS DATA_SOURCE,
+                  A.SUB_SEGMENT                       AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  NVL (A.RESERVED_AMOUNT_3, 0)        AS ECL_ON_BS,
+                  NVL (A.ECL_OFF_BS_LCL, 0)           AS ECL_OFF_BS,
+                  NVL (A.RESERVED_AMOUNT_5, 0)        AS ECL_TOTAL,
+                  NVL (A.RESERVED_AMOUNT_6, 0)        AS CARRY_AMOUNT,
+                  NVL (A.UNUSED_AMT_LCL, 0)           AS UNUSED_AMT,
+                  A.CURRENCY                          AS CURRENCY,
+                  A.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+                  CASE
+                     WHEN A.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (A.STAGE, '1')
+                  END
+                     AS STAGE,
+                  A.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+                  A.SPECIAL_REASON                    AS SPECIAL_REASON,
+                  A.PRODUCT_CODE                AS PRODUCT_CODE,
+                  A.RESERVED_VARCHAR_2                AS TRA,
+                  A.RESERVED_VARCHAR_5                AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS
+                  AND (A.ACCOUNT_STATUS = 'A' OR A.outstanding_on_bs_ccy > 0)
+                  AND A.DATA_SOURCE = 'CRD'
+                  AND NVL (A.Sub_Segment, ' ') <> NVL (b.Sub_Segment, ' ')
+           UNION
+           ------ 20201001
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  B.MASTERID                          AS MASTERID,
+                  B.CUSTOMER_NUMBER                   AS CUSTOMER_NUMBER,
+                  B.CUSTOMER_NAME                     AS CUSTOMER_NAME,
+                  B.ACCOUNT_NUMBER                    AS ACCOUNT_NUMBER,
+                  B.DATA_SOURCE                       AS DATA_SOURCE,
+                  B.SUB_SEGMENT                       AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  -1 * NVL (B.RESERVED_AMOUNT_3, 0)   AS ECL_ON_BS,
+                  -1 * NVL (B.ECL_OFF_BS_LCL, 0)      AS ECL_OFF_BS,
+                  -1 * NVL (B.RESERVED_AMOUNT_5, 0)   AS ECL_TOTAL,
+                  -1 * NVL (B.RESERVED_AMOUNT_6, 0)   AS CARRY_AMOUNT,
+                  -1 * NVL (B.UNUSED_AMT_LCL, 0)      AS UNUSED_AMT,
+                  B.CURRENCY                          AS CURRENCY,
+                  B.EXCHANGE_RATE                     AS EXCHANGE_RATE,
+                  CASE
+                     WHEN B.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (B.STAGE, '1')
+                  END
+                     AS STAGE,
+                  B.WRITEOFF_FLAG                     AS WRITEOFF_FLAG,
+                  B.SPECIAL_REASON                    AS SPECIAL_REASON,
+                  B.PRODUCT_CODE                AS PRODUCT_CODE,
+                  B.RESERVED_VARCHAR_2            AS TRA,
+                  B.RESERVED_VARCHAR_5            AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV A
+                  INNER JOIN GTMP_NOMINATIVE_CURR_PREV B
+                     ON     A.MASTERID = B.MASTERID
+                        AND B.REPORT_DATE = V_PREVDATE
+            WHERE     A.REPORT_DATE = V_CURRDATE
+                  AND NVL (A.STAGE, '1') = NVL (B.STAGE, '1')
+                  AND A.ACCOUNT_STATUS = B.ACCOUNT_STATUS
+                  AND (A.ACCOUNT_STATUS = 'A' OR A.outstanding_on_bs_ccy > 0)
+                  AND A.DATA_SOURCE = 'CRD'
+                  AND NVL (A.Sub_Segment, ' ') <> NVL (b.Sub_Segment, ' ')
+           UNION
+           SELECT DISTINCT
+                  V_CURRDATE                           AS REPORT_DATE,
+                  PREV.MASTERID                        AS MASTERID,
+                  PREV.CUSTOMER_NUMBER                 AS CUSTOMER_NUMBER,
+                  PREV.CUSTOMER_NAME                   AS CUSTOMER_NAME,
+                  PREV.ACCOUNT_NUMBER                  AS ACCOUNT_NUMBER,
+                  PREV.DATA_SOURCE                     AS DATA_SOURCE,
+                  PREV.SUB_SEGMENT                     AS SUB_SEGMENT,
+                  3                                    AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS'  AS IMP_CHANGE_REASON,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+                  -1 * NVL (PREV.ECL_OFF_BS_LCL, 0)    AS ECL_OFF_BS,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+                  -1 * NVL (PREV.UNUSED_AMT_LCL, 0)    AS UNUSED_AMT,
+                  PREV.CURRENCY                        AS CURRENCY,
+                  PREV.EXCHANGE_RATE                   AS EXCHANGE_RATE,
+                  CASE
+                     WHEN PREV.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (PREV.STAGE, '1')
+                  END
+                     AS STAGE,
+                  PREV.WRITEOFF_FLAG                   AS WRITEOFF_FLAG,
+                  PREV.SPECIAL_REASON                  AS SPECIAL_REASON,
+                  PREV.PRODUCT_CODE              AS PRODUCT_CODE,
+          PREV.RESERVED_VARCHAR_2            AS TRA,
+          PREV.RESERVED_VARCHAR_5              AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV PREV
+            WHERE     PREV.REPORT_DATE = V_PREVDATE
+                  AND PREV.DATA_SOURCE = 'LIMIT'
+                  AND NVL (PREV.RESERVED_AMOUNT_5, 0) <> 0
+                  AND EXISTS
+                         (SELECT 1
+                            FROM GTMP_NOMINATIVE_CURR_PREV CURR
+                           WHERE     CURR.REPORT_DATE = V_CURRDATE
+                                 AND CURR.DATA_SOURCE = 'ILS'
+                                 AND CURR.ACCOUNT_STATUS = 'A'
+                                 AND PREV.ACCOUNT_NUMBER =
+                                        CURR.FACILITY_NUMBER)
+           UNION
+           SELECT DISTINCT
+                  V_CURRDATE                           AS REPORT_DATE,
+                  PREV.MASTERID                        AS MASTERID,
+                  PREV.CUSTOMER_NUMBER                 AS CUSTOMER_NUMBER,
+                  PREV.CUSTOMER_NAME                   AS CUSTOMER_NAME,
+                  PREV.ACCOUNT_NUMBER                  AS ACCOUNT_NUMBER,
+                  PREV.DATA_SOURCE                     AS DATA_SOURCE,
+                  PREV.SUB_SEGMENT                     AS SUB_SEGMENT,
+                  3                                    AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS'  AS IMP_CHANGE_REASON,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+                  -1 * NVL (PREV.ECL_OFF_BS_LCL, 0)    AS ECL_OFF_BS,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+                  -1 * NVL (PREV.UNUSED_AMT_LCL, 0)    AS UNUSED_AMT,
+                  PREV.CURRENCY                        AS CURRENCY,
+                  PREV.EXCHANGE_RATE                   AS EXCHANGE_RATE,
+                  CASE
+                     WHEN PREV.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (PREV.STAGE, '1')
+                  END
+                     AS STAGE,
+                  PREV.WRITEOFF_FLAG                   AS WRITEOFF_FLAG,
+                  PREV.SPECIAL_REASON                  AS SPECIAL_REASON,
+                  PREV.PRODUCT_CODE                AS PRODUCT_CODE,
+                  PREV.RESERVED_VARCHAR_2            AS TRA,
+          PREV.RESERVED_VARCHAR_5              AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV PREV
+            WHERE     PREV.REPORT_DATE = V_PREVDATE
+                  AND PREV.DATA_SOURCE = 'LIMIT'
+                  AND NVL (PREV.RESERVED_AMOUNT_6, 0) <> 0
+                  AND EXISTS
+                         (SELECT 1
+                            FROM GTMP_NOMINATIVE_CURR_PREV CURR
+                           WHERE     CURR.REPORT_DATE = V_CURRDATE
+                                 AND CURR.DATA_SOURCE = 'ILS'
+                                 AND CURR.ACCOUNT_STATUS = 'A'
+                                 AND PREV.ACCOUNT_NUMBER =
+                                        CURR.FACILITY_NUMBER)
+           UNION
+           SELECT DISTINCT
+                  V_CURRDATE                           AS REPORT_DATE,
+                  PREV.MASTERID                        AS MASTERID,
+                  PREV.CUSTOMER_NUMBER                 AS CUSTOMER_NUMBER,
+                  PREV.CUSTOMER_NAME                   AS CUSTOMER_NAME,
+                  PREV.ACCOUNT_NUMBER                  AS ACCOUNT_NUMBER,
+                  PREV.DATA_SOURCE                     AS DATA_SOURCE,
+                  PREV.SUB_SEGMENT                     AS SUB_SEGMENT,
+                  3                                    AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS'  AS IMP_CHANGE_REASON,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+                  -1 * NVL (PREV.ECL_OFF_BS_LCL, 0)    AS ECL_OFF_BS,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+                  -1 * NVL (PREV.UNUSED_AMT_LCL, 0)    AS UNUSED_AMT,
+                  PREV.CURRENCY                        AS CURRENCY,
+                  PREV.EXCHANGE_RATE                   AS EXCHANGE_RATE,
+                  CASE
+                     WHEN PREV.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (PREV.STAGE, '1')
+                  END
+                     AS STAGE,
+                  PREV.WRITEOFF_FLAG                   AS WRITEOFF_FLAG,
+                  PREV.SPECIAL_REASON                  AS SPECIAL_REASON,
+                  PREV.PRODUCT_CODE              AS PRODUCT_CODE,
+          PREV.RESERVED_VARCHAR_2          AS TRA,
+          PREV.RESERVED_VARCHAR_5              AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV PREV
+            WHERE     PREV.REPORT_DATE = V_PREVDATE
+                  AND PREV.DATA_SOURCE = 'LIMIT'
+                  AND NVL (PREV.UNUSED_AMT_LCL, 0) <> 0
+                  AND EXISTS
+                         (SELECT 1
+                            FROM GTMP_NOMINATIVE_CURR_PREV CURR
+                           WHERE     CURR.REPORT_DATE = V_CURRDATE
+                                 AND CURR.DATA_SOURCE = 'ILS'
+                                 AND CURR.ACCOUNT_STATUS = 'A'
+                                 AND PREV.ACCOUNT_NUMBER =
+                                        CURR.FACILITY_NUMBER)
+           UNION
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  CURR.MASTERID                       AS MASTERID,
+                  CURR.CUSTOMER_NUMBER                AS CUSTOMER_NUMBER,
+                  CURR.CUSTOMER_NAME                  AS CUSTOMER_NAME,
+                  CURR.ACCOUNT_NUMBER                 AS ACCOUNT_NUMBER,
+                  CURR.DATA_SOURCE                    AS DATA_SOURCE,
+                  CURR.SUB_SEGMENT                    AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  NVL (CURR.RESERVED_AMOUNT_3, 0)     AS ECL_ON_BS,
+                  NVL (CURR.ECL_OFF_BS_LCL, 0)        AS ECL_OFF_BS,
+                  NVL (CURR.RESERVED_AMOUNT_5, 0)     AS ECL_TOTAL,
+                  NVL (CURR.RESERVED_AMOUNT_6, 0)     AS CARRY_AMOUNT,
+                  NVL (CURR.UNUSED_AMT_LCL, 0)        AS UNUSED_AMT,
+                  CURR.CURRENCY                       AS CURRENCY,
+                  CURR.EXCHANGE_RATE                  AS EXCHANGE_RATE,
+                  CASE
+                     WHEN CURR.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (CURR.STAGE, '1')
+                  END
+                     AS STAGE,
+                  CURR.WRITEOFF_FLAG                  AS WRITEOFF_FLAG,
+                  CURR.SPECIAL_REASON                 AS SPECIAL_REASON,
+                  CURR.PRODUCT_CODE               AS PRODUCT_CODE,
+                  CURR.RESERVED_VARCHAR_2           AS TRA,
+            CURR.RESERVED_VARCHAR_5             AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV PREV,
+                  GTMP_NOMINATIVE_CURR_PREV CURR
+            WHERE     PREV.REPORT_DATE = V_PREVDATE
+                  AND PREV.DATA_SOURCE = 'LIMIT'
+                  AND NVL (PREV.RESERVED_AMOUNT_5, 0) <> 0
+                  AND CURR.REPORT_DATE = V_CURRDATE
+                  AND CURR.DATA_SOURCE = 'ILS'
+                  AND PREV.ACCOUNT_NUMBER = CURR.FACILITY_NUMBER
+                  --- MENAMBAHAN 2020-05-02
+                  AND NOT EXISTS
+                         (SELECT 1
+                            FROM GTMP_NOMINATIVE_CURR_PREV PREVILS
+                           WHERE     PREVILS.DATA_SOURCE = 'ILS'
+                                 AND CURR.MASTERID = PREVILS.MASTERID
+                                 AND PREVILS.REPORT_DATE = V_PREVDATE)
+           UNION
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  CURR.MASTERID                       AS MASTERID,
+                  CURR.CUSTOMER_NUMBER                AS CUSTOMER_NUMBER,
+                  CURR.CUSTOMER_NAME                  AS CUSTOMER_NAME,
+                  CURR.ACCOUNT_NUMBER                 AS ACCOUNT_NUMBER,
+                  CURR.DATA_SOURCE                    AS DATA_SOURCE,
+                  CURR.SUB_SEGMENT                    AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  NVL (CURR.RESERVED_AMOUNT_3, 0)     AS ECL_ON_BS,
+                  NVL (CURR.ECL_OFF_BS_LCL, 0)        AS ECL_OFF_BS,
+                  NVL (CURR.RESERVED_AMOUNT_5, 0)     AS ECL_TOTAL,
+                  NVL (CURR.RESERVED_AMOUNT_6, 0)     AS CARRY_AMOUNT,
+                  NVL (CURR.UNUSED_AMT_LCL, 0)        AS UNUSED_AMT,
+                  CURR.CURRENCY                       AS CURRENCY,
+                  CURR.EXCHANGE_RATE                  AS EXCHANGE_RATE,
+                  CASE
+                     WHEN CURR.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (CURR.STAGE, '1')
+                  END
+                     AS STAGE,
+                  CURR.WRITEOFF_FLAG                  AS WRITEOFF_FLAG,
+                  CURR.SPECIAL_REASON                 AS SPECIAL_REASON,
+                  CURR.PRODUCT_CODE               AS PRODUCT_CODE,
+          CURR.RESERVED_VARCHAR_2           AS TRA,
+          CURR.RESERVED_VARCHAR_5             AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV PREV,
+                  GTMP_NOMINATIVE_CURR_PREV CURR
+            WHERE     PREV.REPORT_DATE = V_PREVDATE
+                  AND PREV.DATA_SOURCE = 'LIMIT'
+                  AND NVL (PREV.RESERVED_AMOUNT_6, 0) <> 0
+                  AND CURR.REPORT_DATE = V_CURRDATE
+                  AND CURR.DATA_SOURCE = 'ILS'
+                  AND PREV.ACCOUNT_NUMBER = CURR.FACILITY_NUMBER
+                  --- MENAMBAHAN 2020-05-02
+                  AND NOT EXISTS
+                         (SELECT 1
+                            FROM GTMP_NOMINATIVE_CURR_PREV PREVILS
+                           WHERE     PREVILS.DATA_SOURCE = 'ILS'
+                                 AND CURR.MASTERID = PREVILS.MASTERID
+                                 AND PREVILS.REPORT_DATE = V_PREVDATE)
+           UNION
+           SELECT V_CURRDATE                          AS REPORT_DATE,
+                  CURR.MASTERID                       AS MASTERID,
+                  CURR.CUSTOMER_NUMBER                AS CUSTOMER_NUMBER,
+                  CURR.CUSTOMER_NAME                  AS CUSTOMER_NAME,
+                  CURR.ACCOUNT_NUMBER                 AS ACCOUNT_NUMBER,
+                  CURR.DATA_SOURCE                    AS DATA_SOURCE,
+                  CURR.SUB_SEGMENT                    AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  NVL (CURR.RESERVED_AMOUNT_3, 0)     AS ECL_ON_BS,
+                  NVL (CURR.ECL_OFF_BS_LCL, 0)        AS ECL_OFF_BS,
+                  NVL (CURR.RESERVED_AMOUNT_5, 0)     AS ECL_TOTAL,
+                  NVL (CURR.RESERVED_AMOUNT_6, 0)     AS CARRY_AMOUNT,
+                  NVL (CURR.UNUSED_AMT_LCL, 0)        AS UNUSED_AMT,
+                  CURR.CURRENCY                       AS CURRENCY,
+                  CURR.EXCHANGE_RATE                  AS EXCHANGE_RATE,
+                  CASE
+                     WHEN CURR.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (CURR.STAGE, '1')
+                  END
+                     AS STAGE,
+                  CURR.WRITEOFF_FLAG                  AS WRITEOFF_FLAG,
+                  CURR.SPECIAL_REASON                 AS SPECIAL_REASON,
+                  CURR.PRODUCT_CODE               AS PRODUCT_CODE,
+                  CURR.RESERVED_VARCHAR_2           AS TRA,
+                  CURR.RESERVED_VARCHAR_5             AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV PREV,
+                  GTMP_NOMINATIVE_CURR_PREV CURR
+            WHERE     PREV.REPORT_DATE = V_PREVDATE
+                  AND PREV.DATA_SOURCE = 'LIMIT'
+                  AND NVL (PREV.UNUSED_AMT_LCL, 0) <> 0
+                  AND CURR.REPORT_DATE = V_CURRDATE
+                  AND CURR.DATA_SOURCE = 'ILS'
+                  AND PREV.ACCOUNT_NUMBER = CURR.FACILITY_NUMBER
+                  --- MENAMBAHAN 2020-05-02
+                  AND NOT EXISTS
+                         (SELECT 1
+                            FROM GTMP_NOMINATIVE_CURR_PREV PREVILS
+                           WHERE     PREVILS.DATA_SOURCE = 'ILS'
+                                 AND CURR.MASTERID = PREVILS.MASTERID
+                                 AND PREVILS.REPORT_DATE = V_PREVDATE) /*----- FEB 2020
+                                                                       UNION
+                                                                       SELECT DISTINCT V_CURRDATE                                        AS REPORT_DATE,
+                                                                                       CURR.MASTERID                                     AS MASTERID,
+                                                                                       CURR.CUSTOMER_NUMBER                              AS CUSTOMER_NUMBER,
+                                                                                       CURR.CUSTOMER_NAME                                AS CUSTOMER_NAME,
+                                                                                       CURR.ACCOUNT_NUMBER                               AS ACCOUNT_NUMBER,
+                                                                                       CURR.DATA_SOURCE                                  AS DATA_SOURCE,
+                                                                                       CURR.SUB_SEGMENT                                  AS SUB_SEGMENT,
+                                                                                       3                                                 AS SEQ_NO,
+                                                                                       'CHANGES IN MODEL/ RISK PARAMETERS'               AS IMP_CHANGE_REASON,
+                                                                                       -1 * NVL(CURR.RESERVED_AMOUNT_3, 0)               AS ECL_ON_BS,
+                                                                                       -1 * NVL(CURR.ECL_OFF_BS_LCL, 0)                  AS ECL_OFF_BS,
+                                                                                       -1 * NVL(CURR.RESERVED_AMOUNT_5, 0)               AS ECL_TOTAL,
+                                                                                       -1 * NVL(CURR.RESERVED_AMOUNT_6, 0)               AS CARRY_AMOUNT,
+                                                                                       CURR.CURRENCY                                     AS CURRENCY,
+                                                                                       CURR.EXCHANGE_RATE                                AS EXCHANGE_RATE,
+                                                                                       CASE WHEN CURR.POCI_FLAG = 'Y' THEN
+                                                                                          'POCI'
+                                                                                         ELSE
+                                                                                          NVL(CURR.STAGE, '1')
+                                                                                       END                                               AS STAGE,
+                                                                                       CURR.WRITEOFF_FLAG                                AS WRITEOFF_FLAG,
+                                                                                       CURR.SPECIAL_REASON                               AS SPECIAL_REASON
+                                                                         FROM GTMP_NOMINATIVE_CURR_PREV CURR
+                                                                        WHERE CURR.REPORT_DATE = V_CURRDATE
+                                                                          AND CURR.DATA_SOURCE = 'LIMIT'
+                                                                          AND NVL(CURR.RESERVED_AMOUNT_5, 0) <> 0
+                                                                          AND EXISTS
+                                                                        (SELECT 1
+                                                                                 FROM GTMP_NOMINATIVE_CURR_PREV PREV
+                                                                                WHERE PREV.REPORT_DATE = V_PREVDATE
+                                                                                  AND PREV.DATA_SOURCE = 'ILS'
+                                                                                  AND CURR.ACCOUNT_NUMBER = PREV.FACILITY_NUMBER
+                                                                                  AND NVL(PREV.RESERVED_AMOUNT_5, 0) <> 0)
+                                                                       UNION
+                                                                       SELECT V_CURRDATE                                                 AS REPORT_DATE,
+                                                                              CURR.MASTERID                                              AS MASTERID,
+                                                                              CURR.CUSTOMER_NUMBER                                       AS CUSTOMER_NUMBER,
+                                                                              CURR.CUSTOMER_NAME                                         AS CUSTOMER_NAME,
+                                                                              CURR.ACCOUNT_NUMBER                                        AS ACCOUNT_NUMBER,
+                                                                              CURR.DATA_SOURCE                                           AS DATA_SOURCE,
+                                                                              CURR.SUB_SEGMENT                                           AS SUB_SEGMENT,
+                                                                              3                                                          AS SEQ_NO,
+                                                                              'CHANGES IN MODEL/ RISK PARAMETERS'                        AS IMP_CHANGE_REASON,
+                                                                              NVL(CURR.RESERVED_AMOUNT_3, 0)                             AS ECL_ON_BS,
+                                                                              NVL(CURR.ECL_OFF_BS_LCL, 0)                                AS ECL_OFF_BS,
+                                                                              NVL(CURR.RESERVED_AMOUNT_5, 0)                             AS ECL_TOTAL,
+                                                                              NVL(CURR.RESERVED_AMOUNT_6, 0)                             AS CARRY_AMOUNT,
+                                                                              CURR.CURRENCY                                              AS CURRENCY,
+                                                                              CURR.EXCHANGE_RATE                                         AS EXCHANGE_RATE,
+                                                                              CASE WHEN CURR.POCI_FLAG = 'Y' THEN
+                                                                                 'POCI'
+                                                                                ELSE
+                                                                                 NVL(CURR.STAGE, '1')
+                                                                              END                                                        AS STAGE,
+                                                                              CURR.WRITEOFF_FLAG                                         AS WRITEOFF_FLAG,
+                                                                              CURR.SPECIAL_REASON                                        AS SPECIAL_REASON
+                                                                         FROM GTMP_NOMINATIVE_CURR_PREV PREV,
+                                                                              GTMP_NOMINATIVE_CURR_PREV CURR
+                                                                        WHERE PREV.REPORT_DATE = V_PREVDATE
+                                                                          AND PREV.DATA_SOURCE = 'LIMIT'
+                                                                          AND NVL(CURR.RESERVED_AMOUNT_5, 0) = 0
+                                                                          AND CURR.DATA_SOURCE = 'ILS'
+                                                                          AND CURR.REPORT_DATE = V_CURRDATE
+                                                                          AND PREV.ACCOUNT_NUMBER = CURR.FACILITY_NUMBER*/
+  /*                                                                    ) NOMI
+    WHERE NOT EXISTS
+             (SELECT 1
+                FROM TMP_IFRS_ECL_MOVEMENT_DTL X
+               WHERE     X.MASTERID = NOMI.MASTERID
+                     AND X.REPORT_DATE = NOMI.REPORT_DATE);
+
+COMMIT;
+
+INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL (REPORT_DATE,
+                                       MASTERID,
+                                       CUSTOMER_NUMBER,
+                                       CUSTOMER_NAME,
+                                       ACCOUNT_NUMBER,
+                                       DATA_SOURCE,
+                                       SUB_SEGMENT,
+                                       SEQ_NO,
+                                       IMP_CHANGE_REASON,
+                                       ECL_ON_BS,
+                                       ECL_OFF_BS,
+                                       ECL_TOTAL,
+                                       CARRY_AMOUNT,
+                                       UNUSED_AMT,
+                                       CURRENCY,
+                                       EXCHANGE_RATE,
+                                       STAGE,
+                                       WRITEOFF_FLAG,
+                                       SPECIAL_REASON,
+                                       PRODUCT_CODE,
+                                       TRA,
+                                       ASET_KEUANGAN)
+   SELECT *
+     FROM (SELECT DISTINCT
+                  V_CURRDATE                           AS REPORT_DATE,
+                  PREV.MASTERID                        AS MASTERID,
+                  PREV.CUSTOMER_NUMBER                 AS CUSTOMER_NUMBER,
+                  PREV.CUSTOMER_NAME                   AS CUSTOMER_NAME,
+                  PREV.ACCOUNT_NUMBER                  AS ACCOUNT_NUMBER,
+                  PREV.DATA_SOURCE                     AS DATA_SOURCE,
+                  PREV.SUB_SEGMENT                     AS SUB_SEGMENT,
+                  3                                    AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS'  AS IMP_CHANGE_REASON,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+                  -1 * NVL (PREV.ECL_OFF_BS_LCL, 0)    AS ECL_OFF_BS,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+                  -1 * NVL (PREV.UNUSED_AMT_LCL, 0)    AS UNUSED_AMT,
+                  PREV.CURRENCY                        AS CURRENCY,
+                  PREV.EXCHANGE_RATE                   AS EXCHANGE_RATE,
+                  CASE
+                     WHEN PREV.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (PREV.STAGE, '1')
+                  END
+                     AS STAGE,
+                  PREV.WRITEOFF_FLAG                   AS WRITEOFF_FLAG,
+                  PREV.SPECIAL_REASON                  AS SPECIAL_REASON,
+                  PREV.PRODUCT_CODE                AS PRODUCT_CODE,
+                  PREV.RESERVED_VARCHAR_2            AS TRA,
+                  PREV.RESERVED_VARCHAR_5              AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV CURR,
+                  GTMP_NOMINATIVE_CURR_PREV PREV
+            WHERE     CURR.DATA_SOURCE = 'LIMIT'
+                  AND CURR.REPORT_DATE = V_CURRDATE
+                  --AND NVL(CURR.RESERVED_AMOUNT_5, 0) <> 0
+                  AND CURR.ACCOUNT_STATUS = 'A'
+                  AND PREV.DATA_SOURCE = 'ILS'
+                  AND PREV.FACILITY_NUMBER = CURR.ACCOUNT_NUMBER
+                  AND PREV.REPORT_DATE = V_PREVDATE
+                  AND NVL (PREV.RESERVED_AMOUNT_5, 0) <> 0
+                  AND PREV.ACCOUNT_STATUS = 'A'
+           UNION
+           SELECT DISTINCT
+                  V_CURRDATE                           AS REPORT_DATE,
+                  PREV.MASTERID                        AS MASTERID,
+                  PREV.CUSTOMER_NUMBER                 AS CUSTOMER_NUMBER,
+                  PREV.CUSTOMER_NAME                   AS CUSTOMER_NAME,
+                  PREV.ACCOUNT_NUMBER                  AS ACCOUNT_NUMBER,
+                  PREV.DATA_SOURCE                     AS DATA_SOURCE,
+                  PREV.SUB_SEGMENT                     AS SUB_SEGMENT,
+                  3                                    AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS'  AS IMP_CHANGE_REASON,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+                  -1 * NVL (PREV.ECL_OFF_BS_LCL, 0)    AS ECL_OFF_BS,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+                  -1 * NVL (PREV.UNUSED_AMT_LCL, 0)    AS UNUSED_AMT,
+                  PREV.CURRENCY                        AS CURRENCY,
+                  PREV.EXCHANGE_RATE                   AS EXCHANGE_RATE,
+                  CASE
+                     WHEN PREV.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (PREV.STAGE, '1')
+                  END
+                     AS STAGE,
+                  PREV.WRITEOFF_FLAG                   AS WRITEOFF_FLAG,
+                  PREV.SPECIAL_REASON                  AS SPECIAL_REASON,
+                  PREV.PRODUCT_CODE                AS PRODUCT_CODE,
+                  PREV.RESERVED_VARCHAR_2          AS TRA,
+                  PREV.RESERVED_VARCHAR_5              AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV CURR,
+                  GTMP_NOMINATIVE_CURR_PREV PREV
+            WHERE     CURR.DATA_SOURCE = 'LIMIT'
+                  AND CURR.REPORT_DATE = V_CURRDATE
+                  --AND NVL(CURR.RESERVED_AMOUNT_5, 0) <> 0
+                  AND CURR.ACCOUNT_STATUS = 'A'
+                  AND PREV.DATA_SOURCE = 'ILS'
+                  AND PREV.FACILITY_NUMBER = CURR.ACCOUNT_NUMBER
+                  AND PREV.REPORT_DATE = V_PREVDATE
+                  AND ( (  NVL (PREV.RESERVED_AMOUNT_6, 0)
+                         - NVL (CURR.RESERVED_AMOUNT_6, 0) <> 0))
+                  AND PREV.ACCOUNT_STATUS = 'A'
+           UNION
+           SELECT DISTINCT
+                  V_CURRDATE                           AS REPORT_DATE,
+                  PREV.MASTERID                        AS MASTERID,
+                  PREV.CUSTOMER_NUMBER                 AS CUSTOMER_NUMBER,
+                  PREV.CUSTOMER_NAME                   AS CUSTOMER_NAME,
+                  PREV.ACCOUNT_NUMBER                  AS ACCOUNT_NUMBER,
+                  PREV.DATA_SOURCE                     AS DATA_SOURCE,
+                  PREV.SUB_SEGMENT                     AS SUB_SEGMENT,
+                  3                                    AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS'  AS IMP_CHANGE_REASON,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+                  -1 * NVL (PREV.ECL_OFF_BS_LCL, 0)    AS ECL_OFF_BS,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+                  -1 * NVL (PREV.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+                  -1 * NVL (PREV.UNUSED_AMT_LCL, 0)    AS UNUSED_AMT,
+                  PREV.CURRENCY                        AS CURRENCY,
+                  PREV.EXCHANGE_RATE                   AS EXCHANGE_RATE,
+                  CASE
+                     WHEN PREV.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (PREV.STAGE, '1')
+                  END
+                     AS STAGE,
+                  PREV.WRITEOFF_FLAG                   AS WRITEOFF_FLAG,
+                  PREV.SPECIAL_REASON                  AS SPECIAL_REASON,
+                  PREV.PRODUCT_CODE                AS PRODUCT_CODE,
+                  PREV.RESERVED_VARCHAR_2            AS TRA,
+                  PREV.RESERVED_VARCHAR_5              AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV CURR,
+                  GTMP_NOMINATIVE_CURR_PREV PREV
+            WHERE     CURR.DATA_SOURCE = 'LIMIT'
+                  AND CURR.REPORT_DATE = V_CURRDATE
+                  --AND NVL(CURR.RESERVED_AMOUNT_5, 0) <> 0
+                  AND CURR.ACCOUNT_STATUS = 'A'
+                  AND PREV.DATA_SOURCE = 'ILS'
+                  AND PREV.FACILITY_NUMBER = CURR.ACCOUNT_NUMBER
+                  AND PREV.REPORT_DATE = V_PREVDATE
+                  AND ( (  NVL (PREV.UNUSED_AMT_LCL, 0)
+                         - NVL (CURR.UNUSED_AMT_LCL, 0) <> 0))
+                  AND PREV.ACCOUNT_STATUS = 'A'
+           UNION
+           SELECT DISTINCT
+                  V_CURRDATE                          AS REPORT_DATE,
+                  CURR.MASTERID                       AS MASTERID,
+                  CURR.CUSTOMER_NUMBER                AS CUSTOMER_NUMBER,
+                  CURR.CUSTOMER_NAME                  AS CUSTOMER_NAME,
+                  CURR.ACCOUNT_NUMBER                 AS ACCOUNT_NUMBER,
+                  CURR.DATA_SOURCE                    AS DATA_SOURCE,
+                  CURR.SUB_SEGMENT                    AS SUB_SEGMENT,
+                  3                                   AS SEQ_NO,
+                  'CHANGES IN MODEL/ RISK PARAMETERS' AS IMP_CHANGE_REASON,
+                  NVL (CURR.RESERVED_AMOUNT_3, 0)     AS ECL_ON_BS,
+                  NVL (CURR.ECL_OFF_BS_LCL, 0)        AS ECL_OFF_BS,
+                  NVL (CURR.RESERVED_AMOUNT_5, 0)     AS ECL_TOTAL,
+                  NVL (CURR.RESERVED_AMOUNT_6, 0)     AS CARRY_AMOUNT,
+                  NVL (CURR.UNUSED_AMT_LCL, 0)        AS UNUSED_AMT,
+                  CURR.CURRENCY                       AS CURRENCY,
+                  CURR.EXCHANGE_RATE                  AS EXCHANGE_RATE,
+                  CASE
+                     WHEN CURR.POCI_FLAG = 'Y' THEN 'POCI'
+                     ELSE NVL (CURR.STAGE, '1')
+                  END
+                     AS STAGE,
+                  CURR.WRITEOFF_FLAG                  AS WRITEOFF_FLAG,
+                  CURR.SPECIAL_REASON                 AS SPECIAL_REASON,
+                  CURR.PRODUCT_CODE               AS PRODUCT_CODE,
+                  CURR.RESERVED_VARCHAR_2           AS TRA,
+                  CURR.RESERVED_VARCHAR_5             AS ASET_KEUANGAN
+             FROM GTMP_NOMINATIVE_CURR_PREV CURR,
+                  GTMP_NOMINATIVE_CURR_PREV PREV
+            WHERE     CURR.DATA_SOURCE = 'LIMIT'
+                  AND CURR.REPORT_DATE = V_CURRDATE
+                  --AND NVL(CURR.RESERVED_AMOUNT_5, 0) <> 0
+                  AND CURR.ACCOUNT_STATUS = 'A'
+                  AND PREV.DATA_SOURCE = 'ILS'
+                  AND PREV.FACILITY_NUMBER = CURR.ACCOUNT_NUMBER
+                  AND PREV.REPORT_DATE = V_PREVDATE --   AND ((NVL(PREV.RESERVED_AMOUNT_5,
+                      --             0) <> 0 AND PREV.ACCOUNT_STATUS = 'A') OR
+                                         --       (NVL(PREV.RESERVED_AMOUNT_5,
+                         --             0) = 0 AND PREV.ACCOUNT_STATUS = 'C'))
+          ) NOMI
+    WHERE NOT EXISTS
+             (SELECT 1
+                FROM TMP_IFRS_ECL_MOVEMENT_DTL X
+               WHERE     X.MASTERID = NOMI.MASTERID
+                     AND X.REPORT_DATE = NOMI.REPORT_DATE);
+
+COMMIT;
+ end  take out change in model / risk parameter 21 april 22  */
+
+
+  INSERT INTO TMP_IFRS_ECL_MOVEMENT_DTL
+    (REPORT_DATE,
+     MASTERID,
+     DATA_SOURCE,
+     SUB_SEGMENT,
+     SEQ_NO,
+     IMP_CHANGE_REASON,
+     ECL_ON_BS,
+     ECL_OFF_BS,
+     ECL_TOTAL,
+     CARRY_AMOUNT,
+     UNUSED_AMT,
+     CURRENCY,
+     EXCHANGE_RATE,
+     STAGE,
+     WRITEOFF_FLAG,
+     SPECIAL_REASON,
+     OUTSTANDING_ON_BS,
+     OUTSTANDING_OFF_BS,
+     NILAI_TERCATAT_ON_BS)
+    SELECT REPORT_DATE,
+       MASTERID,
+       DATA_SOURCE,
+       SUB_SEGMENT,
+       SEQ_NO,
+       IMP_CHANGE_REASON,
+       SUM(ECL_ON_BS) AS ECL_ON_BS,
+       SUM(ECL_OFF_BS) AS ECL_OFF_BS,
+       SUM(ECL_TOTAL) AS ECL_TOTAL,
+       SUM(CARRY_AMOUNT) AS CARRY_AMOUNT,
+       SUM(UNUSED_AMT) AS UNUSED_AMT,
+       CURRENCY,
+       EXCHANGE_RATE,
+       STAGE,
+       WRITEOFF_FLAG,
+       SPECIAL_REASON,
+       SUM(OUTSTANDING_ON_BS_LCL) AS OUTSTANDING_ON_BS_LCL,
+       SUM(OUTSTANDING_OFF_BS_LCL) AS OUTSTANDING_OFF_BS_LCL,
+       SUM(NILAI_TERCATAT_ON_BS) AS NILAI_TERCATAT_ON_BS
+    FROM (SELECT V_CURRDATE AS REPORT_DATE,
+           0 AS MASTERID,
+           '' AS DATA_SOURCE,
+           A.SUB_SEGMENT AS SUB_SEGMENT,
+           99 AS SEQ_NO,
+           'ENDING AT ' ||
+           TO_CHAR(LAST_DAY(V_CURRDATE), 'DD MON YYYY') AS IMP_CHANGE_REASON,
+           NVL(A.RESERVED_AMOUNT_3, 0) AS ECL_ON_BS,
+           NVL(A.ECL_OFF_BS_LCL, 0) AS ECL_OFF_BS,
+           NVL(A.RESERVED_AMOUNT_5, 0) AS ECL_TOTAL,
+           NVL(A.RESERVED_AMOUNT_6, 0) AS CARRY_AMOUNT,
+           NVL(A.UNUSED_AMT_LCL, 0) AS UNUSED_AMT,
+           '' AS CURRENCY,
+           1 AS EXCHANGE_RATE,
+           CASE WHEN A.POCI_FLAG = 'Y'
+                THEN 'POCI'
+                ELSE NVL(A.STAGE, '1')
+           END AS STAGE,
+           0 AS WRITEOFF_FLAG,
+           '' AS SPECIAL_REASON,
+           NVL(A.OUTSTANDING_ON_BS_LCL, 0) AS OUTSTANDING_ON_BS_LCL,
+           NVL(A.OUTSTANDING_OFF_BS_LCL, 0) AS OUTSTANDING_OFF_BS_LCL,
+           (NVL(A.OUTSTANDING_ON_BS_LCL, 0) - NVL(A.UNAMORT_FEE_AMT_LCL, 0) +
+            NVL(A.IA_UNWINDING_INTEREST_LCL, 0)) NILAI_TERCATAT_ON_BS
+        FROM GTMP_NOMINATIVE_CURR_PREV A
+         WHERE A.REPORT_DATE = V_CURRDATE)
+     GROUP BY REPORT_DATE,
+        MASTERID,
+        DATA_SOURCE,
+        SUB_SEGMENT,
+        SEQ_NO,
+        IMP_CHANGE_REASON,
+        CURRENCY,
+        EXCHANGE_RATE,
+        STAGE,
+        WRITEOFF_FLAG,
+        SPECIAL_REASON;
+
+  COMMIT;
+
+
+    /****************************************************
+    INSERT INTO FINAL TABLE
+    ****************************************************/
+  INSERT INTO IFRS_REPORT_ECL_MOVEMENT_DTL
+    (REPORT_DATE,
+     MASTERID,
+     CUSTOMER_NUMBER,
+     CUSTOMER_NAME,
+     ACCOUNT_NUMBER,
+     DATA_SOURCE,
+     SUB_SEGMENT,
+     SEQ_NO,
+     IMP_CHANGE_REASON,
+     ECL_ON_BS,
+     ECL_OFF_BS,
+     ECL_TOTAL,
+     CARRY_AMOUNT,
+     UNUSED_AMT,
+     CURRENCY,
+     EXCHANGE_RATE,
+     STAGE,
+     WRITEOFF_FLAG,
+     SPECIAL_REASON,
+     PRODUCT_CODE,
+     TRA,
+     ASET_KEUANGAN,
+     OUTSTANDING_ON_BS,
+     OUTSTANDING_OFF_BS,
+     NILAI_TERCATAT_ON_BS)
+    SELECT REPORT_DATE,
+       MASTERID,
+       CUSTOMER_NUMBER,
+       CUSTOMER_NAME,
+       ACCOUNT_NUMBER,
+       DATA_SOURCE,
+       SUB_SEGMENT,
+       SEQ_NO,
+       IMP_CHANGE_REASON,
+       ECL_ON_BS,
+       ECL_OFF_BS,
+       ECL_TOTAL,
+       CARRY_AMOUNT,
+       UNUSED_AMT,
+       CURRENCY,
+       EXCHANGE_RATE,
+       STAGE,
+       WRITEOFF_FLAG,
+       SPECIAL_REASON,
+       PRODUCT_CODE,
+       TRA,
+       ASET_KEUANGAN,
+       OUTSTANDING_ON_BS,
+       OUTSTANDING_OFF_BS,
+       NILAI_TERCATAT_ON_BS
+    FROM TMP_IFRS_ECL_MOVEMENT_DTL;
+  COMMIT;
+
+
+    SP_IFRS_RPT_ANALY_AW_AK (V_CURRDATE,V_PREVDATE);
+
+    V_PREVDATE := V_CURRDATE;
+    V_CURRDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, 1));
+  END LOOP;
+END;

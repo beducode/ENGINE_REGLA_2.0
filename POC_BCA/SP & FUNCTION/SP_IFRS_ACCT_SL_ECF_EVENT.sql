@@ -1,0 +1,92 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_SL_ECF_EVENT
+AS
+  V_CURRDATE DATE ;
+  V_PREVDATE DATE;
+
+BEGIN
+
+    SELECT  MAX(CURRDATE), MAX(PREVDATE)
+    INTO V_CURRDATE, V_PREVDATE
+    FROM    IFRS_PRC_DATE_AMORT ;
+
+    INSERT INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES(V_CURRDATE ,SYSTIMESTAMP ,'START' ,'SP_IFRS_ACCT_SL_ECF_EVENT' ,'');
+    COMMIT;
+
+    -- reset
+    UPDATE  /*+ PARALLEL(8) */ IFRS_IMA_AMORT_CURR
+    SET     EIR_STATUS = '',ECF_STATUS =''
+    WHERE   DOWNLOAD_DATE = V_CURRDATE
+    AND ECF_STATUS = 'Y';
+    COMMIT;
+
+    UPDATE  /*+ PARALLEL(8) */ IFRS_MASTER_ACCOUNT
+    SET     EIR_STATUS = '',ECF_STATUS =''
+    WHERE   DOWNLOAD_DATE = V_CURRDATE;
+    COMMIT;
+
+
+    --update PMA set ecf='' where DOWNLOAD_DATE=v_currdate and ecf='Y'
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_ECF_ACT';
+
+    INSERT  /*+ PARALLEL(8) */ INTO TMP_ECF_ACT( MASTERID)
+    SELECT /*+ PARALLEL(8) */ DISTINCT MASTERID
+    FROM    IFRS_ACCT_SL_ECF
+    WHERE   AMORTSTOPDATE IS NULL
+    AND DOWNLOAD_DATE < V_CURRDATE;
+    COMMIT;
+
+    --loan due date changes
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_T1';
+
+    INSERT  /*+ PARALLEL(8) */ INTO TMP_T1( MASTERID)
+    SELECT  /*+ PARALLEL(8) */ A.MASTERID
+    FROM    IFRS_IMA_AMORT_CURR A
+    JOIN IFRS_IMA_AMORT_PREV B ON A.MASTERID = B.MASTERID
+    JOIN TMP_ECF_ACT C ON C.MASTERID = A.MASTERID
+    WHERE   A.LOAN_DUE_DATE != B.LOAN_DUE_DATE
+    AND A.LOAN_DUE_DATE > V_CURRDATE     -- dont detect if due date is invalid
+    AND A.DOWNLOAD_DATE = V_CURRDATE;
+    COMMIT;
+
+
+    --new cost fee
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_T2';
+
+    INSERT  /*+ PARALLEL(8) */INTO TMP_T2( MASTERID)
+    SELECT /*+ PARALLEL(8) */ DISTINCT A.MASTERID
+    FROM IFRS_IMA_AMORT_CURR A
+    JOIN IFRS_ACCT_COST_FEE B
+      ON B.DOWNLOAD_DATE = V_CURRDATE
+      AND A.MASTERID = B.MASTERID
+      AND B.STATUS = 'ACT'
+      AND B.METHOD = 'SL';
+    COMMIT;
+
+    -- update ecf flag
+    UPDATE  /*+ PARALLEL(8) */ IFRS_IMA_AMORT_CURR
+    SET     EIR_STATUS = 'Y',ECF_STATUS ='Y'
+    WHERE   MASTERID IN ( SELECT MASTERID
+                          FROM TMP_T1
+                          UNION
+                          SELECT MASTERID
+                          FROM TMP_T2 )
+    AND DOWNLOAD_DATE = V_CURRDATE
+    --dont do if closed
+    AND MASTERID NOT IN ( SELECT DISTINCT MASTERID
+                          FROM IFRS_ACCT_CLOSED
+                          WHERE DOWNLOAD_DATE = V_CURRDATE );
+    COMMIT;
+
+    --update PMA
+    --set ecf='Y'
+    --where masterid in (select masterid from TMP_T1 union select masterid from TMP_T2)
+    --and DOWNLOAD_DATE=v_currdate
+        --dont do if closed
+    --    and masterid not in (select masterid from IFRS_ACCT_CLOSED where DOWNLOAD_DATE=v_currdate);
+    --commit;
+
+    INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP ,'END' ,'SP_IFRS_ACCT_SL_ECF_EVENT' ,'');
+
+END;

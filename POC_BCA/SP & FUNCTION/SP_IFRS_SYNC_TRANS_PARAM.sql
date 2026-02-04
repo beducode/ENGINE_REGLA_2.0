@@ -1,0 +1,57 @@
+CREATE OR REPLACE PROCEDURE  SP_IFRS_SYNC_TRANS_PARAM
+AS
+
+ V_CURRDATE   DATE;
+ V_PREVDATE   DATE;
+
+BEGIN
+
+    /******************************************************************************
+    01. DECLARE VARIABLE
+    *******************************************************************************/
+    SELECT CURRDATE, PREVDATE
+    INTO V_CURRDATE, V_PREVDATE
+    FROM IFRS_PRC_DATE_AMORT;
+
+    INSERT INTO IFRS_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES( V_CURRDATE,SYSTIMESTAMP,'START','SP_IFRS_SYNC_TRANSACTION_PARAM','' );
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE IFRS_TRANSACTION_PARAM';
+
+    INSERT INTO IFRS_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_SYNC_TRANSACTION_PARAM','INSERT TRANS PARAM');
+
+    /******************************************************************************
+    02. INSERT TRANSACTION PARAM
+    *******************************************************************************/
+    INSERT  INTO IFRS_TRANSACTION_PARAM
+    ( DATA_SOURCE ,
+      PRD_TYPE ,
+      PRD_CODE ,
+      TRX_CODE ,
+      CCY ,
+      IFRS_TXN_CLASS ,
+      AMORTIZATION_FLAG ,
+      AMORT_TYPE ,
+      GL_CODE --,
+      --TENOR_AMORTIZATION ,
+      --TRANSACTION_TYPE
+      )
+    SELECT  DATA_SOURCE ,
+						PRD_TYPE ,
+						PRD_CODE ,
+						TRX_CODE ,
+						CCY ,
+						IFRS_TXN_CLASS ,
+						AMORTIZATION_FLAG ,
+						AMORT_TYPE ,
+						GL_CODE --,
+						--TENOR_AMORTIZATION ,
+						--TRANSACTION_TYPE
+    FROM    IFRS_MASTER_TRANSACTION_PARAM
+    WHERE INST_CLS_VALUE = 'A';
+
+    INSERT INTO IFRS_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(  V_CURRDATE,SYSTIMESTAMP,'END','SP_IFRS_SYNC_TRANSACTION_PARAM','');
+
+    END;

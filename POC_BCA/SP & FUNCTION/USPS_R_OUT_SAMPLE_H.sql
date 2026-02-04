@@ -1,0 +1,49 @@
+CREATE OR REPLACE PROCEDURE  USPS_R_OUT_SAMPLE_H (
+    v_MODEL_ID    NUMBER,
+    v_MODEL_SEQ   NUMBER,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+    v_status NUMBER(10);
+BEGIN
+    SELECT STATUS
+    INTO v_status
+    FROM IFRS_FL_MODEL_VAR
+    WHERE PKID = v_MODEL_ID;
+
+    IF v_status = 1 THEN
+        OPEN Cur_out FOR
+        SELECT DISTINCT A.FL_MODEL_NAME FLModelName,
+        B.MODEL_SEQ ModelSeq,
+        A.DEPENDENT_VAR_TYPE DependantVariableType,
+        PD.PD_RULE_NAME    DependantVariablePD,
+        LGD.LGD_RULE_NAME DependantVariableLGD,
+        A.OUT_SAMPLE_START_DATE || ' to ' || A.OUT_SAMPLE_END_DATE OutSamplePeriod
+        FROM IFRS_FL_MODEL_VAR A
+        JOIN R_BACKTEST_OUT_SAMPLE_DTL B
+            ON A.PKID = v_MODEL_ID
+            AND A.PKID = B.MODEL_ID
+            AND B.MODEL_SEQ = A.SELECTED_MODEL_SEQ
+        LEFT JOIN IFRS_PD_RULES_CONFIG PD
+            ON A.DEPENDENT_VAR_VALUE = PD.PKID
+        LEFT JOIN IFRS_LGD_RULES_CONFIG LGD
+            ON A.DEPENDENT_VAR_VALUE = LGD.PKID;
+    ELSE
+        OPEN Cur_out FOR
+        SELECT DISTINCT A.FL_MODEL_NAME FLModelName,
+        B.MODEL_SEQ ModelSeq,
+        A.DEPENDENT_VAR_TYPE DependantVariableType,
+        PD.PD_RULE_NAME    DependantVariablePD,
+        LGD.LGD_RULE_NAME DependantVariableLGD,
+        A.OUT_SAMPLE_START_DATE || ' to ' || A.OUT_SAMPLE_END_DATE OutSamplePeriod
+        FROM IFRS_FL_MODEL_VAR A
+        JOIN R_BACKTEST_OUT_SAMPLE_DTL_PEN B
+            ON A.PKID = v_MODEL_ID
+            AND A.PKID = B.MODEL_ID
+            AND B.MODEL_SEQ = v_MODEL_SEQ
+        LEFT JOIN IFRS_PD_RULES_CONFIG PD
+            ON A.DEPENDENT_VAR_VALUE = PD.PKID
+        LEFT JOIN IFRS_LGD_RULES_CONFIG LGD
+            ON A.DEPENDENT_VAR_VALUE = LGD.PKID;
+    END IF;
+END;

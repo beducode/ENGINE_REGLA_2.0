@@ -1,4 +1,6 @@
-CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PREPAYMENT_RULES_CONFIG
+CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PREPAYMENT_RULES_CONFIG(
+	P_DOWNLOAD_DATE IN DATE
+)
 AUTHID CURRENT_USER
 AS
 BEGIN
@@ -12,14 +14,15 @@ BEGIN
 	        A."syscode_prepayment_config"  		AS SYSCODE_PREPAYMENT,
 	        B."pkid"                     		AS SEGMENTATION_ID,
 	        A."is_active"                   	AS ACTIVE_FLAG,
-	        NVL(A."is_deleted", 0)        		AS IS_DELETED,
+	        NVL(A."is_deleted", 0)        		AS IS_DELETE,
 	        'SP_IFRS_PREPAYMENT_RULES_CONFIG' 	AS CREATED_BY,
 	        NVL(A."created_date", SYSDATE)      AS CREATED_DATE,
 	        NULL                          		AS UPDATED_BY,
 	        NULL                          		AS UPDATED_DATE
-	    FROM "PrepaymentConfiguration"@DBCONFIGLINK A
-	    LEFT JOIN "SegmentationMapping"@DBCONFIGLINK B
+	    FROM "NTT_PSAK413_IMPAIRMENT"."PrepaymentConfiguration"@DBCONFIGLINK A
+	    LEFT JOIN "NTT_PSAK413_IMPAIRMENT"."SegmentationMapping"@DBCONFIGLINK B
 	        ON A."segment_code" = B."syscode_segmentation_lv3"
+	    WHERE B."pkid" IS NOT NULL
 	) S
 	ON (
 	    T.SYSCODE_PREPAYMENT = S.SYSCODE_PREPAYMENT
@@ -28,28 +31,28 @@ BEGIN
 	    UPDATE SET
 	        T.PREPAYMENT_RULE_NAME	= S.PREPAYMENT_RULE_NAME,
             T.SEGMENTATION_ID 		= S.SEGMENTATION_ID,
-	        T.UPDATED_BY           	= 'SP_IFRS_PREPAYMENT_RULES_CONFIG',
+	        T.UPDATEDBY           	= 'SP_IFRS_PREPAYMENT_RULES_CONFIG',
 	        T.ACTIVE_FLAG		   	= S.ACTIVE_FLAG,
-	        T.UPDATED_DATE         	= SYSDATE,
-	        T.IS_DELETED           	= S.IS_DELETED
+	        T.UPDATEDDATE         	= SYSDATE,
+	        T.IS_DELETE           	= S.IS_DELETE
 	WHEN NOT MATCHED THEN
 	    INSERT (
 	        PREPAYMENT_RULE_NAME,
 	        SYSCODE_PREPAYMENT,
 	        SEGMENTATION_ID,
 	        ACTIVE_FLAG,
-	        IS_DELETED,
-	        CREATED_BY,
-	        CREATED_DATE,
-	        UPDATED_BY,
-	        UPDATED_DATE
+	        IS_DELETE,
+	        CREATEDBY,
+	        CREATEDDATE,
+	        UPDATEDBY,
+	        UPDATEDDATE
 	    )
 	    VALUES (
 	        S.PREPAYMENT_RULE_NAME,
 	        S.SYSCODE_PREPAYMENT,
 	        S.SEGMENTATION_ID,
 	        S.ACTIVE_FLAG,
-	        S.IS_DELETED,
+	        S.IS_DELETE,
 	        S.CREATED_BY,
 	        S.CREATED_DATE,
 	        NULL,
@@ -66,12 +69,12 @@ BEGIN
 		DOWNLOAD_DATE,
 		PREPAYMENT_RATE,
 		PREPAYMENT_OVERRIDE,
-		CREATED_BY,
-		CREATED_DATE,
-		CREATED_HOST,
-		UPDATED_BY,
-		UPDATED_DATE,
-		UPDATED_HOST
+		CREATEDBY,
+		CREATEDDATE,
+		CREATEDHOST,
+		UPDATEDBY,
+		UPDATEDDATE,
+		UPDATEDHOST
 		
 	    )
 		    SELECT
@@ -87,7 +90,7 @@ BEGIN
 	    		NULL                          	AS UPDATED_DATE,
 		        NULL                          	AS UPDATED_HOST
 		    FROM IFRS_PREPAYMENT_RULES_CONFIG R
-		    WHERE NVL(R.IS_DELETED, 0) = 0
+		    WHERE NVL(R.IS_DELETE, 0) = 0
 		      AND NOT EXISTS (
 		            SELECT 1
 		            FROM IFRS_PREPAYMENT_OVERRIDE O

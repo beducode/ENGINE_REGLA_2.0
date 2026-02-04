@@ -1,0 +1,169 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_LGD_CARD_WORKOUT(V_EFF_DATE DATE)
+AS
+   V_WORKOUT_PERIOD NUMBER;
+BEGIN
+    V_WORKOUT_PERIOD := 36;
+
+    DELETE IFRS_LGD_WORKOUT
+    WHERE EFF_DATE = V_EFF_DATE
+    AND DATA_SOURCE = 'CRD';
+    COMMIT;
+
+    INSERT INTO IFRS_LGD_WORKOUT
+    (
+        EFF_DATE,
+        DOWNLOAD_DATE,
+        PRODUCT_CODE,
+        PRODUCT_NAME,
+        MASTER_ID,
+        ACCOUNT_NUMBER,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        LGD_CUSTOMER_TYPE,
+        SEGMENTATION_ID,
+        SEGMENTATION_NAME,
+        CURRENCY,
+        ORIGINAL_CURRENCY,
+        NPL_DATE,
+        CLOSED_DATE,
+        BI_COLLECTABILITY_NPL,
+        BI_COLLECTABILITY_CLOSED,
+        TOTAL_LOSS_AMT,
+        RECOV_AMT_BF_NPV,
+        LAST_RECOV_DATE,
+        RECOV_PERCENTAGE,
+        DISCOUNT_RATE,
+        LOSS_RATE,
+        RECOVERY_AMOUNT,
+        DATA_SOURCE,
+        LGD_RULE_ID,
+        LGD_RULE_NAME,
+        LGD_FLAG,
+        CREATEDDATE,
+        CREATEDBY,
+        CREATEDHOST
+    )
+    SELECT EFF_DATE,
+        DOWNLOAD_DATE,
+        PRODUCT_CODE,
+        PRODUCT_NAME,
+        MASTER_ID,
+        ACCOUNT_NUMBER,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        LGD_CUSTOMER_TYPE,
+        SEGMENTATION_ID,
+        SEGMENTATION_NAME,
+        CURRENCY,
+        ORIGINAL_CURRENCY,
+        NPL_DATE,
+        CASE WHEN ADD_MONTHS(LAST_DAY(NPL_DATE), V_WORKOUT_PERIOD) >= LAST_DAY(CLOSED_DATE) THEN CLOSED_DATE ELSE ADD_MONTHS(LAST_DAY(NPL_DATE), V_WORKOUT_PERIOD) END AS CLOSED_DATE,
+        BI_COLLECTABILITY_NPL,
+        BI_COLLECTABILITY_CLOSED,
+        TOTAL_LOSS_AMT,
+        CASE WHEN ADD_MONTHS(LAST_DAY(NPL_DATE), V_WORKOUT_PERIOD) >= LAST_DAY(CLOSED_DATE) THEN RECOV_AMT_BF_NPV ELSE 0 END AS RECOV_AMT_BF_NPV,
+        CASE WHEN ADD_MONTHS(LAST_DAY(NPL_DATE), V_WORKOUT_PERIOD) >= LAST_DAY(CLOSED_DATE) THEN LAST_RECOV_DATE ELSE ADD_MONTHS(LAST_DAY(NPL_DATE), V_WORKOUT_PERIOD) END AS LAST_RECOV_DATE,
+        RECOV_PERCENTAGE,
+        DISCOUNT_RATE,
+        CASE WHEN ADD_MONTHS(LAST_DAY(NPL_DATE), V_WORKOUT_PERIOD) >= LAST_DAY(CLOSED_DATE) THEN LOSS_RATE ELSE 100 END AS LOSS_RATE,
+        CASE WHEN ADD_MONTHS(LAST_DAY(NPL_DATE), V_WORKOUT_PERIOD) >= LAST_DAY(CLOSED_DATE) THEN RECOVERY_AMOUNT ELSE 0 END AS RECOVERY_AMOUNT,
+        DATA_SOURCE,
+        LGD_RULE_ID,
+        LGD_RULE_NAME,
+        LGD_FLAG,
+        SYSDATE CREATEDDATE,
+        CREATEDBY,
+        CREATEDHOST
+    FROM IFRS_LGD
+    WHERE EFF_DATE = V_EFF_DATE
+    AND DATA_SOURCE = 'CRD';
+
+    COMMIT;
+
+    INSERT INTO IFRS_LGD_WORKOUT
+    (
+        EFF_DATE,
+        DOWNLOAD_DATE,
+        PRODUCT_CODE,
+        PRODUCT_NAME,
+        MASTER_ID,
+        ACCOUNT_NUMBER,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        LGD_CUSTOMER_TYPE,
+        SEGMENTATION_ID,
+        SEGMENTATION_NAME,
+        CURRENCY,
+        ORIGINAL_CURRENCY,
+        NPL_DATE,
+        CLOSED_DATE,
+        BI_COLLECTABILITY_NPL,
+        BI_COLLECTABILITY_CLOSED,
+        TOTAL_LOSS_AMT,
+        RECOV_AMT_BF_NPV,
+        LAST_RECOV_DATE,
+        RECOV_PERCENTAGE,
+        DISCOUNT_RATE,
+        LOSS_RATE,
+        RECOVERY_AMOUNT,
+        DATA_SOURCE,
+        LGD_RULE_ID,
+        LGD_RULE_NAME,
+        LGD_FLAG,
+        CREATEDDATE,
+        CREATEDBY,
+        CREATEDHOST
+    )
+    SELECT V_EFF_DATE,
+        a.Download_date,
+        a.Product_Code,
+        NULL Product_Name,
+        a.masterid,
+        a.Account_number,
+        a.Customer_number,
+        a.customer_name,
+        null lgd_customer_type,
+        case when a.segment_rule_id = 52 then '142' else '143' end segmentation_id,
+        case when a.segment_rule_id = 52 then 'CREDIT CARD ORGANIZATION' else 'CREDIT CARD INDIVIDUAL' end segmentation_name,
+        a.currency,
+        a.currency original_currency,
+        a.first_npl_date npl_date,
+        CASE WHEN ADD_MONTHS(LAST_DAY(a.first_npl_date), V_WORKOUT_PERIOD) >= LAST_DAY(A.RESERVED_DATE_1) THEN A.RESERVED_DATE_1 ELSE ADD_MONTHS(LAST_DAY(a.first_npl_date), V_WORKOUT_PERIOD) END AS CLOSED_DATE,
+        null default_status_at_loss_date,
+        null default_status_at_close_date,
+        a.first_npl_os total_loss_amt,
+        CASE WHEN ADD_MONTHS(LAST_DAY(a.first_npl_date), V_WORKOUT_PERIOD) >= LAST_DAY(A.RESERVED_DATE_1) THEN a.first_npl_os ELSE 0 END recovery_amt_bf_npv,
+        CASE WHEN ADD_MONTHS(LAST_DAY(a.first_npl_date), V_WORKOUT_PERIOD) >= LAST_DAY(A.RESERVED_DATE_1) THEN A.RESERVED_DATE_1 ELSE ADD_MONTHS(LAST_DAY(a.first_npl_date), V_WORKOUT_PERIOD) END AS last_recovery_date,
+        0 Recovery_percentage,
+        a.INTEREST_RATE discount_rate,
+        CASE WHEN ADD_MONTHS(LAST_DAY(a.first_npl_date), V_WORKOUT_PERIOD) >= LAST_DAY(A.RESERVED_DATE_1) THEN 0 ELSE 100 END loss_rate,
+        CASE WHEN ADD_MONTHS(LAST_DAY(a.first_npl_date), V_WORKOUT_PERIOD) >= LAST_DAY(A.RESERVED_DATE_1) THEN
+        (a.first_npl_os/POWER(1+a.INTEREST_RATE,
+                FN_LGD_DAYS_30_360 (A.first_npl_date,A.RESERVED_DATE_1)/360)
+            )
+        ELSE 0 END AS Recovery_amount,
+        A.data_source,
+        case when a.segment_rule_id = 52 then '12' else '11' end lgd_rule_id,
+        case when a.segment_rule_id = 52 then 'LGD_CREDIT_CARD_ORGANIZATION' else 'LGD_CREDIT_CARD' end lgd_rule_name,
+        'W',
+        SYSDATE CREATEDDATE,
+        CREATEDBY,
+        CREATEDHOST
+    FROM TMP_LGD_IMA A
+    JOIN
+    (
+        SELECT ACCOUNT_NUMBER, MAX(DOWNLOAD_DATE) MAX_DOWNLOAD_DATE
+        FROM TMP_LGD_IMA
+        WHERE DATA_SOURCE = 'CRD'
+        GROUP BY ACCOUNT_NUMBER
+    ) B
+    ON A.DOWNLOAD_DATE = B.MAX_DOWNLOAD_DATE
+    AND A.RESERVED_DATE_1 IS NOT NULL
+    AND A.FIRST_NPL_OS > 0
+    AND A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER
+    --AND A.OUTSTANDING > 0
+    AND A.ACCOUNT_STATUS IS NOT NULL
+    AND A.ACCOUNT_NUMBER NOT IN
+    (SELECT ACCOUNT_NUMBER FROM IFRS_LGD_WORKOUT WHERE EFF_DATE = V_EFF_DATE AND DATA_SOURCE = 'CRD');
+    COMMIT;
+END;

@@ -1,0 +1,99 @@
+CREATE OR REPLACE FUNCTION FN_CNT_DAYS_30_360
+(DATE1 IN DATE,DATE2 IN DATE)
+RETURN NUMBER
+AS
+    V1 NUMBER;
+    LAST_DAY1 NUMBER;
+    LAST_DAY2 NUMBER;
+BEGIN
+
+-- 201501106 frans
+/*get Last day, maximum 30*/
+IF(TO_NUMBER(TO_CHAR(LAST_DAY(DATE1),'DD'))>30 AND TO_NUMBER(TO_CHAR(LAST_DAY(DATE1),'DD'))<>TO_NUMBER(TO_CHAR((DATE1),'DD')) ) THEN
+    LAST_DAY1:=30;
+ELSE
+    LAST_DAY1:=TO_NUMBER(TO_CHAR(LAST_DAY(DATE1),'DD'));
+END IF;
+IF(TO_NUMBER(TO_CHAR(LAST_DAY(DATE2),'DD'))>30 AND TO_NUMBER(TO_CHAR(LAST_DAY(DATE2),'DD'))<>TO_NUMBER(TO_CHAR((DATE2),'DD'))) THEN
+    LAST_DAY2:=30;
+ELSE
+    LAST_DAY2:=TO_NUMBER(TO_CHAR(LAST_DAY(DATE2),'DD'));
+END IF;
+
+--dbms_output.put_line(last_day1);
+
+--dbms_output.put_line(last_day2);
+
+SELECT MONTHS_BETWEEN(LAST_DAY(DATE2),LAST_DAY(DATE1))*30 INTO V1 FROM DUAL;
+
+
+/* if date is different */
+IF(TO_CHAR(DATE2,'DD') <> TO_CHAR(DATE1,'DD') ) THEN
+/* if  date 1 and date 2 month same*/
+IF(TO_CHAR(DATE2,'MM')= TO_CHAR(DATE1,'MM')) THEN
+    IF(
+    TO_NUMBER(TO_CHAR(DATE2,'DD'))=TO_NUMBER(TO_CHAR(LAST_DAY(DATE2),'DD'))
+    AND TO_NUMBER(TO_CHAR(DATE1,'DD'))=TO_NUMBER(TO_CHAR(LAST_DAY(DATE1),'DD') )
+    ) THEN
+       V1:=V1;
+
+    ELSE
+         V1:=V1+ (TO_NUMBER(TO_CHAR(DATE2,'DD'))- TO_NUMBER(TO_CHAR(DATE1,'DD')));
+    END IF;
+ELSE
+/*date2*/
+    /* kabisat */
+    IF(
+    MOD(CAST(TO_CHAR(DATE2,'YYYY') AS NUMBER),4)=0
+    AND TO_CHAR(DATE2,'MM')='02'
+
+    ) THEN
+            IF(TO_CHAR(DATE1,'DD')<='29' AND TO_CHAR(DATE2,'DD')='29') THEN
+         V1:=V1- 30 + ((LEAST(30,TO_NUMBER(TO_CHAR(DATE2,'DD')))) + (LAST_DAY1 - TO_NUMBER(TO_CHAR(DATE1,'DD'))));
+            END IF;
+            IF(TO_CHAR(DATE2,'DD')<>'29') THEN
+         V1:=V1- 30 + ((LEAST(30,TO_NUMBER(TO_CHAR(DATE2,'DD')))) + (LAST_DAY1 - TO_NUMBER(TO_CHAR(DATE1,'DD'))));
+            END IF;
+    END IF;
+    /* non kabisat*/
+    IF(MOD(CAST(TO_CHAR(DATE2,'YYYY') AS NUMBER),4)<>0  AND TO_CHAR(DATE2,'MM')='02' ) THEN
+            IF(TO_CHAR(DATE1,'DD')<='28' AND TO_CHAR(DATE2,'DD')='28') THEN
+         V1:=V1- 30 + ((LEAST(30,TO_NUMBER(TO_CHAR(DATE2,'DD')))) + (LAST_DAY1 - TO_NUMBER(TO_CHAR(DATE1,'DD'))));
+            END IF;
+            IF(TO_CHAR(DATE2,'DD')<>'28') THEN
+         V1:=V1- 30 + ((LEAST(30,TO_NUMBER(TO_CHAR(DATE2,'DD')))) + (LAST_DAY1 - TO_NUMBER(TO_CHAR(DATE1,'DD'))));
+            END IF;
+    END IF;
+
+/*date1*/
+    /* kabisat */
+    IF(MOD(CAST(TO_CHAR(DATE1,'YYYY') AS NUMBER),4)=0  AND TO_CHAR(DATE1,'MM')='02' ) THEN
+            IF(TO_CHAR(DATE2,'DD')<='29' AND TO_CHAR(DATE1,'DD')='29') THEN
+         V1:=V1- 30 + ((LEAST(30,TO_NUMBER(TO_CHAR(DATE2,'DD')))) + (LAST_DAY1 - TO_NUMBER(TO_CHAR(DATE1,'DD'))));
+            END IF;
+            IF(TO_CHAR(DATE1,'DD')<>'29') THEN
+         V1:=V1- 30 + ((LEAST(30,TO_NUMBER(TO_CHAR(DATE2,'DD')))) + (LAST_DAY1 - TO_NUMBER(TO_CHAR(DATE1,'DD'))));
+            END IF;
+    END IF;
+    /* non kabisat*/
+    IF(MOD(CAST(TO_CHAR(DATE1,'YYYY') AS NUMBER),4)<>0  AND TO_CHAR(DATE1,'MM')='02' ) THEN
+            IF(TO_CHAR(DATE2,'DD')<='28' AND TO_CHAR(DATE1,'DD')='28' ) THEN
+         V1:=V1- 30 + ((LEAST(30,TO_NUMBER(TO_CHAR(DATE2,'DD')))) + (LAST_DAY1 - TO_NUMBER(TO_CHAR(DATE1,'DD'))));
+            END IF;
+            IF(TO_CHAR(DATE1,'DD')<>'28') THEN
+         V1:=V1- 30 + ((LEAST(30,TO_NUMBER(TO_CHAR(DATE2,'DD')))) + (LAST_DAY1 - TO_NUMBER(TO_CHAR(DATE1,'DD'))));
+            END IF;
+    END IF;
+
+    /* if all  date not feb*/
+    IF(TO_CHAR(DATE2,'MM')<>'02' AND TO_CHAR(DATE1,'MM')<>'02') THEN
+
+         V1:=V1- 30 + ((LEAST(30,TO_NUMBER(TO_CHAR(DATE2,'DD')))) + (LAST_DAY1 - TO_NUMBER(TO_CHAR(DATE1,'DD'))));
+
+    END IF;
+END IF;
+END IF;
+
+--dbms_output.put_line(v1);
+RETURN V1;
+END;

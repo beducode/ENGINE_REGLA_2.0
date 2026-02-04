@@ -1,0 +1,19 @@
+CREATE OR REPLACE PROCEDURE  USPS_PD_FL_MODEL_COEFF (
+    v_pd_rule_id  number,
+    v_model_id    number,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+	OPEN Cur_out FOR
+
+    SELECT A.COEFF_NAME	, A.ESTIMATE_VAL ,    A.STD_ERROR	, A.T_VALUE	,
+    A.PR_GT_T_VAL	,    A.SIG_FLAG
+	FROM R_MULT_LINEAR_REGR_COEF_PEN A
+	JOIN IFRS_FL_MODEL_VAR D
+	ON A.MODEL_ID = D.PKID
+    WHERE A.MODEL_ID = v_model_id
+    AND D.DEPENDENT_VAR_VALUE = v_pd_rule_id
+    AND A.MODEL_SEQ = 469;
+
+END;

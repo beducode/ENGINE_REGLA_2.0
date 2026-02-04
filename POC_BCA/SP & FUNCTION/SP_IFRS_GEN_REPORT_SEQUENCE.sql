@@ -1,0 +1,40 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_GEN_REPORT_SEQUENCE (v_DOWNLOADDATECUR  DATE DEFAULT ('1-JAN-1900'),
+                                               v_DOWNLOADDATEPREV DATE DEFAULT ('1-JAN-1900'))
+AS
+
+  V_CURRDATE DATE;
+  V_PREVDATE DATE;
+  V_SPNAME   VARCHAR2(150);
+
+BEGIN
+
+IF v_DOWNLOADDATECUR = '1-JAN-1900'
+  THEN
+    SELECT CURRDATE INTO V_CURRDATE FROM IFRS_PRC_DATE;
+  ELSE
+    V_CURRDATE := v_DOWNLOADDATECUR;
+  END IF;
+
+  IF v_DOWNLOADDATEPREV = '1-JAN-1900'
+  THEN
+    SELECT PREVDATE INTO V_PREVDATE FROM IFRS_PRC_DATE;
+  ELSE
+    V_PREVDATE := v_DOWNLOADDATEPREV;
+  END IF;
+
+V_SPNAME := 'SP_IFRS_ECL_RESULT_HEADER_BR (' || '''' ||TO_CHAR(V_CURRDATE, 'dd-mon-yyyy') || '''' || ',' || '''' || TO_CHAR(V_PREVDATE, 'dd-mon-yyyy') || '''' || ')';
+SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME, 'REPORT', 'Y');
+
+V_SPNAME := 'SP_IFRS_ECL_DETAIL_DKP (' || '''' ||TO_CHAR(V_CURRDATE, 'dd-mon-yyyy') || '''' || ',' || '''' || TO_CHAR(V_PREVDATE, 'dd-mon-yyyy') || '''' || ')';
+SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME, 'REPORT', 'Y');
+
+V_SPNAME := 'SP_IFRS_OJK_REPORT (' || '''' ||TO_CHAR(V_CURRDATE, 'dd-mon-yyyy') || '''' || ',' || '''' || TO_CHAR(V_PREVDATE, 'dd-mon-yyyy') || '''' || ')';
+SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME, 'REPORT', 'Y');
+
+V_SPNAME := 'SP_IFRS_OJK_REPORT_COVID (' || '''' ||TO_CHAR(V_CURRDATE, 'dd-mon-yyyy') || '''' || ',' || '''' || TO_CHAR(V_PREVDATE, 'dd-mon-yyyy') || '''' || ')';
+SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME, 'REPORT', 'Y');
+
+V_SPNAME := 'SP_IFRS_JOURNAL_DKP (' || '''' ||TO_CHAR(V_CURRDATE, 'dd-mon-yyyy') || '''' || ',' || '''' || TO_CHAR(V_PREVDATE, 'dd-mon-yyyy') || '''' || ')';
+SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME, 'REPORT', 'Y');
+
+END;

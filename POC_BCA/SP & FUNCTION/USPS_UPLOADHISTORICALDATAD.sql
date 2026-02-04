@@ -1,0 +1,75 @@
+CREATE OR REPLACE PROCEDURE USPS_UPLOADHISTORICALDATAD
+(
+    v_KeyHistoryValue VARCHAR2,
+    v_TableName VARCHAR2,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+    v_Query VARCHAR2(4000);
+    v_ColumnName VARCHAR2(4500);
+    v_mappingName varchar2(250);
+BEGIN
+    SELECT MAPPINGNAME
+    INTO v_mappingName
+    FROM TBLM_MAPPINGRULEHEADER_NEW
+    WHERE TABLEDESTINATION = v_TableName;
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE GTMP_SOURCE_HEADER';
+
+    IF v_mappingName NOT IN ('FORWARD_LOOKING_VAR', 'FORWARD_LOOKING_VAR_FORECAST') THEN
+        INSERT INTO GTMP_SOURCE_HEADER (NO_URUT, COLUMN_SOURCE, COLUMN_ALIAS, DATA_TYPE_DESTINATION, MAX_LENGTH)
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY COLUMN_ID) NO_URUT,
+            COLUMN_NAME COLUMN_SOURCE,
+            'COLUMN_' || TO_CHAR (ROW_NUMBER() OVER (ORDER BY COLUMN_ID)) COLUMN_ALIAS,
+            DATA_TYPE,
+            CASE WHEN DATA_TYPE = 'NUMBER' THEN
+                NVL(DATA_PRECISION,50)
+            ELSE
+                NVL(DATA_LENGTH, 0)
+            END AS MAX_LENGTH
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = v_TableName
+        AND COLUMN_NAME NOT IN ('PKID','UPLOADID', 'UPLOADBY', 'UPLOADDATE', 'UPLOADHOST', 'APPROVEDBY', 'APPROVEDDATE', 'APPROVEDHOST')
+        ORDER BY COLUMN_ID;
+        COMMIT;
+    ELSE
+        INSERT INTO GTMP_SOURCE_HEADER (NO_URUT, COLUMN_SOURCE, COLUMN_ALIAS, DATA_TYPE_DESTINATION, MAX_LENGTH)
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY PKID) NO_URUT,
+            UPPER(COLUMN_NAME) COLUMN_SOURCE,
+            'COLUMN_' || TO_CHAR (ROW_NUMBER() OVER (ORDER BY PKID)) COLUMN_ALIAS,
+            CASE WHEN COLUMN_NAME LIKE '%PERIOD%' THEN
+                'DATE'
+            ELSE
+                'NUMBER'
+            END DATA_TYPE,
+            0 MAX_LENGTH
+        FROM TBLU_DOC_TEMP_HEADER
+        WHERE UPLOADID = v_KeyHistoryValue
+        AND COLUMN_NAME NOT IN ('PKID','UPLOADID', 'UPLOADBY', 'UPLOADDATE', 'UPLOADHOST', 'APPROVEDBY', 'APPROVEDDATE', 'APPROVEDHOST')
+        ORDER BY PKID ASC;
+        COMMIT;
+    END IF;
+
+    SELECT LISTAGG(CASE WHEN DATA_TYPE_DESTINATION = 'DATE' THEN
+                        'TO_CHAR((CASE LENGTH(TRIM(' || COLUMN_ALIAS || '))
+                                WHEN 0 THEN NULL
+                                WHEN 6 THEN LAST_DAY(TO_DATE(' || COLUMN_ALIAS || ' || ''01'',''YYYYMMDD''))
+                                ELSE TO_DATE(' || COLUMN_ALIAS || ',''YYYYMMDD'')
+                              END),''dd-MON-yyyy'')'
+                   WHEN DATA_TYPE_DESTINATION = 'NUMBER' AND MAX_LENGTH = 1 THEN
+                        'CASE WHEN ' || COLUMN_ALIAS || ' = ''Y'' THEN ''Y'' ELSE ''N'' END'
+                   WHEN DATA_TYPE_DESTINATION = 'NUMBER' THEN
+                        'DECODE(' || COLUMN_ALIAS || ', ''.'',NULL,TO_NUMBER(' || COLUMN_ALIAS || '))'
+                   ELSE COLUMN_ALIAS
+                   END || ' AS ' || COLUMN_SOURCE,',')
+    WITHIN GROUP (ORDER BY NO_URUT)
+    INTO v_ColumnName
+    FROM GTMP_SOURCE_HEADER;
+
+    v_Query := 'SELECT ' || v_ColumnName || ' FROM TBLU_DOC_TEMP_DETAIL WHERE UPLOADID = ' || v_KeyHistoryValue;
+
+    OPEN Cur_out FOR V_QUERY;
+
+END;

@@ -1,0 +1,18 @@
+CREATE OR REPLACE PROCEDURE  USPS_LIFETIME_GET_RESULT
+(
+    V_RULEPKID Number Default 0,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+
+    OPEN Cur_out FOR
+    Select LIFETIME_SEGMENT_ID || '_' || DOWNLOAD_DATE || '_'  as PKID,
+            A.DOWNLOAD_DATE,
+            A.LIFETIME_PERIOD,
+            B.LIFETIME_RULE_NAME
+    From ifrs_lifetime_header A
+    join IFRS_LIFETIME_RULES_CONFIG B on (A.LIFETIME_CONFIG_ID = B.PKID)
+    Where (A.LIFETIME_CONFIG_ID= V_RULEPKID);
+
+END;

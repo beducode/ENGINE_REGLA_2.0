@@ -1,0 +1,127 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_ECF_ALIGN
+AS
+  V_CURRDATE DATE ;
+  V_PREVDATE DATE;
+  V_ROUND NUMBER(10);
+  V_FUNCROUND NUMBER(10);
+BEGIN
+
+    SELECT  MAX(CURRDATE), MAX(PREVDATE)
+    INTO V_CURRDATE, V_PREVDATE
+    FROM IFRS_PRC_DATE_AMORT;
+
+
+    INSERT INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    values(V_CURRDATE ,SYSTIMESTAMP ,'START' ,'SP_IFRS_ACCT_EIR_ECF_ALIGN' ,'');
+
+
+    BEGIN
+      SELECT CAST(VALUE1 AS NUMBER(10))
+           , CAST(VALUE2 AS NUMBER(10))
+      INTO V_ROUND, V_FUNCROUND
+      FROM TBLM_COMMONCODEDETAIL
+      WHERE COMMONCODE = 'SCM003';
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        V_ROUND := 6;
+        V_FUNCROUND:=1;
+    END;
+    /*Pindah ke bawah 20160428
+
+    update IFRS_ACCT_EIR_ECF
+    set
+    n_daily_amort_cost = case when i_days=0 then 0 else n_cost_amort_amt/CAST(i_days as decimal(32,6)) end
+    , n_daily_amort_fee = case when i_days=0 then 0 else n_fee_amort_amt/CAST(i_days as decimal(32,6)) end
+    where DOWNLOAD_DATE=@v_currdate
+
+    insert into IFRS_AMORT_LOG(CURRDATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(@v_currdate,current_timestamp,'DEBUG','SP_IFRS_ACCT_EIR_ECF_ALIGN','daily amort updated')
+    Pindah ke bawah 20160428 */
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_T8';
+
+    INSERT /*+ PARALLEL(12) */ INTO TMP_T8
+    ( MASTERID ,
+      DTMAX ,
+       CURRDATE
+    )
+    SELECT  /*+ PARALLEL(12) */ MASTERID ,
+            MAX(PMT_DATE) DTMAX ,
+            V_CURRDATE
+    FROM    IFRS_ACCT_EIR_ECF
+    WHERE   DOWNLOAD_DATE = V_CURRDATE
+    /*nambahin kondisi untuk case acct switch 20180115*/
+    AND AMORTSTOPDATE IS NULL
+    GROUP BY MASTERID;
+
+    COMMIT;
+
+    INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE, DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_ACCT_EIR_ECF_ALIGN' ,'tmp t8 prepared');
+
+    COMMIT;
+
+    MERGE /*+ PARALLEL(12) */ INTO IFRS_ACCT_EIR_ECF A
+    USING TMP_T8 B
+    ON (A.MASTERID = B.MASTERID
+        AND B.DTMAX = A.PMT_DATE
+        AND A.DOWNLOAD_DATE = B.CURRDATE
+       )
+    WHEN MATCHED THEN
+    UPDATE
+    SET  N_UNAMORT_AMT = 0 ,
+         N_COST_UNAMORT_AMT = 0 ,
+         N_FEE_UNAMORT_AMT = 0 ,
+         N_AMORT_AMT = -1 * N_UNAMORT_AMT_PREV ,
+         N_COST_AMORT_AMT = -1 * N_COST_UNAMORT_AMT_PREV ,
+         N_FEE_AMORT_AMT = -1 * N_FEE_UNAMORT_AMT_PREV ,
+         N_FAIRVALUE = 0;
+
+    COMMIT;
+
+    /*pindahan dari atas 20160428*/
+    UPDATE /*+ PARALLEL(12) */ IFRS_ACCT_EIR_ECF
+    SET N_DAILY_AMORT_COST = ROUND(CASE WHEN I_DAYS2 = 0 THEN 0
+                                        ELSE N_COST_AMORT_AMT/ CAST(I_DAYS2 AS NUMBER(32, 6))
+                                        END,V_ROUND) ,
+        N_DAILY_AMORT_FEE = ROUND(CASE WHEN I_DAYS2 = 0 THEN 0
+                                       ELSE N_FEE_AMORT_AMT/ CAST(I_DAYS2 AS NUMBER(32, 6))
+                                       END,V_ROUND)
+    WHERE   DOWNLOAD_DATE = V_CURRDATE;
+
+    COMMIT;
+
+    INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_ACCT_EIR_ECF_ALIGN' ,'daily amort updated');
+
+    /*pindahan dari atas 20160428*/
+    COMMIT;
+
+
+    INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  (V_CURRDATE ,SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_ACCT_EIR_ECF_ALIGN' ,'merge align done');
+
+    COMMIT;
+
+    -- update endamortdate to max pmtdate
+    MERGE /*+ PARALLEL(12) */ INTO IFRS_ACCT_EIR_ECF A
+    USING TMP_T8 B
+    ON (A.MASTERID = B.MASTERID
+        AND A.DOWNLOAD_DATE = B.CURRDATE
+       )
+    WHEN MATCHED THEN
+    UPDATE SET A.ENDAMORTDATE = B.DTMAX
+    ;
+
+    COMMIT;
+
+    INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_ACCT_EIR_ECF_ALIGN' ,'merge endamortdate done');
+
+    COMMIT;
+
+    INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP ,'END' ,'SP_IFRS_ACCT_EIR_ECF_ALIGN' ,'');
+
+    COMMIT;
+END;

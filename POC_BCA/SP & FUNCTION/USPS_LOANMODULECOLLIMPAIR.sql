@@ -1,0 +1,36 @@
+CREATE OR REPLACE PROCEDURE USPS_LOANMODULECOLLIMPAIR
+(
+    V_DDATE_MAID VARCHAR2 DEFAULT ' ',
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+    v_DATE DATE;
+    v_MASTERID NUMBER(18);
+BEGIN
+
+    v_DATE := TO_DATE(SUBSTR(V_DDATE_MAID, 1, 10), 'yyyy/MM/dd');
+    v_MASTERID := TO_NUMBER(SUBSTR(V_DDATE_MAID, 11, INSTR(V_DDATE_MAID, '*', 1) - 11));
+
+    OPEN Cur_out FOR
+        SELECT DOWNLOAD_DATE AS "Period",
+            ACCOUNT_NUMBER AS "Account Number",
+            CURRENCY AS "Currency",
+            --IMPAIRED_FLAG AS IMPAIRMENT_FLAG,
+            CR_STAGE AS "Stage",
+            DAY_PAST_DUE AS "DPD",
+            BI_COLLECTABILITY AS "BI Collectability",
+            EAD_AMOUNT AS "EAD",
+            ECL_AMOUNT AS "ECL",
+            --CA_UNWINDING_AMOUNT,
+            COALESCE(BEGINNING_BALANCE, 0) AS "Beginning Balance",
+            COALESCE(CHARGE_AMOUNT, 0) AS "Charge",
+            COALESCE(WRITEBACK_AMOUNT, 0) AS "Write Back",
+            COALESCE(ENDING_BALANCE, 0) AS "Ending Balance"
+        FROM IFRS_MASTER_ACCOUNT_MONTHLY A
+        WHERE --IMPAIRED_FLAG = 'C' AND
+            --IS_IMPAIRED = 1 AND
+            MASTERID = v_MASTERID
+            AND DOWNLOAD_DATE BETWEEN ADD_MONTHS(v_DATE, -12) AND v_DATE
+        ORDER BY DOWNLOAD_DATE DESC;
+
+END;

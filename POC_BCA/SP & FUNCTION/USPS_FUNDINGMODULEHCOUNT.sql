@@ -1,0 +1,49 @@
+CREATE OR REPLACE PROCEDURE  USPS_FUNDINGMODULEHCOUNT
+(
+    v_DOWNLOAD_DATE date DEFAULT '01-JAN-1900',
+    v_PRD_CODE varchar2 DEFAULT ' ',
+    v_ACCOUNT_NUMBER varchar2 DEFAULT ' ',
+    V_BRANCH_CODE varchar2 DEFAULT ' ',
+    v_Where VARCHAR2 DEFAULT ' ',
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+    V_QUERY VARCHAR2(3000);
+    V_DOWNLOAD_DATE_DD DATE;
+BEGIN
+
+    IF (V_DOWNLOAD_DATE ='01-JAN-1900') THEN
+        SELECT currdate INTO V_DOWNLOAD_DATE_DD FROM IFRS_PRC_DATE;
+    ELSE
+        V_DOWNLOAD_DATE_DD := V_DOWNLOAD_DATE;
+    END IF;
+
+    V_QUERY :=
+        'SELECT COUNT(*)
+        FROM IFRS_LI_MASTER_ACCOUNT A
+            JOIN IFRS_MASTER_PRODUCT_PARAM B ON A.PRODUCT_CODE = B.PRD_CODE AND B.DATA_SOURCE = ''FUNDING''
+            LEFT JOIN IFRS_MASTER_BRANCH C ON A.BRANCH_CODE = C.BRANCH_NUM
+        WHERE A.DATA_SOURCE IN (''FUNDING'') '
+        ||
+        CASE WHEN v_Where <> ' ' THEN
+            v_Where
+        ELSE
+            'AND A.DOWNLOAD_DATE = ''' || TO_CHAR (V_DOWNLOAD_DATE_DD, 'dd-MON-yyyy') ||  ''' '
+
+            || CASE WHEN v_PRD_CODE <> ' '
+            THEN 'AND UPPER(A.PRODUCT_CODE) LIKE ''%' || UPPER(LTRIM(RTRIM(v_PRD_CODE))) || '%'' '
+            ELSE ''
+        END
+        || CASE WHEN V_BRANCH_CODE <> ' '
+                THEN 'AND UPPER(A.BRANCH_CODE) LIKE ''%' || UPPER(LTRIM(RTRIM(V_BRANCH_CODE))) || '%'' '
+                ELSE ''
+            END
+            || CASE WHEN v_ACCOUNT_NUMBER <> ' '
+                THEN 'AND UPPER(A.ACCOUNT_NUMBER) LIKE ''%' || UPPER(LTRIM(RTRIM(v_ACCOUNT_NUMBER))) || '%'''
+                ELSE ''
+            END
+        END;
+
+    OPEN Cur_out FOR V_QUERY;
+
+END;

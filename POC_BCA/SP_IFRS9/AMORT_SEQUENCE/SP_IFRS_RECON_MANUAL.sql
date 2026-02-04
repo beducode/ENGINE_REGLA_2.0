@@ -1,0 +1,224 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_RECON_MANUAL
+AS
+  V_CURRDATE DATE;
+  V_PREVDATE DATE;
+BEGIN
+
+
+  SELECT  MAX(CURRDATE), MAX(PREVDATE)
+  INTO V_CURRDATE, V_PREVDATE
+  FROM    IFRS_PRC_DATE_AMORT;
+
+
+  INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+  VALUES  ( V_CURRDATE ,CURRENT_TIMESTAMP ,'START' ,'SP_IFRS_RECON_MANUAL' ,'START');
+  /************************************************************************
+  01. RESET DATA
+  *************************************************************************/
+  DELETE FROM IFRS_ACCT_COST_FEE_RECON WHERE DOWNLOAD_DATE>=V_CURRDATE;
+  EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_IFRS_COST_FEE';
+  EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_IFRS_IMA';
+  EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_JOURNAL_DATA';
+
+  COMMIT;
+
+  /************************************************************************
+  02. TEMP COST FEE CURRENT DATE
+  *************************************************************************/
+  INSERT INTO TMP_IFRS_COST_FEE(
+  MASTERID,
+  DATA_SOURCE,
+  CURRENCY,
+  INITIAL_FEE,
+  INITIAL_COST
+  )
+  SELECT MASTERID, DATASOURCE,CCY,AMOUNT_FEE,AMOUNT_COST
+  FROM IFRS_ACCT_COST_FEE_SUMM
+  WHERE DOWNLOAD_DATE=V_CURRDATE;
+
+  COMMIT;
+
+  /************************************************************************
+  03. TEMP IMA CURRENT
+  *************************************************************************/
+  /*FOR NON STAFF LOAN*/
+  INSERT INTO TMP_IFRS_IMA(
+  DOWNLOAD_DATE,
+  MASTERID,
+  DATA_SOURCE,
+  PRODUCT_TYPE,
+	PRODUCT_CODE,
+  CURRENCY,
+  STAFF_LOAN_FLAG,
+  AMORT_TYPE,
+  LOAN_START_DATE,
+	LOAN_DUE_DATE,
+  OUTSTANDING,
+  UNAMORT_COST_IMA,
+	UNAMORT_FEE_IMA
+  )
+  SELECT  V_CURRDATE,
+          A.MASTERID,
+          A.DATA_SOURCE,
+          A.PRODUCT_TYPE,
+          A.PRODUCT_CODE,
+          A.CURRENCY,
+          A.STAFF_LOAN_FLAG,
+          A.AMORT_TYPE,
+          A.LOAN_START_DATE,
+          A.LOAN_DUE_DATE,
+          A.OUTSTANDING,
+          A.UNAMORT_COST_AMT,
+          A.UNAMORT_FEE_AMT
+  FROM IFRS_MASTER_ACCOUNT A
+  JOIN TMP_IFRS_COST_FEE B ON A.MASTERID=B.MASTERID
+  WHERE A.DOWNLOAD_DATE=V_CURRDATE
+  AND (NVL(A.STAFF_LOAN_FLAG,0) =0);
+
+  COMMIT;
+
+  /*FOR STAFF_LOAN OR LBM ACCOUNT */
+  INSERT INTO TMP_IFRS_IMA(
+  DOWNLOAD_DATE,
+  MASTERID,
+  DATA_SOURCE,
+  PRODUCT_TYPE,
+	PRODUCT_CODE,
+  CURRENCY,
+  STAFF_LOAN_FLAG,
+  AMORT_TYPE,
+  LOAN_START_DATE,
+	LOAN_DUE_DATE,
+  OUTSTANDING,
+  UNAMORT_COST_IMA,
+	UNAMORT_FEE_IMA
+  )
+  SELECT  V_CURRDATE,
+          A.MASTERID,
+          A.DATA_SOURCE,
+          A.PRODUCT_TYPE,
+          A.PRODUCT_CODE,
+          A.CURRENCY,
+          A.STAFF_LOAN_FLAG,
+          A.AMORT_TYPE,
+          A.LOAN_START_DATE,
+          A.LOAN_DUE_DATE,
+          A.OUTSTANDING,
+          A.UNAMORT_COST_AMT,
+          A.UNAMORT_FEE_AMT
+  FROM IFRS_MASTER_ACCOUNT A
+  LEFT JOIN TMP_IFRS_COST_FEE B ON A.MASTERID=B.MASTERID
+  WHERE A.DOWNLOAD_DATE=V_CURRDATE
+  AND (NVL(A.STAFF_LOAN_FLAG,0) =1)
+  AND A.AMORT_TYPE='EIR';
+
+  COMMIT;
+
+  /************************************************************************
+  04. TEMP JOURNAL DATA SUMM
+  *************************************************************************/
+
+  INSERT INTO TMP_JOURNAL_DATA(
+	MASTERID,
+	DATASOURCE ,
+	PRDTYPE,
+	PRDCODE ,
+	METHOD,
+  CCY,
+	JOURNALCODE2,
+	FLAG_CF,
+  N_AMOUNT
+  )
+  SELECT MASTERID,
+        DATASOURCE ,
+        PRDTYPE,
+        PRDCODE ,
+        METHOD,
+        CCY,
+        JOURNALCODE2,
+        FLAG_CF,
+         SUM(N_AMOUNT)
+  FROM IFRS_ACCT_JOURNAL_DATA_SUMM
+  WHERE DOWNLOAD_dATE =V_CURRDATE
+  AND JOURNALCODE2 IN ('ACCRU','ACCRU_SL')
+  AND N_AMOUNT <= 0
+  GROUP BY MASTERID,
+            DATASOURCE ,
+            PRDTYPE,
+            PRDCODE ,
+            METHOD,
+            CCY,
+            JOURNALCODE2,
+            FLAG_CF;
+
+  COMMIT;
+
+  /************************************************************************
+  05. RECON
+  *************************************************************************/
+  INSERT INTO IFRS_ACCT_COST_FEE_RECON
+  (
+    DOWNLOAD_DATE
+  , MASTERID
+  , DATA_SOURCE
+  , PRODUCT_TYPE
+  , PRODUCT_CODE
+  , AMORT_TYPE
+  , CURRENCY
+  , STAFF_LOAN_FLAG
+  , LOAN_START_DATE
+  , LOAN_DUE_DATE
+  , OUTSTANDING
+  , INITIAL_FEE
+  , AMORT_FEE
+  , UNAMORT_FEE
+  , UNAMORT_FEE_IMA
+  , INITIAL_COST
+  , AMORT_COST
+  , UNAMORT_COST
+  , UNAMORT_COST_IMA
+  )
+  SELECT  A.DOWNLOAD_DATE,
+          A.MASTERID,
+          A.DATA_SOURCE,
+          A.PRODUCT_TYPE,
+          A.PRODUCT_CODE,
+          A.AMORT_TYPE,
+          A.CURRENCY,
+          A.STAFF_LOAN_FLAG,
+          A.LOAN_START_DATE,
+          A.LOAN_DUE_DATE,
+          A.OUTSTANDING,
+          NVL(B.INITIAL_FEE,0) AS INITIAL_FEE,
+          NVL(D.N_AMOUNT,0) AS AMORT_FEE,
+          NVL((B.INITIAL_FEE-D.N_AMOUNT),0) AS  UNAMORT_FEE,
+          NVL(A.UNAMORT_FEE_IMA,0),
+           NVL(B.INITIAL_COST,0) AS INITIAL_COST,
+          NVL(C.N_AMOUNT,0) AS AMORT_COST,
+          NVL((B.INITIAL_COST+C.N_AMOUNT),0) AS UNAMORT_COST,
+          NVL(A.UNAMORT_COST_IMA,0)
+  FROM TMP_IFRS_IMA A
+  LEFT JOIN TMP_IFRS_COST_FEE B ON A.MASTERID=B.MASTERID AND A.DATA_SOURCE=B.DATA_SOURCE
+  LEFT JOIN TMP_JOURNAL_DATA C ON A.MASTERID=C.MASTERID AND A.DATA_SOURCE=C.DATASOURCE AND C.FLAG_CF='C'
+  LEFT JOIN TMP_JOURNAL_DATA D ON A.MASTERID=D.MASTERID  AND A.DATA_SOURCE=D.DATASOURCE AND D.FLAG_CF='F';
+
+  COMMIT;
+
+
+        INSERT  INTO IFRS_AMORT_LOG
+                ( DOWNLOAD_DATE ,
+                  DTM ,
+                  OPS ,
+                  PROCNAME ,
+                  REMARK
+                )
+        VALUES  ( V_CURRDATE ,
+                  CURRENT_TIMESTAMP ,
+                  'END' ,
+                  'SP_IFRS_RECON_MANUAL' ,
+                  'END'
+                );
+
+                COMMIT;
+
+END;

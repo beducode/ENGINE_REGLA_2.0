@@ -1,0 +1,51 @@
+CREATE OR REPLACE PROCEDURE  USPS_LGDANALYSISSUMMARYCOUNT
+(
+    V_PERIOD in VARCHAR2  DEFAULT ' ',
+    V_RULE_NAME varchar2 DEFAULT ' ',
+    v_Where VARCHAR2 DEFAULT ' ',
+   Cur_out OUT SYS_REFCURSOR
+)
+AS
+
+ V_QUERY VARCHAR2(3000);
+ V_DOWNLOAD_DATE_DD DATE;
+ v_CONFIGID NUMBER;
+
+
+BEGIN
+  IF (V_RULE_NAME <>' ') THEN
+
+        --SELECT  NVL(PKID,0)  INTO v_CONFIGID FROM IFRS_MSTR_SEGMENT_RULES_HEADER where SEGMENT =V_CONFIG_NAME and SEGMENT_TYPE='LGD_SEG';
+          SELECT  NVL(PKID,0)  INTO v_CONFIGID FROM IFRS_LGD_RULES_CONFIG where UPPER(LGD_RULE_NAME) =UPPER(V_RULE_NAME);
+    ELSE
+        v_CONFIGID := 0;
+    END IF;
+
+
+
+
+    V_QUERY :=
+        'SELECT  COUNT(*) FROM IFRS_LGD_EXPECTED_RECOVERY A  WHERE'
+        || CASE WHEN v_Where <> ' ' THEN
+            v_Where
+        ELSE
+            '   A.PERIOD = ''' || (V_PERIOD)  ||  ''''
+            || CASE WHEN V_RULE_NAME <> ' '
+                THEN 'AND UPPER(A.RULE_ID) LIKE ''%' || UPPER(LTRIM(RTRIM(v_CONFIGID))) || '%'' '
+                ELSE ''
+            END
+
+        END
+        || '
+        ORDER BY A.PERIOD';
+        -- EXECUTE IMMEDIATE 'TRUNCATE TABLE TEST_QUERY';
+        -- INSERT INTO TEST_QUERY
+        -- SELECT V_QUERY FROM DUAL;
+
+  -- COMMIT;
+
+   OPEN Cur_out FOR V_QUERY;
+
+    --dbms_output.put_line(v_Query);
+
+END;
