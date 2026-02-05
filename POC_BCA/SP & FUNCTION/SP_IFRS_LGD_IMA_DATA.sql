@@ -1,0 +1,786 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_LGD_IMA_DATA(V_EFF_DATE DATE)
+AS
+    v_MIN_DATE DATE;
+    v_MAX_DATE DATE;
+BEGIN
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_LGD_IMA';
+
+
+    EXECUTE IMMEDIATE 'alter session set temp_undo_enabled=true';
+    EXECUTE IMMEDIATE 'alter session enable parallel dml';
+
+    DBMS_STATS.UNLOCK_TABLE_STATS ( OWNNAME=>'IFRS', TABNAME=>'TMP_LGD_IMA');
+    DBMS_STATS.GATHER_TABLE_STATS ( OWNNAME=>'IFRS', TABNAME=>'TMP_LGD_IMA',DEGREE=>2);
+
+--INSERT INTO T_EXCLUDED_LOANS_LGD_BCA
+--SELECT SEGMENT,
+--PRODUCT_CODE,
+--'-',
+--ACCOUNT_NUMBER,
+--CUSTOMER_NUMBER,
+--MAX(CUSTOMER_NAME),
+--'Based On Raphael Email Wed 9/9/2020 9:37 AM (Konfirmasi LGD Komersial)' NOTES,
+--SYSDATE LAST_MODIFIED,
+--'ADMIN' MODIFIED_BY
+--FROM TMP_LGD_IMA
+--WHERE ACCOUNT_NUMBER IN ('0046900020800001','09880340082000010217','09880340082000030217')
+--GROUP BY
+--SEGMENT,
+--PRODUCT_CODE,
+--ACCOUNT_NUMBER,
+--CUSTOMER_NUMBER;
+--
+--DELETE TMP_LGD_IMA
+--WHERE ACCOUNT_NUMBER IN ('0046900020800001','09880340082000010217','09880340082000030217');
+
+    v_MIN_DATE := '31 OCT 2006';
+
+    WHILE v_MIN_DATE <= V_EFF_DATE LOOP
+        SP_IFRS_INSERT_GTMP_FROM_IMA_M(v_MIN_DATE, 'ILS');
+
+        INSERT /*+ PARALLEL(8) */ INTO TMP_LGD_IMA
+        (
+            PROCESS_DATE,
+            DOWNLOAD_DATE,
+            MASTERID,
+            CUSTOMER_NUMBER,
+            CUSTOMER_NAME,
+            FACILITY_NUMBER,
+            ACCOUNT_NUMBER,
+            OUTSTANDING,
+            CURRENCY,
+            ACCOUNT_STATUS,
+            BI_COLLECTABILITY,
+            PRODUCT_CODE,
+            FIRST_NPL_DATE,
+            FIRST_NPL_OS,
+            INTEREST_RATE,
+            EIR,
+            GROUP_SEGMENT,
+            SEGMENT,
+            SUB_SEGMENT,
+            LGD_RULE_ID,
+            LGD_SEGMENT,
+            SEGMENT_RULE_ID,
+            DATA_SOURCE,
+            RESERVED_VARCHAR_1,
+            RESERVED_VARCHAR_2
+        )
+        SELECT
+            V_EFF_DATE PROCESS_DATE,
+            A.DOWNLOAD_DATE,
+            A.MASTERID,
+            A.CUSTOMER_NUMBER,
+            A.CUSTOMER_NAME,
+            A.FACILITY_NUMBER,
+            A.ACCOUNT_NUMBER,
+            A.OUTSTANDING,
+            A.CURRENCY,
+            A.ACCOUNT_STATUS,
+            A.BI_COLLECTABILITY,
+            A.PRODUCT_CODE,
+            A.RESERVED_DATE_3,
+            A.RESERVED_AMOUNT_8,
+            A.INTEREST_RATE,
+            A.EIR,
+            A.GROUP_SEGMENT,
+            A.SEGMENT,
+            A.SUB_SEGMENT,
+            A.LGD_RULE_ID,
+            A.LGD_SEGMENT,
+            A.SEGMENT_RULE_ID,
+            A.DATA_SOURCE,
+            A.RESERVED_VARCHAR_9,
+            A.RESERVED_VARCHAR_2
+        FROM GTMP_IFRS_MASTER_ACCOUNT A
+        WHERE (RESERVED_DATE_3 IS NOT NULL
+        AND RESERVED_DATE_3 >= '31 OCT 2006')
+--        OR ACCOUNT_NUMBER IN
+--        (SELECT ACCOUNT_NUMBER FROM test_k)
+        --(SELECT ACCOUNT_NUMBER FROM IFRS_LGD_FIRST_NPL_DATE WHERE FIRST_NPL_OS = 0 AND DOWNLOAD_DATE > '31 DEC 2010')
+        ;
+
+        COMMIT;
+
+        update /*+ PARALLEL(8) */ ifrs_prc_date_k
+        set currdate = v_min_date;
+        commit;
+
+        v_MIN_DATE := ADD_MONTHS(v_MIN_DATE, 1);
+    END LOOP;
+
+    DBMS_STATS.UNLOCK_TABLE_STATS ( OWNNAME=>'IFRS', TABNAME=>'TMP_LGD_IMA');
+    DBMS_STATS.GATHER_TABLE_STATS ( OWNNAME=>'IFRS', TABNAME=>'TMP_LGD_IMA',DEGREE=>2);
+
+    /*============================================================================================================
+      Start updating IMAM reserved_amount_8 based on previous outstanding and included accounts
+      ==========================================================================================================*/
+    INSERT /*+ PARALLEL(8) */ INTO IFRS_LGD_IMA_UPDATE
+    (
+        PROCESS_DATE,
+        PROCESS_SOURCE,
+        MASTERID,
+        ACCOUNT_NUMBER,
+        FIRST_NPL_DATE,
+        FIRST_NPL_OS,
+        IS_PROCESSED
+    )
+    SELECT V_EFF_DATE,
+        'PREVIOUS OS',
+        A.MASTERID,
+        A.ACCOUNT_NUMBER,
+        B.FIRST_NPL_DATE,
+        A.OUTSTANDING FIRST_NPL_OS,
+        0 IS_PROCESSED
+    FROM
+    (
+        SELECT A2.MASTERID, A2.ACCOUNT_NUMBER, A2.OUTSTANDING
+        FROM TMP_LGD_IMA A2
+        JOIN
+        (
+            SELECT A3.ACCOUNT_NUMBER,
+                MAX(A3.DOWNLOAD_DATE) DOWNLOAD_DATE
+            FROM TMP_LGD_IMA A3
+            JOIN IFRS_LGD_FIRST_NPL_DATE B3
+            ON A3.ACCOUNT_NUMBER = B3.ACCOUNT_NUMBER
+            AND A3.DATA_SOURCE = 'ILS'
+            AND B3.FIRST_NPL_OS = 0
+            AND A3.DOWNLOAD_DATE < B3.FIRST_NPL_DATE
+            AND A3.OUTSTANDING > 0
+            GROUP BY A3.ACCOUNT_NUMBER
+        ) B2
+        ON A2.DOWNLOAD_DATE = B2.DOWNLOAD_DATE
+        AND A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+    ) A
+    JOIN
+    (
+        SELECT A2.ACCOUNT_NUMBER, A2.FIRST_NPL_DATE, A2.OUTSTANDING
+        FROM TMP_LGD_IMA A2
+        JOIN
+        (
+            SELECT A3.ACCOUNT_NUMBER,
+                MIN(A3.DOWNLOAD_DATE) DOWNLOAD_DATE
+            FROM TMP_LGD_IMA A3
+            JOIN IFRS_LGD_FIRST_NPL_DATE B3
+            ON A3.ACCOUNT_NUMBER = B3.ACCOUNT_NUMBER
+            AND A3.DATA_SOURCE = 'ILS'
+            AND B3.FIRST_NPL_OS = 0
+            AND A3.DOWNLOAD_DATE > B3.FIRST_NPL_DATE
+            AND A3.OUTSTANDING > 0
+            GROUP BY A3.ACCOUNT_NUMBER
+        ) B2
+        ON A2.DOWNLOAD_DATE = B2.DOWNLOAD_DATE
+        AND A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+    ) B
+    ON A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER
+    AND A.OUTSTANDING > B.OUTSTANDING
+    AND A.ACCOUNT_NUMBER NOT IN
+    (SELECT ACCOUNT_NUMBER FROM IFRS_LGD_IMA_UPDATE)
+    ORDER BY A.ACCOUNT_NUMBER;
+    COMMIT;
+
+    INSERT /*+ PARALLEL(8) */ INTO IFRS_LGD_IMA_UPDATE
+    (
+        PROCESS_DATE,
+        PROCESS_SOURCE,
+        MASTERID,
+        ACCOUNT_NUMBER,
+        FIRST_NPL_DATE,
+        FIRST_NPL_OS,
+        IS_PROCESSED
+    )
+    SELECT V_EFF_DATE,
+        'LGD INCLUDED LOAN UPLOAD',
+        B.MASTERID,
+        B.ACCOUNT_NUMBER,
+        B.FIRST_NPL_DATE,
+        A.ADJ_REC_AMOUNT_BF_NPV / B.EXCHANGE_RATE FIRST_NPL_OS,
+        0 IS_PROCESSED
+    FROM TBLU_LGD_INCLUDED_LOAN A
+    JOIN IFRS_LGD_FIRST_NPL_DATE B
+    ON A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER
+    AND A.ADJ_REC_AMOUNT_BF_NPV > 0
+    AND B.FIRST_NPL_OS = 0
+    AND A.ACCOUNT_NUMBER NOT IN
+    (SELECT ACCOUNT_NUMBER FROM IFRS_LGD_IMA_UPDATE)
+    ORDER BY A.ACCOUNT_NUMBER;
+    COMMIT;
+
+    SELECT LAST_DAY(MIN(FIRST_NPL_DATE))
+    INTO V_MIN_DATE
+    FROM IFRS_LGD_IMA_UPDATE
+    WHERE IS_PROCESSED = 0;
+
+    SELECT CURRDATE
+    INTO V_MAX_DATE
+    FROM IFRS_PRC_DATE;
+
+    WHILE V_MIN_DATE <= V_MAX_DATE loop
+        MERGE INTO IFRS_MASTER_ACCOUNT_MONTHLY A
+        USING IFRS_LGD_IMA_UPDATE B
+        ON (A.DOWNLOAD_DATE = V_MIN_DATE
+            AND A.MASTERID = B.MASTERID
+            AND B.IS_PROCESSED = 0)
+        WHEN MATCHED THEN
+        UPDATE SET
+        A.RESERVED_AMOUNT_8 = CASE WHEN V_MIN_DATE >= LAST_DAY(B.FIRST_NPL_DATE) THEN B.FIRST_NPL_OS ELSE NULL END;
+        COMMIT;
+
+        V_MIN_DATE := ADD_MONTHS(V_MIN_DATE,1);
+    END LOOP;
+
+    MERGE /*+ PARALLEL(8) */ INTO IFRS_LGD_FIRST_NPL_DATE A
+    USING IFRS_LGD_IMA_UPDATE B
+    ON (A.MASTERID = B.MASTERID
+        AND B.IS_PROCESSED = 0)
+    WHEN MATCHED THEN
+    UPDATE SET
+    A.FIRST_NPL_OS = B.FIRST_NPL_OS;
+    COMMIT;
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING IFRS_LGD_IMA_UPDATE B
+    ON (A.MASTERID = B.MASTERID
+        AND B.IS_PROCESSED = 0)
+    WHEN MATCHED THEN
+    UPDATE SET
+    A.FIRST_NPL_OS = B.FIRST_NPL_OS;
+    COMMIT;
+
+    UPDATE /*+ PARALLEL(8) */ IFRS_LGD_IMA_UPDATE
+    SET IS_PROCESSED = 1
+    WHERE IS_PROCESSED = 0;
+    COMMIT;
+
+    /*============================================================================================================
+      End updating IMAM reserved_amount_8 based on previous outstanding and included accounts
+      ==========================================================================================================*/
+
+
+    DELETE /*+ PARALLEL(8) */ TMP_LGD_IMA
+    WHERE NVL(FIRST_NPL_OS,0) = 0;
+    COMMIT;
+
+    DELETE /*+ PARALLEL(8) */ TMP_LGD_IMA
+    WHERE PKID IN
+    (
+        SELECT A.PKID
+        FROM TMP_LGD_IMA A
+        JOIN
+        (
+            SELECT A2.ACCOUNT_NUMBER,
+                MIN(DOWNLOAD_DATE) MIN_DOWNLOAD_DATE
+            FROM TMP_LGD_IMA A2
+            JOIN
+            (
+                SELECT A3.ACCOUNT_NUMBER FROM TMP_LGD_IMA A3
+                JOIN
+                (
+                    SELECT ACCOUNT_NUMBER,
+                        MAX(DOWNLOAD_DATE) MAX_DOWNLOAD_DATE
+                    FROM TMP_LGD_IMA
+                    GROUP BY ACCOUNT_NUMBER
+                ) B3
+                ON A3.DOWNLOAD_DATE = B3.MAX_DOWNLOAD_DATE
+                AND A3.ACCOUNT_NUMBER = B3.ACCOUNT_NUMBER
+                AND A3.OUTSTANDING > 0
+            ) B2
+            ON A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+            AND A2.RESERVED_VARCHAR_1 LIKE '%J%'
+            GROUP BY A2.ACCOUNT_NUMBER
+        ) B
+        ON A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER
+        AND A.DATA_SOURCE = 'ILS'
+        AND A.DOWNLOAD_DATE > B.MIN_DOWNLOAD_DATE
+    );
+    COMMIT;
+
+    DBMS_STATS.UNLOCK_TABLE_STATS ( OWNNAME=>'IFRS', TABNAME=>'TMP_LGD_IMA');
+    DBMS_STATS.GATHER_TABLE_STATS ( OWNNAME=>'IFRS', TABNAME=>'TMP_LGD_IMA',DEGREE=>2);
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT A2.* FROM
+        (
+            SELECT ACCOUNT_NUMBER, MIN(DOWNLOAD_DATE) DOWNLOAD_DATE
+            FROM TMP_LGD_IMA
+            WHERE OUTSTANDING = 0
+            AND DATA_SOURCE = 'ILS'
+            GROUP BY ACCOUNT_NUMBER
+        ) A2
+        JOIN
+        (
+            SELECT A3.ACCOUNT_NUMBER
+            FROM TMP_LGD_IMA A3
+            JOIN
+            (
+             SELECT ACCOUNT_NUMBER, MAX(PKID) PKID
+             FROM TMP_LGD_IMA
+             GROUP BY ACCOUNT_NUMBER
+            ) B3
+            ON A3.ACCOUNT_NUMBER = B3.ACCOUNT_NUMBER
+            AND A3.DATA_SOURCE = 'ILS'
+            AND A3.PKID = B3.PKID
+            AND A3.OUTSTANDING = 0
+        ) B2
+        ON A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.CLOSED_DATE = B.DOWNLOAD_DATE,
+        A.LGD_FLAG = 'N';
+    COMMIT;
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT ACCOUNT_NUMBER, DOWNLOAD_DATE
+        FROM TMP_LGD_IMA
+        WHERE RESERVED_VARCHAR_1 LIKE '%J%'
+        AND DATA_SOURCE = 'ILS'
+        AND CLOSED_DATE IS NULL
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.CLOSED_DATE = B.DOWNLOAD_DATE,
+        A.LGD_FLAG = 'J';
+    COMMIT;
+
+    /*Flag L for main model*/
+--    MERGE INTO TMP_LGD_IMA A
+--    USING
+--    (
+--        SELECT A2.ACCOUNT_NUMBER
+--            ,A2.DOWNLOAD_DATE
+--        FROM TMP_LGD_IMA A2
+--        JOIN
+--        (
+--            SELECT ACCOUNT_NUMBER, MAX(DOWNLOAD_DATE) MAX_DOWNLOAD_DATE
+--            FROM TMP_LGD_IMA
+--            WHERE CLOSED_DATE IS NULL
+--            AND PRODUCT_CODE NOT IN ('304','315','310','311','312','313','314','316','320','321')
+--            GROUP BY ACCOUNT_NUMBER
+--        ) B2
+--        ON A2.DOWNLOAD_DATE = B2.MAX_DOWNLOAD_DATE
+--        AND A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+--        AND A2.ACCOUNT_STATUS = 'W'
+--    ) B
+--    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+--    WHEN MATCHED THEN
+--    UPDATE SET
+--        A.CLOSED_DATE = B.DOWNLOAD_DATE,
+--        A.LGD_FLAG = 'L';
+--    COMMIT;
+
+    /*Flag L for challanger model*/
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT A2.ACCOUNT_NUMBER
+            ,MIN(A2.DOWNLOAD_DATE) DOWNLOAD_DATE
+        FROM TMP_LGD_IMA A2
+        JOIN
+        (
+            SELECT A3.ACCOUNT_NUMBER
+            FROM TMP_LGD_IMA A3
+            JOIN
+            (
+                SELECT ACCOUNT_NUMBER, MAX(DOWNLOAD_DATE) MAX_DOWNLOAD_DATE
+                FROM TMP_LGD_IMA
+                WHERE CLOSED_DATE IS NULL
+                AND PRODUCT_CODE NOT IN ('304','315','310','311','312','313','314','316','320','321')
+                GROUP BY ACCOUNT_NUMBER
+            ) B3
+            ON A3.DOWNLOAD_DATE = B3.MAX_DOWNLOAD_DATE
+            AND A3.ACCOUNT_NUMBER = B3.ACCOUNT_NUMBER
+            AND A3.ACCOUNT_STATUS = 'W'
+        )B2
+        ON A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+        AND A2.ACCOUNT_STATUS = 'W'
+        GROUP BY A2.ACCOUNT_NUMBER
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.CLOSED_DATE = B.DOWNLOAD_DATE,
+        A.LGD_FLAG = 'L';
+    COMMIT;
+
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT C2.ACCOUNT_NUMBER, C2.DOWNLOAD_DATE
+        FROM TMP_LGD_IMA A2
+        JOIN
+        (
+        SELECT ACCOUNT_NUMBER, MIN(DOWNLOAD_DATE) MIN_DOWNLOAD_DATE
+        FROM TMP_LGD_IMA
+        WHERE PRODUCT_CODE IN ('312','314')
+        AND ACCOUNT_STATUS = 'W'
+        AND CLOSED_DATE IS NULL
+        GROUP BY ACCOUNT_NUMBER
+        ) B2
+        ON A2.DOWNLOAD_DATE = B2.MIN_DOWNLOAD_DATE
+        AND A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+        JOIN TMP_LGD_IMA C2
+        ON ADD_MONTHS(B2.MIN_DOWNLOAD_DATE,12) = C2.DOWNLOAD_DATE
+        AND A2.ACCOUNT_NUMBER = C2.ACCOUNT_NUMBER
+        JOIN
+        (
+            SELECT A3.ACCOUNT_NUMBER, A3.OUTSTANDING
+            FROM TMP_LGD_IMA A3
+            JOIN
+            (
+                SELECT ACCOUNT_NUMBER, MAX(DOWNLOAD_DATE) MAX_DOWNLOAD_DATE
+                FROM TMP_LGD_IMA
+                WHERE PRODUCT_CODE IN ('312','314')
+                AND ACCOUNT_STATUS = 'W'
+                AND CLOSED_DATE IS NULL
+                GROUP BY ACCOUNT_NUMBER
+            ) B3
+            ON A3.DOWNLOAD_DATE = B3.MAX_DOWNLOAD_DATE
+            AND A3.ACCOUNT_NUMBER = B3.ACCOUNT_NUMBER
+        ) D2
+        ON A2.ACCOUNT_NUMBER = D2.ACCOUNT_NUMBER
+        AND A2.DATA_SOURCE = 'ILS'
+        AND A2.OUTSTANDING = D2.OUTSTANDING
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.CLOSED_DATE = CASE WHEN B.DOWNLOAD_DATE < TO_DATE('30 JUN 2014','DD MON YYYY') THEN TO_DATE('30 JUN 2014','DD MON YYYY') ELSE B.DOWNLOAD_DATE END,
+        A.LGD_FLAG = 'C1';
+    COMMIT;
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT C2.ACCOUNT_NUMBER, MAX(C2.DOWNLOAD_DATE) DOWNLOAD_DATE
+        FROM TMP_LGD_IMA A2
+        JOIN
+        (
+            SELECT ACCOUNT_NUMBER, MIN(DOWNLOAD_DATE) MIN_DOWNLOAD_DATE
+            FROM TMP_LGD_IMA
+            WHERE PRODUCT_CODE IN ('312','314')
+            AND ACCOUNT_STATUS = 'W'
+            AND CLOSED_DATE IS NULL
+            GROUP BY ACCOUNT_NUMBER
+        ) B2
+        ON A2.DOWNLOAD_DATE = B2.MIN_DOWNLOAD_DATE
+        AND A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+        JOIN TMP_LGD_IMA C2
+        ON ADD_MONTHS(B2.MIN_DOWNLOAD_DATE,12) <= C2.DOWNLOAD_DATE
+        AND A2.ACCOUNT_NUMBER = C2.ACCOUNT_NUMBER
+        JOIN
+        (
+            SELECT ACCOUNT_NUMBER, OUTSTANDING, MIN(DOWNLOAD_DATE) MIN_DOWNLOAD_DATE
+            FROM TMP_LGD_IMA
+            WHERE PRODUCT_CODE IN ('312','314')
+            AND ACCOUNT_STATUS = 'W'
+            AND CLOSED_DATE IS NULL
+            GROUP BY ACCOUNT_NUMBER, OUTSTANDING
+        ) D2
+        ON A2.ACCOUNT_NUMBER = D2.ACCOUNT_NUMBER
+        AND A2.DATA_SOURCE = 'ILS'
+        AND A2.OUTSTANDING != D2.OUTSTANDING
+        AND C2.DOWNLOAD_DATE = CASE WHEN D2.MIN_DOWNLOAD_DATE < ADD_MONTHS(B2.MIN_DOWNLOAD_DATE,12) THEN C2.DOWNLOAD_DATE ELSE D2.MIN_DOWNLOAD_DATE END
+        GROUP BY C2.ACCOUNT_NUMBER
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.CLOSED_DATE = CASE WHEN B.DOWNLOAD_DATE < TO_DATE('30 JUN 2014','DD MON YYYY') THEN TO_DATE('30 JUN 2014','DD MON YYYY') ELSE B.DOWNLOAD_DATE END,
+        A.LGD_FLAG = 'C2';
+    COMMIT;
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING TBLU_LGD_INCLUDED_LOAN B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER
+        AND B.ADJ_REC_AMOUNT_BF_NPV > 0)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.LGD_FLAG = 'N';
+    COMMIT;
+
+--    DELETE TMP_LGD_IMA
+--    WHERE LGD_FLAG IS NULL
+--    AND DATA_SOURCE = 'ILS';
+--    COMMIT;
+
+    DBMS_STATS.UNLOCK_TABLE_STATS ( OWNNAME=>'IFRS', TABNAME=>'TMP_LGD_IMA');
+    DBMS_STATS.GATHER_TABLE_STATS ( OWNNAME=>'IFRS', TABNAME=>'TMP_LGD_IMA',DEGREE=>2);
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT
+            A2.PKID,
+            CASE WHEN B2.CHARGEOFF_AMOUNT > 0 THEN
+                CASE WHEN B2.OS_BEFORE_CHARGEOFF - B2.CHARGEOFF_AMOUNT > 0 THEN B2.OS_BEFORE_CHARGEOFF - B2.CHARGEOFF_AMOUNT ELSE 0 END
+            WHEN C2.FIRST_NPL_OS - SUM(B2.RECOVERY_AMOUNT) OVER(PARTITION BY B2.ACCOUNT_NUMBER ORDER BY B2.PKID)> 0 THEN
+                B2.RECOVERY_AMOUNT
+            ELSE
+                CASE WHEN C2.FIRST_NPL_OS + B2.RECOVERY_AMOUNT - SUM(B2.RECOVERY_AMOUNT) OVER(PARTITION BY B2.ACCOUNT_NUMBER ORDER BY B2.PKID) > 0 THEN
+                    C2.FIRST_NPL_OS + B2.RECOVERY_AMOUNT - SUM(B2.RECOVERY_AMOUNT) OVER(PARTITION BY B2.ACCOUNT_NUMBER ORDER BY B2.PKID)
+                ELSE
+                    0
+                END
+            END RECOVERY_AMOUNT
+        FROM TMP_LGD_IMA A2
+        JOIN
+        (
+            SELECT A3.PKID,
+                A3.FACILITY_NUMBER,
+                A3.ACCOUNT_NUMBER,
+                CASE WHEN LAG(A3.OUTSTANDING) OVER(PARTITION BY A3.ACCOUNT_NUMBER ORDER BY A3.PKID) - A3.OUTSTANDING > 0 THEN
+                    LAG(A3.OUTSTANDING) OVER(PARTITION BY A3.ACCOUNT_NUMBER ORDER BY A3.PKID) - A3.OUTSTANDING
+                ELSE
+                    0
+                END RECOVERY_AMOUNT,
+                NVL(B3.OS_BEFORE_CHARGEOFF,0) OS_BEFORE_CHARGEOFF,
+                NVL(B3.CHARGEOFF_AMOUNT,0) CHARGEOFF_AMOUNT
+            FROM TMP_LGD_IMA A3
+            LEFT JOIN
+            (
+                SELECT A4.ACCOUNT_NUMBER,
+                A4.OUTSTANDING AS OS_BEFORE_CHARGEOFF,
+                VALUATION_DATE CHARGEOFF_DATE,
+                B4.AMOUNT CHARGEOFF_AMOUNT
+                FROM TMP_LGD_IMA A4
+                JOIN
+                (
+                    SELECT A5.ACCOUNT_NUMBER,
+                        MAX(DOWNLOAD_DATE) DOWNLOAD_DATE,
+                        B5.VALUATION_DATE,
+                        B5.AMOUNT
+                    FROM TMP_LGD_IMA A5
+                    JOIN
+                    (
+                        SELECT DISTINCT ACCOUNT_NUMBER,
+                            LAST_DAY(VALUATION_DATE) VALUATION_DATE,
+                            SUM(AMOUNT) AMOUNT
+                        FROM
+                        (
+                            SELECT DISTINCT ACCOUNT_NUMBER, VALUATION_DATE, AMOUNT
+                            FROM IFRS_MASTER_VALUATION
+                            WHERE TRX_CODE = 'CHARGEOFF'
+                        )
+                        GROUP BY ACCOUNT_NUMBER,
+                            LAST_DAY(VALUATION_DATE)
+                        HAVING SUM(AMOUNT) > 0
+                    ) B5
+                    ON A5.DOWNLOAD_DATE <= B5.VALUATION_DATE
+                    AND A5.ACCOUNT_NUMBER = B5.ACCOUNT_NUMBER
+                    AND A5.OUTSTANDING > 0
+                    GROUP BY A5.ACCOUNT_NUMBER,
+                        B5.VALUATION_DATE,
+                        B5.AMOUNT
+                ) B4
+                ON A4.ACCOUNT_NUMBER = B4.ACCOUNT_NUMBER
+                AND A4.DOWNLOAD_DATE = B4.DOWNLOAD_DATE
+            ) B3
+            ON A3.ACCOUNT_NUMBER = B3.ACCOUNT_NUMBER
+            AND A3.DOWNLOAD_DATE = B3.CHARGEOFF_DATE
+        ) B2
+        ON A2.PKID = B2.PKID
+        JOIN
+        (
+            SELECT A3.*
+            FROM TMP_LGD_IMA A3
+            JOIN
+            (
+                SELECT ACCOUNT_NUMBER,
+                    MIN(DOWNLOAD_DATE) MIN_DOWNLOAD_DATE
+                FROM TMP_LGD_IMA
+                GROUP BY ACCOUNT_NUMBER
+            ) B3
+            ON A3.DOWNLOAD_DATE = B3.MIN_DOWNLOAD_DATE
+            AND A3.ACCOUNT_NUMBER = B3.ACCOUNT_NUMBER
+        ) C2
+        ON A2.ACCOUNT_NUMBER = C2.ACCOUNT_NUMBER
+        AND A2.DATA_SOURCE = 'ILS'
+    ) B
+    ON (A.PKID = B.PKID)
+    WHEN MATCHED THEN
+    UPDATE SET A.RECOVERY_AMOUNT = B.RECOVERY_AMOUNT;
+
+    COMMIT;
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT ACCOUNT_NUMBER, MAX(DOWNLOAD_DATE) DOWNLOAD_DATE
+        FROM TMP_LGD_IMA
+        WHERE DOWNLOAD_DATE > CLOSED_DATE
+        AND RECOVERY_AMOUNT > 0
+        AND DATA_SOURCE = 'ILS'
+        AND LGD_FLAG != 'L'
+        GROUP BY ACCOUNT_NUMBER
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.CLOSED_DATE = B.DOWNLOAD_DATE;
+    COMMIT;
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT A2.ACCOUNT_NUMBER
+            ,MIN(A2.DOWNLOAD_DATE) DOWNLOAD_DATE
+        FROM TMP_LGD_IMA A2
+        JOIN
+        (
+            SELECT A3.ACCOUNT_NUMBER
+            FROM TMP_LGD_IMA A3
+            JOIN
+            (
+                SELECT ACCOUNT_NUMBER, MAX(DOWNLOAD_DATE) MAX_DOWNLOAD_DATE
+                FROM TMP_LGD_IMA
+                WHERE ACCOUNT_NUMBER IN (SELECT ACCOUNT_NUMBER FROM TBLU_LGD_OVERRIDE_FLAG WHERE OVERRIDE_FLAG = 'L')
+                GROUP BY ACCOUNT_NUMBER
+            ) B3
+            ON A3.DOWNLOAD_DATE = B3.MAX_DOWNLOAD_DATE
+            AND A3.ACCOUNT_NUMBER = B3.ACCOUNT_NUMBER
+            AND A3.ACCOUNT_STATUS = 'W'
+        )B2
+        ON A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+        AND A2.ACCOUNT_STATUS = 'W'
+        GROUP BY A2.ACCOUNT_NUMBER
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.CLOSED_DATE = B.DOWNLOAD_DATE,
+        A.LGD_FLAG = 'L';
+    COMMIT;
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING TBLU_LGD_OVERRIDE_FLAG B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER AND B.OVERRIDE_FLAG = 'N')
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.LGD_FLAG = B.OVERRIDE_FLAG;
+    COMMIT;
+
+    MERGE INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT A2.ACCOUNT_NUMBER,
+            A2.INTEREST_RATE,
+            A2.SEGMENT_RULE_ID
+        FROM TMP_LGD_IMA A2
+        JOIN
+        (
+            SELECT ACCOUNT_NUMBER, MIN(DOWNLOAD_DATE) MIN_DOWNLOAD_DATE
+            FROM TMP_LGD_IMA
+            GROUP BY ACCOUNT_NUMBER
+        ) B2
+        ON A2.DOWNLOAD_DATE = B2.MIN_DOWNLOAD_DATE
+        AND A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+        AND A2.DATA_SOURCE = 'ILS'
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.INTEREST_RATE = ROUND(B.INTEREST_RATE,2) / 100;
+    COMMIT;
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT A.ACCOUNT_NUMBER,
+            A.GROUP_SEGMENT,
+            A.SEGMENT,
+            A.SUB_SEGMENT,
+            A.SEGMENT_RULE_ID
+        FROM TMP_LGD_IMA A
+        JOIN
+        (
+            SELECT ACCOUNT_NUMBER, ADD_MONTHS(CLOSED_DATE,-1) DOWNLOAD_DATE
+            FROM TMP_LGD_IMA
+            WHERE CLOSED_DATE > '30 JUN 2015'
+            AND RESERVED_VARCHAR_2 IN ('L','M','S','K')
+            AND DOWNLOAD_DATE = ADD_MONTHS(CLOSED_DATE,-1)
+            UNION
+            SELECT ACCOUNT_NUMBER, ADD_MONTHS(CLOSED_DATE,-1) DOWNLOAD_DATE
+            FROM TMP_LGD_IMA
+            WHERE PRODUCT_CODE NOT LIKE '3%'
+            AND PRODUCT_CODE != '610'
+            AND RESERVED_VARCHAR_2 = 'X'
+            AND DOWNLOAD_DATE = CLOSED_DATE
+        ) B
+        ON A.DOWNLOAD_DATE = B.DOWNLOAD_DATE
+        AND A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER
+        AND A.DATA_SOURCE = 'ILS'
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.GROUP_SEGMENT = B.GROUP_SEGMENT,
+        A.SEGMENT = B.SEGMENT,
+        A.SUB_SEGMENT = B.SUB_SEGMENT,
+        A.SEGMENT_RULE_ID = B.SEGMENT_RULE_ID;
+    COMMIT;
+
+    MERGE /*+ PARALLEL(8) */ INTO TMP_LGD_IMA A
+    USING
+    (
+        SELECT A2.ACCOUNT_NUMBER,
+            A2.CUSTOMER_NUMBER,
+            B2.MAX_CUSTOMER_NAME CUSTOMER_NAME,
+            A2.GROUP_SEGMENT,
+            A2.SEGMENT,
+            A2.SUB_SEGMENT,
+            A2.SEGMENT_RULE_ID
+        FROM TMP_LGD_IMA A2
+        JOIN
+        (
+            SELECT ACCOUNT_NUMBER,
+            MAX(DOWNLOAD_DATE) MAX_DOWNLOAD_DATE,
+            MAX(NVL(CUSTOMER_NAME,' ')) MAX_CUSTOMER_NAME
+            FROM TMP_LGD_IMA
+            GROUP BY ACCOUNT_NUMBER
+        ) B2
+        ON A2.DOWNLOAD_DATE = B2.MAX_DOWNLOAD_DATE
+        AND A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER
+        AND A2.DATA_SOURCE = 'ILS'
+    ) B
+    ON (A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+    WHEN MATCHED THEN
+    UPDATE SET
+        A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER,
+        A.CUSTOMER_NAME = B.CUSTOMER_NAME,
+        A.GROUP_SEGMENT = GROUP_SEGMENT,
+        A.SEGMENT = B.SEGMENT,
+        A.SUB_SEGMENT = B.SUB_SEGMENT,
+        A.SEGMENT_RULE_ID = B.SEGMENT_RULE_ID;
+    COMMIT;
+
+
+--
+--    merge into tmp_lgd_ima a
+--using
+--(
+--     Select a.*, loss_date, discount_rate
+--from (Select distinct account_number, interest_rate, first_npl_date from tmp_lgd_ima) a
+--join
+--(Select a.*
+--from T_RPT_LGD_LOAN_BCA a
+--    join T_LOSS_EVENT b
+--    on a.deal_id = trim(b.loss_event_external_reference)) b
+--on a.account_number = b.deal_id
+--and a.interest_rate != b.discount_rate
+--and last_day(loss_date) < '31 JAN 2011'
+--) b
+--on (a.account_number = b.account_number)
+--when matched then
+--update set a.interest_rate = b.discount_rate;
+--commit;
+--
+
+END;

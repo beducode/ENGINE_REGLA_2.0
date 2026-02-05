@@ -1,0 +1,48 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_PPR_PAYM_SCHD_ALL
+AS
+    V_CURRDATE DATE;
+BEGIN
+
+    SELECT CURRDATE INTO V_CURRDATE FROM IFRS_PRC_DATE_LGD;
+
+    /*
+    2. SELECT DOWNLOAD_DATE, MASTERID, PMT_DATE, OSPRN, PRINCIPAL, ICC FROM IFRS_PAYM_SCHD_ALL
+       WHERE MASTERID IN [SESUAI PREPAYMENT_SEGMENT]
+       AND MASTERID NOT IN IFRS_PPR_BI_COLLECTABILITY;
+     */
+
+     MERGE INTO IFRS_PPR_PAYM_SCHD_ALL D
+     USING (
+            SELECT
+                A.DOWNLOAD_DATE,
+                A.MASTERID,
+                A.PMTDATE PMT_DATE,
+                A.OSPRN,
+                A.PRINCIPAL,
+                A.ICC FROM
+            IFRS_PAYM_SCHD_ALL A
+            LEFT JOIN IFRS_PPR_BI_COLLECTABILITY B ON A.PMTDATE=B.DOWNLOAD_DATE
+                AND A.MASTERID=B.MASTERID
+            WHERE B.MASTERID IS NULL
+                AND PMTDATE=LAST_DAY(V_CURRDATE)
+            ) S ON (D.MASTERID=S.MASTERID
+                    AND D.PMT_DATE=S.PMT_DATE)
+     WHEN NOT MATCHED THEN
+     INSERT (DOWNLOAD_DATE,
+             MASTERID,
+             PMT_DATE,
+             OSPRN,
+             PRINCIPAL,
+             ICC,
+             IDR_OSPRN,
+             IDR_PRINCIPAL)
+    VALUES ( S.DOWNLOAD_DATE,
+             S.MASTERID,
+             S.PMT_DATE,
+             S.OSPRN,
+             S.PRINCIPAL,
+             S.ICC,
+             0,
+             0);
+    COMMIT;
+END;

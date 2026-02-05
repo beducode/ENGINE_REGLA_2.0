@@ -1,0 +1,106 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_AMORT_ARCHIVE_TABLES_K
+AS
+    V_DATE DATE;
+    V_COUNT NUMBER(10);
+    V_COUNT2 NUMBER(10);
+    V_DATA_COUNT NUMBER(10);
+    V_PKID NUMBER;
+    V_MAX_PKID NUMBER;
+    V_SOURCE_TABLE VARCHAR2(30);
+    V_DESTINATION_TABLE VARCHAR2(30);
+    V_TABLE_SCHEMA VARCHAR2(30);
+    V_DATA_RETENTION NUMBER(10);
+    V_SPECIFIC_FIELD VARCHAR2(30);
+    V_QUERY VARCHAR2(4000);
+BEGIN
+    SELECT MIN(PKID), MAX(PKID)
+    INTO V_PKID, V_MAX_PKID
+    FROM IFRS_RETENTION
+    WHERE TYPE = 1
+    AND PKID = 1;
+
+    WHILE V_PKID <= V_MAX_PKID LOOP
+        SELECT SOURCE_TABLE, DESTINATION_TABLE, TABLE_SCHEMA, DATA_RETENTION, SPECIFIC_FIELD
+        INTO V_SOURCE_TABLE, V_DESTINATION_TABLE, V_TABLE_SCHEMA, V_DATA_RETENTION, V_SPECIFIC_FIELD
+        FROM IFRS_RETENTION
+        WHERE PKID = V_PKID;
+
+        V_QUERY := 'SELECT COUNT(*) FROM (SELECT DISTINCT ' || V_SPECIFIC_FIELD || ' FROM ' || V_SOURCE_TABLE || ')';
+        EXECUTE IMMEDIATE V_QUERY INTO V_DATA_COUNT;
+
+        DBMS_OUTPUT.PUT_LINE(V_QUERY);
+
+        V_QUERY := 'SELECT MIN(' || V_SPECIFIC_FIELD || ') FROM ' || V_SOURCE_TABLE;
+        EXECUTE IMMEDIATE V_QUERY INTO V_DATE;
+
+        DBMS_OUTPUT.PUT_LINE(V_QUERY);
+
+        WHILE V_DATA_COUNT > 28 LOOP
+            IF NOT(V_SOURCE_TABLE = 'IFRS_MASTER_ACCOUNT' AND V_DATE = LAST_DAY(V_DATE)) THEN
+            V_QUERY := 'SELECT COUNT(*) FROM IFRS_AMORT_LOG
+                        WHERE DOWNLOAD_DATE = ''' || TO_CHAR(V_DATE, 'DD MON YYYY') || '''
+                        AND OPS = ''INSERT ' || V_DESTINATION_TABLE ||'''';
+
+            EXECUTE IMMEDIATE V_QUERY INTO V_COUNT;
+
+            DBMS_OUTPUT.PUT_LINE(V_QUERY);
+
+            IF V_COUNT > 0 THEN
+                V_QUERY := 'SELECT COUNT(*) FROM ' || V_SOURCE_TABLE || ' WHERE ' || V_SPECIFIC_FIELD || ' = ''' || TO_CHAR(V_DATE, 'DD MON YYYY') || '''';
+                EXECUTE IMMEDIATE V_QUERY INTO V_COUNT2;
+
+                DBMS_OUTPUT.PUT_LINE(V_QUERY);
+
+                IF V_COUNT2 > 0 THEN
+                    V_QUERY := 'DELETE ' || V_DESTINATION_TABLE ||' WHERE ' || V_SPECIFIC_FIELD || ' = ''' || TO_CHAR(V_DATE, 'DD MON YYYY') || '''';
+                    ROLLBACK;
+
+                    DBMS_OUTPUT.PUT_LINE(V_QUERY);
+                END IF;
+            END IF;
+
+            V_QUERY := 'INSERT INTO ' || V_DESTINATION_TABLE || '
+                        SELECT * FROM ' || V_SOURCE_TABLE || '
+                        WHERE ' || V_SPECIFIC_FIELD || ' = ''' || TO_CHAR(V_DATE, 'DD MON YYYY') || '''';
+
+            EXECUTE IMMEDIATE V_QUERY;
+
+            DBMS_OUTPUT.PUT_LINE(V_QUERY);
+
+            INSERT  INTO IFRS_AMORT_LOG(DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+            VALUES  ( V_DATE ,
+                  SYSTIMESTAMP ,
+                  'INSERT ' || V_DESTINATION_TABLE ,
+                  'SP_IFRS_AMORT_ARCHIVE_TABLES' ,
+                  ''
+                  );
+
+            ROLLBACK;
+
+            V_QUERY := 'DELETE ' || V_SOURCE_TABLE || ' WHERE ' || V_SPECIFIC_FIELD || ' = ''' || TO_CHAR(V_DATE, 'DD MON YYYY') || '''';
+
+            DBMS_OUTPUT.PUT_LINE(V_QUERY);
+            EXECUTE IMMEDIATE V_QUERY;
+
+            INSERT  INTO IFRS_AMORT_LOG(DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+            VALUES  ( V_DATE ,
+                  SYSTIMESTAMP ,
+                  'DELETE ' || V_SOURCE_TABLE,
+                  'SP_IFRS_AMORT_ARCHIVE_TABLES' ,
+                  ''
+                  );
+
+            ROLLBACK;
+        END IF;
+
+            V_DATE := V_DATE + 1;
+            V_DATA_COUNT := V_DATA_COUNT - 1;
+        END LOOP;
+
+        SELECT NVL(MIN(PKID),10000000000000)
+        INTO V_PKID
+        FROM IFRS_RETENTION
+        WHERE TYPE = 1
+        AND PKID > V_PKID;
+    END LOOP;
+END;

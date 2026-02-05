@@ -1,0 +1,6 @@
+CREATE OR REPLACE procedure      SP_IFRS_REPORT_BIAYA_CKPN(V_INPUT varchar2) as
+    V_SPNAME      varchar2(500);
+begin
+    V_SPNAME := 'SP_IFRS_REPORT_BIAYA_CKPN_PROCESS('''|| V_INPUT  ||''')';
+    IFRS.SP_IFRS_EXEC_AND_LOG_PROCESS(V_SPNAME,'REPORT','Y');
+end;

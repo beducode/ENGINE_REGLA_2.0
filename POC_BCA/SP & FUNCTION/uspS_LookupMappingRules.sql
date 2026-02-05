@@ -1,0 +1,22 @@
+CREATE OR REPLACE PROCEDURE uspS_LookupMappingRules
+(
+    v_UserID in varchar2 default ' ',
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+     v_screenGroupID   NUMBER (10, 0);
+BEGIN
+
+    SELECT SCREENGROUPID
+        INTO v_screenGroupID
+        FROM TBLM_USER
+        WHERE USERID = v_UserID;
+
+    OPEN  Cur_out FOR
+    SELECT A.PKID, MappingName, MAPPINGDESCRIPTION, MAPPINGTYPE, FILETYPE
+    FROM TBLM_MAPPINGRULEHEADER_NEW A
+        JOIN TBLM_MAP_RULE_SCREENGROUP B ON A.PKID = B.MAPPINGRULEID
+            AND B.SCREENGROUP = v_screenGroupID
+        WHERE A.SHOW_ON_UPLOAD_SCREEN = 1;
+
+END;

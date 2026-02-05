@@ -1,0 +1,10 @@
+CREATE OR REPLACE PROCEDURE USPU_UPDATEMESTATUS
+(
+    V_PKID number default 0,
+    V_Status number default 0
+)
+AS
+BEGIN
+    UPDATE IFRS_FL_MODEL_VAR_PEN SET RUN_STATUS = V_Status
+    WHERE PKID = V_PKID;
+END;

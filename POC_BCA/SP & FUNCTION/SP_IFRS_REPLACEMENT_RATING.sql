@@ -1,0 +1,77 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_REPLACEMENT_RATING
+AS
+   V_CURRDATE   DATE;
+BEGIN
+   SELECT CURRDATE INTO V_CURRDATE FROM IFRS_PRC_DATE;
+
+   DELETE FROM IFRS_MSTR_CSTMR_RATING_BACKUP
+         WHERE DOWNLOAD_DATE = V_CURRDATE;
+
+   COMMIT;
+
+   INSERT INTO IFRS_MSTR_CSTMR_RATING_BACKUP
+      SELECT *
+        FROM IFRS_MASTER_CUSTOMER_RATING
+       WHERE     DOWNLOAD_DATE = V_CURRDATE
+             AND RATING_TYPE_1 = 1
+             AND CUSTOMER_NUMBER IN (SELECT CUSTOMER_NUMBER
+                                       FROM TBLU_REPLACEMENT_RATING
+                                      WHERE DOWNLOAD_DATE = V_CURRDATE);
+
+   COMMIT;
+
+   MERGE INTO IFRS_MASTER_CUSTOMER_RATING a
+        USING TBLU_REPLACEMENT_RATING b
+           ON (a.DOWNLOAD_DATE = b.DOWNLOAD_DATE
+               AND a.CUSTOMER_NUMBER = b.CUSTOMER_NUMBER)
+   WHEN MATCHED
+   THEN
+      UPDATE SET
+         a.RATING_CODE_1 = b.REPLACEMENT_RATING
+              WHERE     a.DOWNLOAD_DATE = V_CURRDATE
+                    AND a.RATING_TYPE_1 = 1
+                    AND a.BI_COLLECTABILITY = 1
+                    AND a.RATING_CODE_1 in ('RR9','RR10');
+
+   COMMIT;
+
+   DELETE FROM TBLU_REPLACEMENT_RATING_REASON
+         WHERE DOWNLOAD_DATE = V_CURRDATE;
+
+   COMMIT;
+
+   INSERT INTO TBLU_REPLACEMENT_RATING_REASON
+      SELECT b.DOWNLOAD_DATE,
+             b.CUSTOMER_NUMBER,
+             a.GOL_DEB,
+             a.RATING_SOURCE_1 RATING_SOURCE,
+             a.RATING_CODE_1 ASMR_RATING,
+             b.CURRENT_RATING CURRENT_RATING,
+             b.REPLACEMENT_RATING,
+             a.BI_COLLECTABILITY,
+             CASE
+                WHEN a.CUSTOMER_NUMBER IS NULL
+                THEN
+                   b.CUSTOMER_NUMBER || ' not Exist'
+                WHEN a.BI_COLLECTABILITY != 1
+                THEN
+                   'BI Collectability ' || a.BI_COLLECTABILITY
+                 WHEN a.RATING_CODE_1 != b.CURRENT_RATING
+                THEN
+                     'Rating ASMR ' || a.RATING_CODE_1
+             END
+                REASON,
+             'SYSTEM' CREATED_BY,
+             SYSDATE CREATED_DATE
+        FROM    IFRS_MSTR_CSTMR_RATING_BACKUP a
+             RIGHT JOIN
+                TBLU_REPLACEMENT_RATING b
+             ON a.DOWNLOAD_DATE = b.DOWNLOAD_DATE
+                AND a.CUSTOMER_NUMBER = b.CUSTOMER_NUMBER
+       WHERE     b.DOWNLOAD_DATE = V_CURRDATE
+             AND NVL (RATING_TYPE_1, '1') = '1'
+             AND (NVL (a.BI_COLLECTABILITY, 2) != 1
+            OR a.RATING_CODE_1!=b.CURRENT_RATING);
+
+   COMMIT;
+END;

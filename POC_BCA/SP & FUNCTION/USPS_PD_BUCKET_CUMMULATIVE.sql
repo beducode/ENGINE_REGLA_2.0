@@ -1,0 +1,21 @@
+CREATE OR REPLACE PROCEDURE  USPS_PD_BUCKET_CUMMULATIVE
+(
+    v_eff_date    date,
+    v_pd_rule_id  number,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+
+    OPEN Cur_out FOR
+
+    SELECT  DISTINCT A.BUCKET_ID AS Code, B.BUCKET_NAME AS Description
+    FROM IFRS_PD_VAS_CUMULATIVE A
+    JOIN IFRS_BUCKET_DETAIL B
+    ON A.BUCKET_GROUP = B.BUCKET_GROUP
+    AND A.BUCKET_ID = B.BUCKET_ID
+    WHERE A.EFF_DATE = v_eff_date
+    AND A.PD_RULE_ID = v_pd_rule_id
+    ORDER BY B.BUCKET_NAME;
+
+END;

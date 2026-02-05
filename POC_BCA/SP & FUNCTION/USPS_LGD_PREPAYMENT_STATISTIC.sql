@@ -1,0 +1,31 @@
+CREATE OR REPLACE PROCEDURE USPS_LGD_PREPAYMENT_STATISTIC
+(
+    V_PERIOD DATE DEFAULT '2000-01-01',
+    V_SegementationId Number DEFAULT 0,
+    V_Duration Number DEFAULT 0,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+
+    OPEN Cur_out FOR
+    Select  DISTINCT A.SEGMENTATION_ID || '_' ||  A.DURATION || '_' || A.REPORT_DATE || '_' || A.MASTERID as PKID,
+            A.REPORT_DATE as PERIOD,
+            B.PREPAYMENT_RULE_ID as PREPAYMENT_ID,
+            A.ACCOUNT_NUMBER as ACCOUNT_NUMBER,
+            A.CUSTOMER_NAME as CUSTOMER_NAME,
+            A.CUSTOMER_NUMBER as CUSTOMER_NUMBER,
+            A.CURRENCY as CURRENCY,
+            sum(A.RATE_AMOUNT) as AMOUNT
+            From IFRS_PREPAYMENT_DETAIL A
+                join IFRS_PREPAYMENT_HEADER B
+                on (A.SEGMENTATION_ID = B.SEGMENTATION_ID and A.DURATION = B.DURATION)
+            Where A.REPORT_DATE = V_PERIOD and A.SEGMENTATION_ID = V_SegementationId and A.DURATION = V_Duration
+            group by A.SEGMENTATION_ID || '_' ||  A.DURATION || '_' || A.REPORT_DATE || '_' || A.MASTERID,
+                     A.REPORT_DATE, B.PREPAYMENT_RULE_ID, B.PREPAYMENT_RULE_NAME,
+                     A.ACCOUNT_NUMBER,A.CURRENCY,B.DOWNLOAD_DATE,
+                     A.CUSTOMER_NAME, A.CUSTOMER_NUMBER,A.MASTERID
+            Order by PERIOD desc;
+
+
+END;

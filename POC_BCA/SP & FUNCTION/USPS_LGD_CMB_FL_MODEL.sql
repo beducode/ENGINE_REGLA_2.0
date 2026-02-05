@@ -1,0 +1,15 @@
+CREATE OR REPLACE PROCEDURE  USPS_LGD_CMB_FL_MODEL (
+    v_lgd_rule_id number,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+	OPEN Cur_out FOR
+
+    select distinct (A.FL_MODEL_NAME) AS "Description",
+           A.PKID  || '_' || A.SELECTED_MODEL_SEQ  as "Code"
+    FROM IFRS_FL_MODEL_VAR A
+    JOIN IFRS_LGD_RULES_CONFIG B
+          ON DEPENDENT_VAR_TYPE='LGD' and A.STATUS=1 and A.DEPENDENT_VAR_VALUE=B.PKID
+    WHERE A.DEPENDENT_VAR_VALUE = TO_CHAR(v_lgd_rule_id);
+END;

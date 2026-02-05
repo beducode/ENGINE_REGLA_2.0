@@ -1,0 +1,644 @@
+CREATE OR REPLACE PROCEDURE  SP_IFRS_LI_REPORT_RECON
+AS
+  V_CURRDATE DATE ;
+  V_PREVDATE DATE ;
+  --V_RETENTION_DATE DATE ;
+  --V_DAY_RETENTION INTEGER ;
+  V_ROUND NUMBER(10) ;
+  V_FUNCROUND NUMBER(10) ;
+  V_ISBOM NUMBER(10) ;
+  V_ISBOY NUMBER(10);
+
+BEGIN
+
+    /******************************************************************************
+    01. DECLARE VARIABLE
+    *******************************************************************************/
+    SELECT  MAX(CURRDATE) ,  MAX(PREVDATE)
+    INTO V_CURRDATE, V_PREVDATE
+    FROM    IFRS_LI_PRC_DATE_AMORT ;
+
+    V_ROUND := 6 ;
+    V_FUNCROUND := 1 ;
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP ,'START' , 'SP_IFRS_LI_REPORT_RECON' ,'');
+
+
+    V_ISBOM := CASE WHEN TO_CHAR (V_CURRDATE, 'YYYYMMDD') <> TO_CHAR (V_PREVDATE, 'YYYYMMDD') THEN 1  ELSE 0  END ;
+    V_ISBOY := CASE WHEN TO_CHAR (V_CURRDATE, 'YYYYMMDD') <> TO_CHAR (V_PREVDATE, 'YYYYMMDD') THEN 1  ELSE 0  END ;
+
+    /* MOVING TO SP ARCHIVING..
+    V_DAY_RETENTION := 10 ;
+    V_RETENTION_DATE := DATEADD(DAY, -1 * V_DAY_RETENTION,v_currdate) ;
+    */
+    BEGIN
+      SELECT CAST(VALUE1 AS NUMBER(10))
+           , CAST(VALUE2 AS NUMBER(10))
+      INTO V_ROUND, V_FUNCROUND
+      FROM TBLM_COMMONCODEDETAIL
+      WHERE COMMONCODE = 'SCM003';
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        V_ROUND := 2;
+        V_FUNCROUND:=0;
+    END;
+
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE , DTM , OPS , PROCNAME , REMARK )
+    VALUES  ( V_CURRDATE , SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_LI_REPORT_RECON' ,'Cleanup' );
+
+    COMMIT;
+
+    /******************************************************************************
+    02. DELETE
+    *******************************************************************************/
+    DELETE  IFRS_LI_LOAN_REPORT_RECON
+    WHERE   DOWNLOAD_DATE = V_CURRDATE ;
+
+    COMMIT;
+
+    /******************************************************************************
+    03. INSERT INTO TMP_LI_JOURNAL_PARAM
+    *******************************************************************************/
+    EXECUTE IMMEDIATE  'TRUNCATE TABLE TMP_LI_JOURNAL_PARAM' ;
+
+    COMMIT;
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE , DTM , OPS , PROCNAME , REMARK )
+    VALUES  ( V_CURRDATE , SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_LI_REPORT_RECON' ,'INSERT TT_JOURNAL_PARAM' );
+
+    COMMIT;
+
+    INSERT  INTO TMP_LI_JOURNAL_PARAM
+    ( GL_CONSTNAME ,
+      TRX_CODE,
+      FLAG_CF ,
+      JOURNALCODE ,
+      DRCR ,
+      GLNO ,
+      GL_INTERNAL_CODE ,
+      COSTCENTER ,
+      JOURNAL_DESC ,
+      CCY
+    )
+    SELECT  GL_CONSTNAME ,
+						TRX_CODE ,
+						FLAG_CF ,
+						JOURNALCODE ,
+						DRCR ,
+						GLNO ,
+						GL_INTERNAL_CODE ,
+						COSTCENTER ,
+						JOURNAL_DESC ,
+						CCY
+    FROM    IFRS_LI_JOURNAL_PARAM
+    WHERE   JOURNALCODE IN ( 'ACCRU', 'ACCRU_NE', 'ITRCG', 'ITRCG_SL', 'ACCRU_SL', 'ADJMR', 'ITRCG_NE', 'ITRCG2', 'ITRCG2_SL','ITRCG1' ) ;
+
+
+    COMMIT;
+
+    /******************************************************************************
+    04. INSERT INTO TMP_LI_JOURNAL
+    *******************************************************************************/
+    EXECUTE IMMEDIATE  'TRUNCATE TABLE TMP_LI_JOURNAL' ;
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE , DTM , OPS , PROCNAME , REMARK )
+    VALUES  ( V_CURRDATE , SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_LI_REPORT_RECON' ,'INSERT TMP_LI_JOURNAL' );
+
+    COMMIT;
+
+    INSERT  INTO TMP_LI_JOURNAL
+    ( DOWNLOAD_DATE ,
+      MASTERID ,
+      ACCTNO ,
+      DATASOURCE ,
+      PRDTYPE ,
+      PRDCODE ,
+      TRXCODE ,
+      BRANCH ,
+      CCY ,
+      JOURNALCODE ,
+      DRCR ,
+      FLAG_CF ,
+      REVERSE ,
+      VALCTR_CODE ,
+      GLNO ,
+      ORG_AMOUNT ,
+      IDR_AMOUNT ,
+      CLS_AMOUNT ,
+      ACT_AMOUNT ,
+      --ORG_AMOUNT_SL ,
+      --IDR_AMOUNT_SL ,
+      METHOD
+    )
+    SELECT  V_CURRDATE ,
+            GL.MASTERID ,
+            GL.ACCTNO ,
+            GL.DATASOURCE ,
+            GL.PRDTYPE ,
+            GL.PRDCODE ,
+            GL.TRXCODE ,
+            GL.BRANCH ,
+            GL.CCY ,
+            GL.JOURNALCODE ,
+            GL.DRCR ,
+            GL.FLAG_CF ,
+            GL.REVERSE ,
+            GL.VALCTR_CODE ,
+            GL.GLNO ,
+            SUM(CASE WHEN GL.DRCR = 'C' THEN GL.N_AMOUNT  ELSE GL.N_AMOUNT * -1  END) AS ORG_AMOUNT ,
+            SUM( CASE WHEN GL.DRCR = 'C' THEN GL.N_AMOUNT_IDR * NVL(1, 1)  ELSE GL.N_AMOUNT_IDR * NVL(1, 1)  * -1  END  ) AS IDR_AMOUNT ,
+            0 CLS_AMOUNT ,
+            0 ACT_AMOUNT ,
+            /*
+            SUM(CASE WHEN METHOD = 'SL'  THEN CASE WHEN GL.DRCR = 'C' THEN GL.N_AMOUNT ELSE GL.N_AMOUNT * -1  END
+                     ELSE 0  END) AS ORG_AMOUNT_SL ,
+            SUM(CASE WHEN METHOD = 'SL' THEN CASE WHEN GL.DRCR = 'C' THEN GL.N_AMOUNT_IDR * ISNULL(1, 1)
+                     ELSE GL.N_AMOUNT_IDR * ISNULL(1, 1) * -1  END
+                     ELSE 0 END) AS IDR_AMOUNT_SL ,
+            */
+            METHOD
+    FROM    IFRS_LI_ACCT_JOURNAL_DATA GL
+    WHERE   GL.DOWNLOAD_DATE = V_CURRDATE
+    --and  GL.JOURNALCODE2 <> 'ITRCG1'
+    GROUP BY GL.MASTERID ,
+             GL.ACCTNO ,
+             GL.DATASOURCE ,
+             GL.PRDTYPE ,
+             GL.PRDCODE ,
+             GL.TRXCODE ,
+             GL.BRANCH ,
+             GL.CCY ,
+             GL.JOURNALCODE ,
+             GL.DRCR ,
+             GL.FLAG_CF ,
+             GL.REVERSE ,
+             GL.VALCTR_CODE ,
+             GL.GLNO ,
+             METHOD ;
+    COMMIT;
+
+    /******************************************************************************
+    05. INSERT CURRENT DATE DATA
+    *******************************************************************************/
+
+    EXECUTE IMMEDIATE  'TRUNCATE TABLE TMP_IFRS_LI_LOAN_REPORT_RECON' ;
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE , DTM , OPS , PROCNAME , REMARK )
+    VALUES  ( V_CURRDATE , SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_LI_REPORT_RECON' ,'INSERT TT_PSAK_RECON CURR' );
+
+    COMMIT;
+
+    INSERT  INTO TMP_IFRS_LI_LOAN_REPORT_RECON
+    ( DOWNLOAD_DATE ,
+                  MASTERID ,
+                  ACCOUNT_NUMBER ,
+                  BRANCH_CODE ,
+                  TRANSACTION_CODE ,
+                  CCY ,
+                  INITIAL_GL_FEE_AMT ,
+                  INITIAL_GL_COST_AMT ,
+                  UNAMORT_GL_FEE_AMT ,
+                  UNAMORT_GL_COST_AMT ,
+                  AMORT_GL_FEE_AMT ,
+                  DAILY_AMORT_GL_FEE_AMT ,
+                  MTD_AMORT_GL_FEE_AMT ,
+                  YTD_AMORT_GL_FEE_AMT ,
+                  AMORT_GL_COST_AMT ,
+                  DAILY_AMORT_GL_COST_AMT ,
+                  MTD_AMORT_GL_COST_AMT ,
+                  YTD_AMORT_GL_COST_AMT,
+		  AMORT_OTH_GL_FEE_AMT,
+		  DAILY_AMORT_OTH_GL_FEE_AMT,
+		  MTD_AMORT_OTH_GL_FEE_AMT,
+		  YTD_AMORT_OTH_GL_FEE_AMT,
+		  AMORT_OTH_GL_COST_AMT,
+		  DAILY_AMORT_OTH_GL_COST_AMT,
+		  MTD_AMORT_OTH_GL_COST_AMT,
+		  YTD_AMORT_OTH_GL_COST_AMT,
+				  METHOD
+    )
+    SELECT  A.DOWNLOAD_DATE ,
+                        A.MASTERID ,
+                        A.ACCTNO ,
+                        A.BRANCH ,
+                        A.TRXCODE ,
+                        A.CCY ,
+                        SUM(CASE WHEN A.JOURNALCODE = 'DEFA0'  AND A.GLNO = X1.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS INITIAL_GL_FEE_AMT ,
+                        SUM(CASE WHEN A.JOURNALCODE = 'DEFA0'  AND A.GLNO = X4.GLNO  THEN A.ORG_AMOUNT ELSE 0  END) AS INITIAL_GL_COST_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'F' AND A.GLNO = X2.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS UNAMORT_GL_FEE_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'C' AND A.GLNO = X5.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS UNAMORT_GL_COST_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'F' AND A.GLNO = X3.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS AMORT_GL_FEE_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'F' AND A.GLNO = X3.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS DAILY_AMORT_GL_FEE_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'F' AND A.GLNO = X3.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS MTD_AMORT_GL_FEE_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'F' AND A.GLNO = X3.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS YTD_AMORT_GL_FEE_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'C' AND A.GLNO = X6.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS AMORT_GL_COST_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'C' AND A.GLNO = X6.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS DAILY_AMORT_GL_COST_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'C' AND A.GLNO = X6.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS MTD_AMORT_GL_COST_AMT ,
+                        SUM(CASE WHEN A.FLAG_CF = 'C' AND A.GLNO = X6.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS YTD_AMORT_GL_COST_AMT,
+			--PENAMBAHAN OTHER
+			SUM(CASE WHEN A.FLAG_CF = 'F' AND A.GLNO = X7.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS AMORT_OTH_GL_FEE_AMT,
+                        SUM(CASE WHEN A.FLAG_CF = 'F' AND A.GLNO = X7.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS DAILY_AMORT_OTH_GL_FEE_AMT,
+                        SUM(CASE WHEN A.FLAG_CF = 'F' AND A.GLNO = X7.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS MTD_AMORT_OTH_GL_FEE_AMT,
+                        SUM(CASE WHEN A.FLAG_CF = 'F' AND A.GLNO = X7.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS YTD_AMORT_OTH_GL_FEE_AMT,
+                        SUM(CASE WHEN A.FLAG_CF = 'C' AND A.GLNO = X6.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS AMORT_OTH_GL_COST_AMT,
+                        SUM(CASE WHEN A.FLAG_CF = 'C' AND A.GLNO = X6.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS DAILY_AMORT_OTH_GL_COST_AMT,
+                        SUM(CASE WHEN A.FLAG_CF = 'C' AND A.GLNO = X6.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS MTD_AMORT_OTH_GL_COST_AMT,
+			SUM(CASE WHEN A.FLAG_CF = 'C' AND A.GLNO = X6.GLNO THEN A.ORG_AMOUNT ELSE 0  END) AS YTD_AMORT_OTH_GL_COST_AMT,
+                        METHOD
+    FROM TMP_LI_JOURNAL A
+    LEFT JOIN ( SELECT DISTINCT GLNO FROM TMP_LI_JOURNAL_PARAM
+                WHERE   JOURNALCODE IN ( 'ITRCG','ITRCG_SL', 'ITRCG2','ITRCG2_SL', 'ITRCG_NE','ITRCG1' )
+                AND DRCR = 'C'
+                AND FLAG_CF = 'F'
+              ) X1 ON A.GLNO = X1.GLNO
+    --UNAMORT FEE GL
+    LEFT JOIN ( SELECT DISTINCT GLNO FROM TMP_LI_JOURNAL_PARAM
+                WHERE   JOURNALCODE IN ( 'ACCRU','ACCRU_SL', 'ACCRU_NE' )
+                AND DRCR = 'D'
+                AND FLAG_CF = 'F'
+              ) X2 ON A.GLNO = X2.GLNO
+    --AMORT FEE GL
+    LEFT JOIN ( SELECT DISTINCT GLNO FROM TMP_LI_JOURNAL_PARAM
+                WHERE   JOURNALCODE IN ( 'ACCRU','ACCRU_SL', 'ACCRU_NE' )
+                AND DRCR = 'C'
+                AND FLAG_CF = 'F'
+                ) X3 ON A.GLNO = X3.GLNO
+    --INITIAL COST GL
+    LEFT JOIN ( SELECT DISTINCT GLNO FROM TMP_LI_JOURNAL_PARAM
+                WHERE   JOURNALCODE IN ( 'ITRCG','ITRCG_SL', 'ITRCG2','ITRCG2_SL', 'ITRCG_NE','ITRCG1' )
+                AND DRCR = 'D'
+                AND FLAG_CF = 'C'
+              ) X4 ON A.GLNO = X4.GLNO
+    LEFT JOIN ( SELECT DISTINCT GLNO FROM TMP_LI_JOURNAL_PARAM
+                WHERE   JOURNALCODE IN ( 'ACCRU','ACCRU_SL', 'ACCRU_NE')
+                AND DRCR = 'C'
+                AND FLAG_CF = 'C'
+              ) X5 ON A.GLNO = X5.GLNO
+    LEFT JOIN ( SELECT DISTINCT GLNO FROM TMP_LI_JOURNAL_PARAM
+                WHERE   JOURNALCODE IN ( 'ACCRU','ACCRU_SL', 'ACCRU_NE' )
+                AND DRCR = 'D'
+                AND FLAG_CF = 'C'
+              ) X6 ON A.GLNO = X6.GLNO
+    --AMORT OTHER FEE
+    LEFT JOIN ( SELECT DISTINCT GLNO FROM TMP_LI_JOURNAL_PARAM
+  		WHERE JOURNALCODE IN ('OTHER')
+   		AND DRCR = 'C'
+   		AND FLAG_CF = 'F'
+              ) X7 ON A.GLNO = X7.GLNO
+    --AMORT OTHER COST
+    LEFT JOIN ( SELECT DISTINCT GLNO FROM TMP_LI_JOURNAL_PARAM
+                WHERE JOURNALCODE IN ('OTHER')
+                AND DRCR = 'C'
+                AND FLAG_CF = 'F'
+              ) X8 ON A.GLNO = X8.GLNO
+    GROUP BY A.DOWNLOAD_DATE ,
+						 A.MASTERID ,
+						 A.ACCTNO ,
+						 A.BRANCH ,
+						 A.TRXCODE ,
+						 A.CCY ,
+						 A.METHOD;
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE , DTM , OPS , PROCNAME , REMARK )
+    VALUES  ( V_CURRDATE , SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_LI_REPORT_RECON' ,'INSERT TT_IFRS_RECON PREV' );
+
+    COMMIT;
+
+    /******************************************************************************
+    06. INSERT PREVIOUS DATE DATA
+    *******************************************************************************/
+    INSERT  INTO TMP_IFRS_LI_LOAN_REPORT_RECON
+    ( DOWNLOAD_DATE ,
+      MASTERID ,
+      ACCOUNT_NUMBER ,
+      BRANCH_CODE ,
+      TRANSACTION_CODE ,
+      CCY ,
+      INITIAL_GL_FEE_AMT ,
+      INITIAL_GL_COST_AMT ,
+      UNAMORT_GL_FEE_AMT ,
+      UNAMORT_GL_COST_AMT ,
+      AMORT_GL_FEE_AMT ,
+      DAILY_AMORT_GL_FEE_AMT ,
+      MTD_AMORT_GL_FEE_AMT ,
+      YTD_AMORT_GL_FEE_AMT ,
+      AMORT_GL_COST_AMT ,
+      DAILY_AMORT_GL_COST_AMT ,
+      MTD_AMORT_GL_COST_AMT ,
+      YTD_AMORT_GL_COST_AMT ,
+      AMORT_OTH_GL_FEE_AMT ,
+      DAILY_AMORT_OTH_GL_FEE_AMT ,
+      MTD_AMORT_OTH_GL_FEE_AMT ,
+      YTD_AMORT_OTH_GL_FEE_AMT ,
+      AMORT_OTH_GL_COST_AMT ,
+      DAILY_AMORT_OTH_GL_COST_AMT ,
+      MTD_AMORT_OTH_GL_COST_AMT ,
+      YTD_AMORT_OTH_GL_COST_AMT ,
+      METHOD
+    )
+    SELECT  V_CURRDATE ,
+            A.MASTERID ,
+            A.ACCOUNT_NUMBER ,
+            A.BRANCH_CODE ,
+            A.TRANSACTION_CODE ,
+            A.CCY ,
+            A.INITIAL_GL_FEE_AMT ,
+            A.INITIAL_GL_COST_AMT ,
+            A.UNAMORT_GL_FEE_AMT ,
+            A.UNAMORT_GL_COST_AMT ,
+            A.AMORT_GL_FEE_AMT ,
+            0 AS DAILY_AMORT_GL_FEE_AMT ,
+            CASE WHEN V_ISBOM = 0 THEN MTD_AMORT_GL_FEE_AMT ELSE 0  END AS MTD_AMORT_GL_FEE_AMT ,
+            CASE WHEN V_ISBOY = 0 THEN YTD_AMORT_GL_FEE_AMT ELSE 0  END AS YTD_AMORT_GL_FEE_AMT ,
+            A.AMORT_GL_COST_AMT ,
+            0 AS DAILY_AMORT_GL_COST_AMT ,
+            CASE WHEN V_ISBOM = 0 THEN MTD_AMORT_GL_COST_AMT ELSE 0 END AS MTD_AMORT_GL_COST_AMT ,
+            CASE WHEN V_ISBOY = 0 THEN YTD_AMORT_GL_COST_AMT ELSE 0 END AS YTD_AMORT_GL_COST_AMT ,
+	    --PENAMBAHAN OTHER
+            A.AMORT_OTH_GL_FEE_AMT ,
+            0 AS DAILY_AMORT_OTH_GL_FEE_AMT,
+            CASE WHEN V_ISBOM = 0 THEN MTD_AMORT_OTH_GL_FEE_AMT ELSE 0 END AS MTD_AMORT_OTH_GL_FEE_AMT ,
+            CASE WHEN V_ISBOY = 0 THEN YTD_AMORT_OTH_GL_FEE_AMT ELSE 0 END AS YTD_AMORT_OTH_GL_FEE_AMT ,
+            A.AMORT_OTH_GL_COST_AMT ,
+            0 AS DAILY_AMORT_OTH_GL_COST_AMT ,
+            CASE WHEN V_ISBOM = 0 THEN MTD_AMORT_OTH_GL_COST_AMT ELSE 0 END AS MTD_AMORT_OTH_GL_COST_AMT ,
+            CASE WHEN V_ISBOY = 0 THEN YTD_AMORT_OTH_GL_COST_AMT ELSE 0 END AS YTD_AMORT_OTH_GL_COST_AMT ,
+            METHOD
+    FROM    IFRS_LI_LOAN_REPORT_RECON A
+    WHERE   A.DOWNLOAD_DATE = V_PREVDATE ;
+
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE , DTM , OPS , PROCNAME , REMARK )
+    VALUES  ( V_CURRDATE , SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_LI_REPORT_RECON' ,'INSERT PSAK_RECON' );
+
+    COMMIT;
+
+    /******************************************************************************
+    07. INSERT INTO IFRS_LI_LOAN_REPORT_RECON
+    *******************************************************************************/
+    INSERT  INTO IFRS_LI_LOAN_REPORT_RECON
+    ( DOWNLOAD_DATE ,
+                  MASTERID ,
+                  ACCOUNT_NUMBER ,
+                  TRANSACTION_CODE ,
+                  CCY ,
+                  UNAMORT_GL_FEE_AMT ,
+                  UNAMORT_GL_COST_AMT ,
+                  AMORT_GL_FEE_AMT ,
+                  DAILY_AMORT_GL_FEE_AMT ,
+                  MTD_AMORT_GL_FEE_AMT ,
+                  YTD_AMORT_GL_FEE_AMT ,
+                  AMORT_GL_COST_AMT ,
+                  DAILY_AMORT_GL_COST_AMT ,
+                  MTD_AMORT_GL_COST_AMT ,
+                  YTD_AMORT_GL_COST_AMT,
+		  AMORT_OTH_GL_FEE_AMT ,
+		  DAILY_AMORT_OTH_GL_FEE_AMT ,
+		  MTD_AMORT_OTH_GL_FEE_AMT ,
+		  YTD_AMORT_OTH_GL_FEE_AMT ,
+		  AMORT_OTH_GL_COST_AMT ,
+		  DAILY_AMORT_OTH_GL_COST_AMT ,
+		  MTD_AMORT_OTH_GL_COST_AMT ,
+		  YTD_AMORT_OTH_GL_COST_AMT ,
+				  METHOD
+    )
+    SELECT X.DOWNLOAD_DATE
+  ,X.MASTERID
+  ,X.ACCOUNT_NUMBER
+  ,X.TRANSACTION_CODE
+  ,X.CCY
+  ,SUM(X.UNAMORT_GL_FEE_AMT)
+  ,SUM(X.UNAMORT_GL_COST_AMT)
+  ,SUM(X.AMORT_GL_FEE_AMT)
+  ,SUM(X.DAILY_AMORT_GL_FEE_AMT)
+  ,SUM(X.MTD_AMORT_GL_FEE_AMT)
+  ,SUM(X.YTD_AMORT_GL_FEE_AMT)
+  ,SUM(X.AMORT_GL_COST_AMT)
+  ,SUM(X.DAILY_AMORT_GL_COST_AMT)
+  ,SUM(X.MTD_AMORT_GL_COST_AMT)
+  ,SUM(X.YTD_AMORT_GL_COST_AMT)
+  ,SUM(AMORT_OTH_GL_FEE_AMT)
+  ,SUM(X.DAILY_AMORT_OTH_GL_FEE_AMT)
+  ,SUM(X.MTD_AMORT_OTH_GL_FEE_AMT)
+  ,SUM(X.YTD_AMORT_OTH_GL_FEE_AMT)
+  ,SUM(X.AMORT_OTH_GL_COST_AMT)
+  ,SUM(X.DAILY_AMORT_OTH_GL_COST_AMT)
+  ,SUM(X.MTD_AMORT_OTH_GL_COST_AMT)
+  ,SUM(X.YTD_AMORT_OTH_GL_COST_AMT)
+  ,X.METHOD     FROM TMP_LI_LOAN_REPORT_RECON X
+ WHERE X.DOWNLOAD_DATE = V_CURRDATE
+ GROUP BY X.DOWNLOAD_DATE
+  ,X.MASTERID
+  ,X.ACCOUNT_NUMBER
+  ,X.TRANSACTION_CODE
+  ,X.CCY
+  ,X.METHOD;
+
+    COMMIT;
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE , DTM , OPS , PROCNAME , REMARK )
+    VALUES  ( V_CURRDATE , SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_LI_REPORT_RECON' ,'UPD PSAK_RECON' );
+
+    COMMIT;
+    /******************************************************************************
+    08. UPDATE DATA FROM PREV DATE
+    *******************************************************************************/
+    MERGE INTO IFRS_LI_LOAN_REPORT_RECON A
+    USING (SELECT DISTINCT DOWNLOAD_DATE
+                          ,MASTERID
+                          ,TRANSACTION_CODE
+                          ,INITIAL_TRX_COST_AMT
+                          ,INITIAL_TRX_FEE_AMT
+                          ,FACILITY_NUMBER
+                          ,CUSTOMER_NAME
+                          ,BRANCH_CODE
+                          ,DATA_SOURCE
+                          ,PRODUCT_CODE
+                          ,PRODUCT_TYPE
+                          ,JF_FLAG
+                          ,EXCHANGE_RATE
+                          ,BI_COLLECTABILITY
+                          ,DAY_PAST_DUE
+                          ,INTEREST_RATE
+                          ,EIR
+                          ,LOAN_START_DATE
+                          ,LOAN_DUE_DATE
+                          ,OUTSTANDING
+                          ,OUTSTANDING_JF
+                          ,OUTSTANDING_BANK
+                          ,PLAFOND
+                          ,METHOD
+           FROM IFRS_LI_LOAN_REPORT_RECON
+          )B
+    ON (A.MASTERID = B.MASTERID
+        AND A.DOWNLOAD_DATE = V_CURRDATE
+        AND B.DOWNLOAD_DATE = V_PREVDATE
+        /*20180801 UPDATED BY VIVI
+          CANNOT UPDATE BEFORE, BECAUSE DOUBLE*/
+        AND A.TRANSACTION_CODE=B.TRANSACTION_CODE
+        AND A.INITIAL_TRX_COST_AMT=B.INITIAL_TRX_COST_AMT
+        AND A.INITIAL_TRX_FEE_AMT=B.INITIAL_TRX_FEE_AMT
+       )
+    WHEN MATCHED THEN
+    UPDATE
+    SET A.FACILITY_NUMBER = B.FACILITY_NUMBER ,
+        A.CUSTOMER_NAME = B.CUSTOMER_NAME ,
+        A.BRANCH_CODE = B.BRANCH_CODE ,
+        A.DATA_SOURCE = B.DATA_SOURCE ,
+        A.PRODUCT_CODE = B.PRODUCT_CODE ,
+        A.PRODUCT_TYPE = B.PRODUCT_TYPE ,
+        A.JF_FLAG = B.JF_FLAG ,
+        --A.CURRENCY               = B.CURRENCY,
+        A.EXCHANGE_RATE = B.EXCHANGE_RATE ,
+        --A.DEPARTMENT             = B.DEPARTEMEN,
+        --A.SEGMENTATION           = B.FACILITY_DESC,
+        A.BI_COLLECTABILITY = B.BI_COLLECTABILITY ,
+        A.DAY_PAST_DUE = B.DAY_PAST_DUE ,
+        A.INTEREST_RATE = B.INTEREST_RATE ,
+        A.EIR = B.EIR ,
+        A.LOAN_START_DATE = B.LOAN_START_DATE ,
+        A.LOAN_DUE_DATE = B.LOAN_DUE_DATE ,
+        A.OUTSTANDING = B.OUTSTANDING ,
+        A.OUTSTANDING_JF = B.OUTSTANDING_JF ,
+        A.OUTSTANDING_BANK = B.OUTSTANDING_BANK ,
+        A.PLAFOND = B.PLAFOND,
+        A.METHOD = B.METHOD;
+
+    COMMIT;
+
+    /******************************************************************************
+    09. UPDATE FIELDS FROM MASTER ACCOUNT FROM CURRDATE
+    *******************************************************************************/
+    MERGE INTO IFRS_LI_LOAN_REPORT_RECON A
+    USING IFRS_LI_MASTER_ACCOUNT B
+    --USING IFRS_LI_MASTER_ACCOUNT_ACV B
+    ON ( A.MASTERID = B.MASTERID
+    AND A.DOWNLOAD_DATE = V_CURRDATE
+    AND B.DOWNLOAD_DATE = V_CURRDATE
+    )
+    WHEN MATCHED THEN
+    UPDATE SET
+            A.FACILITY_NUMBER = B.FACILITY_NUMBER ,
+            A.CUSTOMER_NAME = B.CUSTOMER_NAME ,
+            A.BRANCH_CODE = B.BRANCH_CODE ,
+            A.DATA_SOURCE = B.DATA_SOURCE ,
+            A.PRODUCT_CODE = B.PRODUCT_CODE ,
+            A.PRODUCT_TYPE = B.PRODUCT_TYPE ,
+            A.JF_FLAG = B.JF_FLAG ,
+           --A.CURRENCY               = B.CURRENCY,
+            A.EXCHANGE_RATE = B.EXCHANGE_RATE ,
+           --A.DEPARTMENT             = B.DEPARTEMEN,
+           --A.SEGMENTATION           = B.FACILITY_DESC,
+            A.BI_COLLECTABILITY = B.BI_COLLECTABILITY ,
+            A.DAY_PAST_DUE = B.DAY_PAST_DUE ,
+            A.INTEREST_RATE = B.INTEREST_RATE ,
+            A.EIR = B.EIR ,
+            A.LOAN_START_DATE = B.LOAN_START_DATE ,
+            A.LOAN_DUE_DATE = B.LOAN_DUE_DATE ,
+            A.OUTSTANDING = B.OUTSTANDING ,
+            A.OUTSTANDING_JF = B.OUTSTANDING_JF ,
+            A.OUTSTANDING_BANK = B.OUTSTANDING_BANK ,
+            A.PLAFOND = B.PLAFOND ,
+            A.UNAMORT_MASTER_FEE_AMT = NVL(B.UNAMORT_FEE_AMT, 0) ,
+            A.UNAMORT_MASTER_FEE_NONEIR_AMT = NVL(B.UNAMORT_FEE_AMT_JF, 0) ,
+            A.UNAMORT_MASTER_COST_AMT = NVL(B.UNAMORT_COST_AMT, 0) ,
+            A.UNAMORT_MASTER_COST_NONEIR_AMT = NVL(B.UNAMORT_COST_AMT_JF, 0),
+            A.METHOD = B.AMORT_TYPE;
+            --A.UNAMORT_MASTER_FEE_AMT = ROUND(ISNULL(B.UNAMOR_ORIGINATION_FEE_AMT,0), @V_ROUND, @v_FuncRound) + ROUND(ISNULL(B.UNAMOR_ORIGINATION_FEE_AMT_SL,0), @V_ROUND, @v_FuncRound),
+            --A.UNAMORT_MASTER_COST_AMT = ROUND(ISNULL(B.UNAMOR_TRANS_COST_AMT,0), @V_ROUND,@v_FuncRound) + ROUND(ISNULL(B.UNAMOR_TRANS_COST_AMT_SL,0), @V_ROUND, @v_FuncRound) ;
+
+    --INITIAL TRX AMOUNT
+   MERGE INTO IFRS_LI_LOAN_REPORT_RECON A
+   USING
+   (SELECT A.DOWNLOAD_DATE, A.MASTER_ID, B.INITIAL_TRX_FEE_AMT, B.INITIAL_TRX_COST_AMT, C.FEE_AMOUNT, C.COST_AMOUNT
+     FROM    IFRS_LI_LOAN_REPORT_RECON A
+     LEFT JOIN IFRS_LI_LOAN_REPORT_RECON B
+     ON A.MASTERID = B.MASTERID
+        AND B.DOWNLOAD_DATE = V_PREVDATE
+     LEFT JOIN
+     ( SELECT  TRX.MASTERID ,
+       SUM(TRX.AMOUNT_FEE) AS FEE_AMOUNT ,
+       SUM(TRX.AMOUNT_COST) AS COST_AMOUNT
+       FROM IFRS_LI_ACCT_COST_FEE_SUMM TRX
+       WHERE TRX.DOWNLOAD_DATE = V_CURRDATE
+       GROUP BY TRX.MASTERID
+      ) C ON A.MASTERID = C.MASTERID
+      WHERE A.DOWNLOAD_DATE = V_CURRDATE
+    ) B
+    ON (A.DOWNLOAD_DATE = B.DOWNLOAD_DATE AND A.MASTER_ID = B.MASTER_ID)
+    WHEN MATCHED THEN
+    UPDATE
+    SET A.INITIAL_TRX_FEE_AMT = NVL(B.FEE_AMOUNT, B.INITIAL_TRX_FEE_AMT) ,
+       A.INITIAL_TRX_COST_AMT = NVL(B.COST_AMOUNT, B.INITIAL_TRX_COST_AMT);
+
+    COMMIT;
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE , DTM , OPS , PROCNAME , REMARK )
+    VALUES  ( V_CURRDATE , SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_LI_REPORT_RECON' ,'UPD COUNTER RECON' );
+
+    COMMIT;
+    /******************************************************************************
+    10. UPDATE COUNTER CHECK MASTER ACCOUNT
+    *******************************************************************************/
+    MERGE INTO IFRS_LI_LOAN_REPORT_RECON A
+    USING (SELECT A.COUNTER_CHECK_FEE AS COUNTER_CHECK_FEE
+                  ,A.COUNTER_CHECK_COST AS COUNTER_CHECK_COST
+                  ,Z.FLAG_AL AS FLAG_AL
+                  ,SUMM.INITIAL_TRX_FEE_AMT AS INITIAL_TRX_FEE_AMT
+                  ,SUMM.UNAMORT_GL_FEE_AMT AS UNAMORT_GL_FEE_AMT
+                  ,SUMM.AMORT_GL_FEE_AMT AS AMORT_GL_FEE_AMT
+                  ,A.UNAMORT_MASTER_FEE_AMT AS UNAMORT_MASTER_FEE_AMT
+                  ,SUMM.INITIAL_TRX_COST_AMT AS INITIAL_TRX_COST_AMT
+                  ,SUMM.UNAMORT_GL_COST_AMT AS UNAMORT_GL_COST_AMT
+                  ,SUMM.AMORT_GL_COST_AMT AS AMORT_GL_COST_AMT
+                  ,A.UNAMORT_MASTER_COST_AMT AS UNAMORT_MASTER_COST_AMT
+                  ,A.DOWNLOAD_DATE
+                  ,A.MASTERID
+                  ,A.ACCOUNT_NUMBER
+                  ,A.FACILITY_NUMBER
+                  ,A.BRANCH_CODE
+                  ,A.PRODUCT_CODE
+
+            FROM IFRS_LI_LOAN_REPORT_RECON A
+            INNER JOIN ( SELECT MASTERID ,
+                                SUM(X.INITIAL_TRX_FEE_AMT) INITIAL_TRX_FEE_AMT ,
+                                SUM(X.UNAMORT_GL_FEE_AMT) UNAMORT_GL_FEE_AMT ,
+                                SUM(X.AMORT_GL_FEE_AMT) AMORT_GL_FEE_AMT ,
+                                SUM(X.INITIAL_TRX_COST_AMT) INITIAL_TRX_COST_AMT ,
+                                SUM(X.UNAMORT_GL_COST_AMT) UNAMORT_GL_COST_AMT ,
+                                SUM(X.AMORT_GL_COST_AMT) AMORT_GL_COST_AMT ,
+				SUM(X.AMORT_OTH_GL_FEE_AMT) AMORT_OTH_GL_FEE_AMT ,
+                                SUM(X.AMORT_OTH_GL_COST_AMT) AMORT_OTH_GL_COST_AMT
+                         FROM   IFRS_LI_LOAN_REPORT_RECON X
+                         WHERE  X.DOWNLOAD_DATE = V_CURRDATE
+                         GROUP BY MASTERID
+                       ) SUMM ON SUMM.MASTERID = A.MASTERID
+            LEFT JOIN IFRS_LI_PRODUCT_PARAM Z
+						ON A.DATA_SOURCE = Z.DATA_SOURCE
+            AND A.PRODUCT_CODE= Z.PRD_CODE
+            AND A.PRODUCT_TYPE = Z.PRD_TYPE
+            AND (A.CCY = Z.CCY OR Z.CCY = 'ALL')
+            WHERE   A.DOWNLOAD_DATE = V_CURRDATE
+           ) B
+    ON (A.DOWNLOAD_DATE=B.DOWNLOAD_DATE
+        AND A.MASTERID=B.MASTERID
+        AND A.ACCOUNT_NUMBER=B.ACCOUNT_NUMBER
+        AND A.FACILITY_NUMBER=B.FACILITY_NUMBER
+        AND A.BRANCH_CODE=B.BRANCH_CODE
+        AND A.PRODUCT_CODE=B.PRODUCT_CODE)
+    WHEN MATCHED THEN
+    UPDATE
+    SET A.COUNTER_CHECK_FEE = CASE WHEN B.FLAG_AL = 'L' THEN ROUND( (B.INITIAL_TRX_FEE_AMT - B.UNAMORT_GL_FEE_AMT - B.AMORT_GL_FEE_AMT - B.AMORT_OTH_GL_FEE_AMT) + ( A.UNAMORT_MASTER_FEE_AMT - B.UNAMORT_GL_FEE_AMT ),V_ROUND)
+                                 ELSE ROUND( (B.INITIAL_TRX_FEE_AMT - B.UNAMORT_GL_FEE_AMT + B.AMORT_GL_FEE_AMT + B.AMORT_OTH_GL_FEE_AMT) + ( A.UNAMORT_MASTER_FEE_AMT - B.UNAMORT_GL_FEE_AMT    ), V_ROUND) END,
+        A.COUNTER_CHECK_COST = CASE WHEN B.FLAG_AL = 'L' THEN ROUND( (B.INITIAL_TRX_COST_AMT  - B.UNAMORT_GL_COST_AMT - B.AMORT_GL_COST_AMT - B.AMORT_OTH_GL_COST_AMT) + ( A.UNAMORT_MASTER_COST_AMT - B.UNAMORT_GL_COST_AMT ), V_ROUND)
+                                  ELSE ROUND( (B.INITIAL_TRX_COST_AMT  - B.UNAMORT_GL_COST_AMT + B.AMORT_GL_COST_AMT + B.AMORT_OTH_GL_COST_AMT) + ( A.UNAMORT_MASTER_COST_AMT -B.UNAMORT_GL_COST_AMT    ), V_ROUND)  END  ;
+
+    COMMIT;
+
+    INSERT  INTO IFRS_LI_AMORT_LOG ( DOWNLOAD_DATE , DTM , OPS , PROCNAME , REMARK )
+    VALUES  ( V_CURRDATE , SYSTIMESTAMP ,'END' ,'SP_IFRS_LI_REPORT_RECON' ,'' );
+
+    COMMIT;
+    END ;

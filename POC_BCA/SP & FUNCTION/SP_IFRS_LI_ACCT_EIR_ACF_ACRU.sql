@@ -1,0 +1,464 @@
+CREATE OR REPLACE PROCEDURE  SP_IFRS_LI_ACCT_EIR_ACF_ACRU
+AS
+    V_CURRDATE    DATE;
+    V_PREVDATE    DATE;
+	V_ROUND NUMBER(10);
+	V_FUNCROUND NUMBER(10);
+BEGIN
+
+    SELECT MAX(CURRDATE),MAX(PREVDATE)
+    INTO V_CURRDATE, V_PREVDATE
+    FROM IFRS_LI_PRC_DATE_AMORT;
+
+    BEGIN
+      SELECT CAST(VALUE1 AS NUMBER(10))
+           , CAST(VALUE2 AS NUMBER(10))
+      INTO V_ROUND, V_FUNCROUND
+      FROM TBLM_COMMONCODEDETAIL
+      WHERE COMMONCODE = 'SCM003';
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        V_ROUND := 2;
+        V_FUNCROUND:=0;
+    END;
+
+    COMMIT;
+
+
+    INSERT INTO IFRS_LI_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'START','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','');
+
+    COMMIT;
+    -- clean up
+    DELETE FROM IFRS_LI_ACCT_EIR_ACF
+    WHERE DOWNLOAD_DATE = V_CURRDATE AND DO_AMORT = 'N';
+
+    COMMIT;
+
+    DELETE FROM IFRS_LI_ACCT_EIR_COST_FEE_PREV
+    WHERE DOWNLOAD_DATE = V_CURRDATE AND CREATEDBY = 'EIRACF02';
+
+    COMMIT;
+
+    INSERT INTO IFRS_LI_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','CLEAN UP');
+    -- prepare index
+    --EXECUTE IMMEDIATE 'drop index psak_eir_ecf_idx1';
+    --EXECUTE IMMEDIATE 'drop index IMA_AMORT_CURR_idx1';
+    --EXECUTE IMMEDIATE 'create index psak_eir_ecf_idx1 on IFRS_LI_ACCT_EIR_ECF(masterid,prev_pmt_date,pmt_date,amortstopdate)';
+    --EXECUTE IMMEDIATE 'create index IMA_AMORT_CURR_idx1 on IFRS_LI_ACCT_EIR_ECF(masterid)';
+   COMMIT;
+    -- insert acf
+    INSERT INTO IFRS_LI_ACCT_EIR_ACF
+    (DOWNLOAD_DATE,
+     FACNO,
+     CIFNO,
+     DATASOURCE,
+     N_UNAMORT_COST,
+     N_UNAMORT_FEE,
+     N_AMORT_COST,
+     N_AMORT_FEE,
+     N_ACCRU_COST,
+     N_ACCRU_FEE,
+     N_ACCRUFULL_COST,
+     N_ACCRUFULL_FEE,
+     ECFDATE,
+     CREATEDDATE,
+     CREATEDBY,
+     MASTERID,
+     ACCTNO,
+     DO_AMORT,
+     BRANCH,
+     ACF_CODE,
+     FLAG_AL -- AR : additional asset / liab flag
+     ,N_ACCRU_NOCF -- from no cost fee ecf
+     ,N_UNAMORT_NOCF
+     ,N_UNAMORT_PREV_NOCF
+    )
+    SELECT V_CURRDATE AS DOWNLOAD_DATE,--m.DOWNLOAD_DATE,
+           M.FACILITY_NUMBER,
+           M.CUSTOMER_NUMBER,
+           M.DATA_SOURCE,
+           CASE WHEN CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) > 1
+                  THEN (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV)
+                ELSE ROUND(CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE)* (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV),V_ROUND)
+           END + A.N_COST_UNAMORT_AMT_PREV,
+
+           CASE WHEN CAST ((V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) > 1
+                  THEN (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV)
+                ELSE ROUND(CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) * (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV),V_ROUND)
+           END+ A.N_FEE_UNAMORT_AMT_PREV,
+
+           (C.N_COST_UNAMORT_AMT)- (CASE WHEN CAST ((V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) > 1
+                                          THEN (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV)
+                                         ELSE ROUND(CAST ((V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE)
+                                              * (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV),V_ROUND)
+                                    END + A.N_COST_UNAMORT_AMT_PREV),
+
+           (C.N_FEE_UNAMORT_AMT) - (CASE WHEN CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) > 1
+                                          THEN (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV)
+                                         ELSE ROUND(CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) * (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV),V_ROUND)
+                                    END + A.N_FEE_UNAMORT_AMT_PREV),
+
+           CASE WHEN CAST ((V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) > 1
+                  THEN (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV)
+                ELSE ROUND(CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) * (A.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT_PREV),V_ROUND)
+           END- COALESCE (A.SW_ADJ_COST, 0),
+
+           CASE WHEN CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) > 1
+                  THEN(A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV)
+                ELSE ROUND(CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) * (A.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT_PREV),V_ROUND)
+           END - COALESCE (A.SW_ADJ_FEE, 0),
+
+           A.N_COST_AMORT_AMT - COALESCE (A.SW_ADJ_COST, 0) AS ACCRUFULL_COST,
+           A.N_FEE_AMORT_AMT - COALESCE (A.SW_ADJ_FEE, 0) AS ACCRUFULL_FEE,
+           A.DOWNLOAD_DATE,
+           SYSTIMESTAMP,
+           'SP_ACCT_EIR_ACF_ACCRU 2',
+           M.MASTERID,
+           M.ACCOUNT_NUMBER,
+           'N' DO_AMORT,
+           M.BRANCH_CODE,
+           '2' ACFCODE,
+           M.FLAG_AL,                             -- ARI : use for loan and funding
+           CASE WHEN CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) > 1
+                  THEN A.NOCF_AMORT_AMT
+                 ELSE ROUND(CAST (( V_CURRDATE -A.PREV_PMT_DATE + 1) AS BINARY_DOUBLE)/ CAST (A.I_DAYS2 AS BINARY_DOUBLE) * A.NOCF_AMORT_AMT,V_ROUND)
+             END,
+           A.NOCF_UNAMORT_AMT,
+           A.NOCF_UNAMORT_AMT_PREV
+    FROM IFRS_LI_ACCT_EIR_ECF A
+    JOIN (SELECT M.DATA_SOURCE,M.BRANCH_CODE,M.MASTERID,M.ACCOUNT_NUMBER, M.FACILITY_NUMBER, M.CUSTOMER_NUMBER,M.IAS_CLASS AS FLAG_AL
+    FROM IFRS_LI_IMA_AMORT_CURR M
+    LEFT JOIN (SELECT DISTINCT DOWNLOAD_DATE,MASTERID FROM IFRS_LI_ACCT_CLOSED WHERE DOWNLOAD_DATE = V_CURRDATE)  D
+      ON M.DOWNLOAD_DATE = D.DOWNLOAD_DATE
+      AND M.MASTERID = D.MASTERID
+    WHERE M.DOWNLOAD_DATE = V_CURRDATE AND D.MASTERID IS NULL) M
+      ON A.MASTERID = M.MASTERID
+    JOIN IFRS_LI_ACCT_EIR_ECF C
+      ON     C.AMORTSTOPDATE IS NULL
+      AND C.MASTERID = A.MASTERID
+      AND C.PMT_DATE = C.PREV_PMT_DATE
+    WHERE A.PMT_DATE > V_CURRDATE
+    AND A.PREV_PMT_DATE <=  V_CURRDATE
+    AND A.PMT_DATE <> A.PREV_PMT_DATE
+    AND A.AMORTSTOPDATE IS NULL;
+	    /* Remarks.. Tunning script 20160602
+        FROM IMA_AMORT_CURR m
+             JOIN IFRS_LI_ACCT_EIR_ECF a
+                ON     a.amortstopdate IS NULL
+                   AND a.masterid = m.masterid
+                   AND @v_currdate < a.pmt_date
+                   AND @v_currdate >= a.prev_pmt_date
+                   AND a.pmt_date <> a.prev_pmt_date
+             JOIN IFRS_LI_ACCT_EIR_ECF c
+                ON     c.amortstopdate IS NULL
+                   AND c.masterid = a.masterid
+                   AND c.pmt_date = c.prev_pmt_date
+       WHERE                                               --dont do if closed
+            m.masterid NOT IN (SELECT masterid
+                                 FROM IFRS_LI_ACCT_CLOSED
+                                WHERE DOWNLOAD_DATE = @v_currdate)
+		end Remarks.. Tunning script 20160602*/
+    COMMIT;
+
+    INSERT INTO IFRS_LI_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','ACF INSERTED');
+    COMMIT;
+
+    -- get sl_acf max(id) to process
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_LI_P1';
+    COMMIT;
+
+    INSERT INTO TMP_LI_P1 (ID)
+    SELECT MAX (ID) AS ID
+    FROM IFRS_LI_ACCT_EIR_ACF
+    WHERE DOWNLOAD_DATE = V_CURRDATE
+    AND DO_AMORT = 'N'
+    GROUP BY MASTERID;
+
+    COMMIT;
+
+    INSERT INTO IFRS_LI_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','P1');
+
+    COMMIT;
+    --fee 1
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_LI_T1';
+
+    COMMIT;
+
+    INSERT INTO TMP_LI_T1 (
+    SUM_AMT,
+    DOWNLOAD_DATE,
+    FACNO,
+    CIFNO,
+    DATASOURCE,
+    ACCTNO,
+    MASTERID
+    )
+    SELECT SUM (A.N_AMOUNT) AS SUM_AMT,
+           A.DOWNLOAD_DATE,
+           A.FACNO,
+           A.CIFNO,
+           A.DATASOURCE,
+           A.ACCTNO,
+           A.MASTERID
+    FROM (SELECT CASE WHEN A.FLAG_REVERSE = 'Y' THEN -1 * A.AMOUNT
+                      ELSE A.AMOUNT
+                       END AS N_AMOUNT,
+                 A.ECFDATE DOWNLOAD_DATE,
+                 A.FACNO,
+                 A.CIFNO,
+                 A.DATASOURCE,
+                 A.ACCTNO,
+                 A.MASTERID
+          FROM IFRS_LI_ACCT_EIR_COST_FEE_ECF A
+          WHERE A.FLAG_CF = 'F'
+         ) A
+    GROUP BY A.DOWNLOAD_DATE,
+             A.FACNO,
+             A.CIFNO,
+             A.DATASOURCE,
+             A.ACCTNO,
+             A.MASTERID;
+
+    COMMIT;
+
+
+    INSERT INTO IFRS_LI_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','T1 FEE');
+    --prepare index
+    --EXECUTE IMMEDIATE 'drop index psak_eir_cost_fee_ecf_idx1';
+    --EXECUTE IMMEDIATE 'drop index psak_eir_acf_idx1';
+    --EXECUTE IMMEDIATE 'drop index TMP_LI_T1_idx1';
+    --EXECUTE IMMEDIATE 'create index psak_eir_cost_fee_ecf_idx1 on IFRS_LI_ACCT_EIR_COST_FEE_ECF(masterid,ecfdate,flag_cf)';
+    --EXECUTE IMMEDIATE 'create index psak_eir_acf_idx1 on IFRS_LI_ACCT_EIR_ACF(masterid,ecfdate)';
+    --EXECUTE IMMEDIATE 'create index TMP_LI_T1_idx1 on TMP_LI_T1(masterid,DOWNLOAD_DATE)';
+    COMMIT;
+
+    -- update sum_amt
+    MERGE INTO IFRS_LI_ACCT_EIR_COST_FEE_ECF A
+    USING TMP_LI_T1 B
+    ON  (A.MASTERID=B.MASTERID
+         AND A.ECFDATE=B.DOWNLOAD_DATE
+         AND A.FLAG_CF='F'
+        )
+    WHEN MATCHED THEN
+    UPDATE
+    SET A.SUM_AMT=B.SUM_AMT;
+
+    COMMIT;
+
+
+    INSERT INTO IFRS_LI_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','INSERT FEE') ;
+
+    COMMIT;
+    -- fee 1
+    INSERT INTO IFRS_LI_ACCT_EIR_COST_FEE_PREV (
+    FACNO,
+    CIFNO,
+    DOWNLOAD_DATE,
+    ECFDATE,
+    DATASOURCE,
+    PRDCODE,
+    TRXCODE,
+    CCY,
+    AMOUNT,
+    STATUS,
+    CREATEDDATE,
+    ACCTNO,
+    MASTERID,
+    FLAG_CF,
+    FLAG_REVERSE,
+    BRCODE,
+    SRCPROCESS,
+    METHOD,
+    CREATEDBY,
+    SEQ,
+    AMOUNT_ORG,
+    ORG_CCY,
+    ORG_CCY_EXRATE,
+    PRDTYPE,
+    CF_ID
+    )
+    SELECT A.FACNO,
+           A.CIFNO,
+           A.DOWNLOAD_DATE,
+           A.ECFDATE,
+           A.DATASOURCE,
+           B.PRDCODE,
+           B.TRXCODE,
+           B.CCY,
+           ROUND(CAST (CAST (B.AMOUNT AS BINARY_DOUBLE) / CAST (B.SUM_AMT AS BINARY_DOUBLE) AS NUMBER(32, 20))* A.N_UNAMORT_FEE,V_ROUND) AS N_AMOUNT,
+           B.STATUS,
+           SYSTIMESTAMP,
+           A.ACCTNO,
+           A.MASTERID,
+           B.FLAG_CF,
+           B.FLAG_REVERSE,
+           B.BRCODE,
+           B.SRCPROCESS,
+           'EIR',
+           'EIRACF02',
+           '2',
+           B.AMOUNT_ORG,
+           B.ORG_CCY,
+           B.ORG_CCY_EXRATE,
+           B.PRDTYPE,
+           B.CF_ID
+    FROM    IFRS_LI_ACCT_EIR_ACF A
+    --tunning script 20160723
+    JOIN TMP_LI_P1 C ON A.ID = C.ID
+    --tunning script 20160723
+    JOIN   IFRS_LI_ACCT_EIR_COST_FEE_ECF B
+      ON     B.ECFDATE = A.ECFDATE
+      AND A.MASTERID = B.MASTERID
+      AND B.FLAG_CF = 'F'
+    WHERE     A.DOWNLOAD_DATE = V_CURRDATE
+    AND ((A.N_UNAMORT_FEE < 0 AND A.FLAG_AL='A') OR (A.N_UNAMORT_FEE > 0 AND A.FLAG_AL='L'));
+    --remarks 20160723
+    --AND a.id IN (SELECT id FROM TMP_LI_P1)
+    --remarks 20160723
+
+    COMMIT;
+
+    INSERT INTO IFRS_LI_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','FEE PREV');
+
+    COMMIT;
+    --cost 1
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_LI_T2';
+
+    INSERT INTO TMP_LI_T2 (
+    SUM_AMT,
+    DOWNLOAD_DATE,
+    FACNO,
+    CIFNO,
+    DATASOURCE,
+    ACCTNO,
+    MASTERID
+    )
+    SELECT SUM (A.N_AMOUNT) AS SUM_AMT,
+               A.DOWNLOAD_DATE,
+               A.FACNO,
+               A.CIFNO,
+               A.DATASOURCE,
+               A.ACCTNO,
+               A.MASTERID
+    FROM (SELECT CASE WHEN A.FLAG_REVERSE = 'Y' THEN -1 * A.AMOUNT ELSE A.AMOUNT END AS N_AMOUNT,
+                 A.ECFDATE DOWNLOAD_DATE,
+                 A.FACNO,
+                 A.CIFNO,
+                 A.DATASOURCE,
+                 A.ACCTNO,
+                 A.MASTERID
+          FROM IFRS_LI_ACCT_EIR_COST_FEE_ECF A
+          WHERE A.FLAG_CF = 'C'
+         ) A
+    GROUP BY A.DOWNLOAD_DATE,
+             A.FACNO,
+             A.CIFNO,
+             A.DATASOURCE,
+             A.ACCTNO,
+             A.MASTERID;
+
+    INSERT INTO IFRS_LI_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','T2 COST');
+
+    COMMIT;
+    --EXECUTE IMMEDIATE 'drop index TMP_LI_T2_idx1';
+    --EXECUTE IMMEDIATE 'create index TMP_LI_T2_idx1 on TMP_LI_T2(masterid,DOWNLOAD_DATE)';
+
+
+    -- update sum_amt
+    MERGE INTO  IFRS_LI_ACCT_EIR_COST_FEE_ECF A
+    USING  TMP_LI_T2 B
+    ON (A.MASTERID=B.MASTERID
+        AND A.ECFDATE=B.DOWNLOAD_DATE
+        AND A.FLAG_CF='C'
+       )
+    WHEN MATCHED THEN
+    UPDATE
+    SET A.SUM_AMT=B.SUM_AMT;
+
+    COMMIT;
+
+
+    INSERT INTO IFRS_LI_ACCT_EIR_COST_FEE_PREV (
+    FACNO,
+    CIFNO,
+    DOWNLOAD_DATE,
+    ECFDATE,
+    DATASOURCE,
+    PRDCODE,
+    TRXCODE,
+    CCY,
+    AMOUNT,
+    STATUS,
+    CREATEDDATE,
+    ACCTNO,
+    MASTERID,
+    FLAG_CF,
+    FLAG_REVERSE,
+    BRCODE,
+    SRCPROCESS,
+    METHOD,
+    CREATEDBY,
+    SEQ,
+    AMOUNT_ORG,
+    ORG_CCY,
+    ORG_CCY_EXRATE,
+    PRDTYPE,
+    CF_ID
+    )
+    SELECT A.FACNO,
+           A.CIFNO,
+           A.DOWNLOAD_DATE,
+           A.ECFDATE,
+           A.DATASOURCE,
+           B.PRDCODE,
+           B.TRXCODE,
+           B.CCY,
+           ROUND(CAST (CAST (B.AMOUNT AS BINARY_DOUBLE) / CAST (B.SUM_AMT AS BINARY_DOUBLE) AS NUMBER(32, 20))* A.N_UNAMORT_COST,V_ROUND) AS N_AMOUNT,
+           B.STATUS,
+           SYSTIMESTAMP,
+           A.ACCTNO,
+           A.MASTERID,
+           B.FLAG_CF,
+           B.FLAG_REVERSE,
+           B.BRCODE,
+           B.SRCPROCESS,
+           'EIR',
+           'EIRACF02',
+           '2',
+           B.AMOUNT_ORG,
+           B.ORG_CCY,
+           B.ORG_CCY_EXRATE,
+           B.PRDTYPE,
+           B.CF_ID
+    FROM    IFRS_LI_ACCT_EIR_ACF A
+    --tunning script 20160723
+    JOIN TMP_LI_P1 C ON A.ID = C.ID
+    --tunning script 20160723
+    JOIN IFRS_LI_ACCT_EIR_COST_FEE_ECF B
+      ON B.ECFDATE = A.ECFDATE
+      AND A.MASTERID = B.MASTERID
+      AND B.FLAG_CF = 'C'
+    WHERE     A.DOWNLOAD_DATE = V_CURRDATE
+    AND ((A.N_UNAMORT_COST > 0 AND A.FLAG_AL='A') OR (A.N_UNAMORT_COST < 0 AND A.FLAG_AL='L'));
+    --remarks 20160723
+    /*AND a.id IN (SELECT id FROM TMP_LI_P1)*/
+    --remarks 20160723
+
+    COMMIT;
+
+    INSERT INTO IFRS_LI_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','COST PREV');
+    COMMIT;
+
+    INSERT INTO IFRS_LI_AMORT_LOG (DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES (V_CURRDATE,SYSTIMESTAMP,'END','SP_IFRS_LI_ACCT_EIR_ACF_ACRU','');
+    COMMIT;
+END;

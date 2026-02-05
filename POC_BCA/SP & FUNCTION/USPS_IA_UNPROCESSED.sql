@@ -1,0 +1,39 @@
+CREATE OR REPLACE procedure      USPS_IA_UNPROCESSED
+(
+     Cur_out OUT SYS_REFCURSOR
+)
+AS
+    v_Query VARCHAR2(4000);
+    v_Str_SQL_Rule VARCHAR2(4000);
+    v_Table_Name VARCHAR2(30);
+    v_Currdate VARCHAR2(20);
+begin
+
+    SELECT TO_CHAR(CURRDATE, 'dd-MON-yyyy')
+    INTO v_Currdate
+    FROM IFRS_PRC_DATE;
+
+    SP_IFRS_GENERATE_RULE('THRESHOLD');
+
+    SELECT TABLE_NAME, PD_RULES_QRY_RESULT
+    INTO v_Table_Name, v_Str_SQL_Rule
+    FROM GTMP_IFRS_SCENARIO_GEN_QUERY;
+
+    v_Query := 'SELECT A.CUSTOMER_NUMBER,
+        MAX(A.CUSTOMER_NAME) CUSTOMER_NAME,
+        A.SEGMENT,
+        A.IMPAIRED_FLAG,
+        MAX(A.BI_COLLECTABILITY) BI_COLLECTABILITY
+    FROM  ' || v_Table_Name || ' A
+       WHERE  A.DOWNLOAD_DATE =  ''' || v_Currdate || '''
+       AND A.CUSTOMER_NUMBER NOT IN (SELECT CUSTOMER_NUMBER FROM IFRS_IA_OVERRIDEH)
+       AND A.ACCOUNT_STATUS = ''A''
+       AND A.OUTSTANDING > 0
+       AND (' || RTRIM(NVL(v_Str_SQL_Rule, '')) || ')
+    GROUP BY A.CUSTOMER_NUMBER,
+        A.SEGMENT,
+        A.IMPAIRED_FLAG';
+
+    OPEN Cur_out FOR v_Query;
+
+end;

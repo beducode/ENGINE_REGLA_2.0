@@ -1,0 +1,223 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_GL_OUTBOUND
+AS
+  V_CURRDATE DATE ;
+  V_PREVDATE DATE ;
+  V_PREVMONTH DATE;
+  V_ROUND NUMBER(10) := 2 ;
+
+BEGIN
+
+    /******************************************************************************
+    01. DECLARE VARIABLE
+    *******************************************************************************/
+    SELECT  MAX(CURRDATE) ,MAX(PREVDATE)
+    INTO V_CURRDATE, V_PREVDATE
+    FROM    IFRS_PRC_DATE_AMORT;
+
+    V_PREVMONTH := LAST_DAY(ADD_MONTHS (V_CURRDATE,-1));
+
+
+    INSERT INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES(V_CURRDATE ,SYSTIMESTAMP ,'START' ,'SP_IFRS_GL_OUTBOUND' ,'');
+
+    COMMIT;
+    /******************************************************************************
+    02. INSERT INTO TEMP
+    *******************************************************************************/
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_IFRS_ACCT_JOURNAL_DATA';
+
+    INSERT /*+ PARALLEL(12) */ INTO TMP_IFRS_ACCT_JOURNAL_DATA
+    (
+        ID,
+        DOWNLOAD_DATE,
+        MASTERID,
+        FACNO,
+        CIFNO,
+        ACCTNO,
+        DATASOURCE,
+        PRDTYPE,
+        PRDCODE,
+        TRXCODE,
+        CCY,
+        JOURNALCODE,
+        JOURNALCODE2,
+        STATUS,
+        REVERSE,
+        FLAG_CF,
+        DRCR,
+        GLNO,
+        N_AMOUNT,
+        N_AMOUNT_IDR,
+        SOURCEPROCESS,
+        INTMID,
+        BRANCH,
+        NOREF,
+        VALCTR_CODE,
+        JOURNAL_DESC,
+        CREATEDDATE,
+        CREATEDBY,
+        GL_INTERNAL_CODE,
+        METHOD,
+        RESERVED_VARCHAR_1,
+        RESERVED_VARCHAR_2,
+        RESERVED_VARCHAR_3,
+        GL_COSTCENTER
+    )
+    SELECT /*+ PARALLEL(12) */
+        ID,
+        DOWNLOAD_DATE,
+        MASTERID,
+        FACNO,
+        CIFNO,
+        ACCTNO,
+        DATASOURCE,
+        PRDTYPE,
+        PRDCODE,
+        TRXCODE,
+        CCY,
+        JOURNALCODE,
+        JOURNALCODE2,
+        STATUS,
+        REVERSE,
+        FLAG_CF,
+        DRCR,
+        GLNO,
+        N_AMOUNT,
+        N_AMOUNT_IDR,
+        SOURCEPROCESS,
+        INTMID,
+        BRANCH,
+        NOREF,
+        VALCTR_CODE,
+        JOURNAL_DESC,
+        CREATEDDATE,
+        CREATEDBY,
+        GL_INTERNAL_CODE,
+        METHOD,
+        RESERVED_VARCHAR_1,
+        RESERVED_VARCHAR_2,
+        RESERVED_VARCHAR_3,
+        GL_COSTCENTER
+    FROM IFRS_ACCT_JOURNAL_DATA WHERE DOWNLOAD_DATE = V_CURRDATE;
+
+    COMMIT;
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_AMORT_GL_OUTBOUND';
+
+    INSERT /*+ PARALLEL(12) */ INTO TMP_AMORT_GL_OUTBOUND(
+     DOWNLOAD_DATE
+    ,CUSTOMER_NUMBER
+    ,NMLEDG
+    ,GLNO
+    ,GLDESC
+    ,CCY
+    ,CCY_RATE
+    ,ORIG_AMOUNT
+    ,IDR_AMOUNT
+    ,JOURNALCODE
+    ,SRCPROCESS
+    ,FLAG_CF
+    ,FLAG_REV
+    ,DRCR
+    ,SEQ
+    ,BRANCH_CODE
+    ,CREATEDDATE
+    ,CREATEDBY
+    ,NARRATIVE_LINE
+    )
+    SELECT /*+ PARALLEL(12) */ A.DOWNLOAD_DATE
+          ,A.CIFNO AS CUSTOMER_NUMBER
+          ,'JOURNAL AMORT' AS NMLEDG
+          ,A.GLNO AS GLNO
+          ,A.JOURNAL_DESC AS GLDESC
+          ,A.CCY AS CCY
+          ,CASE WHEN REVERSE = 'N' THEN NVL(B.RATE_AMOUNT, 1)
+                WHEN REVERSE = 'Y' AND JOURNALCODE IN ('FVTPLG','FVTPLL','FVOCIG','FVOCIL') THEN NVL(E.RATE_AMOUNT, 1)
+                ELSE NVL(C.RATE_AMOUNT, 1) END AS CCY_RATE
+          ,ROUND(NVL(A.N_AMOUNT, 0), V_ROUND) ORIG_AMOUNT
+          ,ROUND(NVL(A.N_AMOUNT_IDR, 0), V_ROUND) IDR_AMOUNT
+          ,CASE WHEN A.JOURNALCODE = 'AMORT' THEN A.JOURNALCODE ELSE A.JOURNALCODE2 END JOURNALCODE
+          ,'AMORT' AS SRCPROCESS
+          ,A.FLAG_CF AS FLAG_CF
+          ,A.REVERSE AS FLAG_REV
+          ,SUBSTR(A.DRCR, 1, 1) AS DRCR
+          ,DENSE_RANK() OVER ( ORDER BY A.CCY, SUBSTR(A.NOREF,1, 1)
+          , A.PRDCODE
+          , A.REVERSE
+          , CASE WHEN A.JOURNALCODE = 'AMORT' THEN A.JOURNALCODE ELSE A.JOURNALCODE2 END ) AS SEQ
+          ,BRANCH AS BRANCH_CODE
+          ,SYSTIMESTAMP AS CREATEDDATE
+          ,'REGLA' AS CREATEDBY
+          ,(CASE WHEN (FLAG_CF = 'O' AND JOURNALCODE LIKE 'FVTPL%')  THEN 'PSAK Adjustment - FVTPL - '||TO_CHAR(A.DOWNLOAD_DATE,'YYYYMMDD')|| CASE WHEN REVERSE = 'Y' THEN ' Reversal ' ELSE ' ' END || NVL(D.PRD_GROUP,'DEFAULT')
+                 WHEN (FLAG_CF = 'O' AND JOURNALCODE LIKE 'FVOCI%')  THEN 'PSAK Adjustment - FVOCI - '||TO_CHAR(A.DOWNLOAD_DATE,'YYYYMMDD')|| CASE WHEN REVERSE = 'Y' THEN ' Reversal ' ELSE ' ' END || NVL(D.PRD_GROUP,'DEFAULT')
+                 WHEN FLAG_CF = 'F' THEN 'PSAK Amortization Fee - '||TO_CHAR(A.DOWNLOAD_DATE,'YYYYMMDD')|| CASE WHEN REVERSE = 'Y' THEN ' Reversal ' ELSE ' ' END || NVL(D.PRD_GROUP,'DEFAULT')
+                 WHEN FLAG_CF = 'C' THEN 'PSAK Amortization Cost - '||TO_CHAR(A.DOWNLOAD_DATE,'YYYYMMDD')|| CASE WHEN REVERSE = 'Y' THEN ' Reversal ' ELSE ' ' END || NVL(D.PRD_GROUP,'DEFAULT')
+           END ) AS NARRATIVE_LINE
+    FROM TMP_IFRS_ACCT_JOURNAL_DATA A
+    LEFT JOIN IFRS_MASTER_EXCHANGE_RATE B ON B.DOWNLOAD_DATE = V_CURRDATE AND A.CCY = B.CURRENCY
+    LEFT JOIN IFRS_MASTER_EXCHANGE_RATE C ON C.DOWNLOAD_DATE = V_PREVDATE AND A.CCY = C.CURRENCY
+    LEFT JOIN IFRS_MASTER_EXCHANGE_RATE E ON E.DOWNLOAD_DATE = V_PREVMONTH AND A.CCY = E.CURRENCY
+    LEFT JOIN IFRS_PRODUCT_PARAM D ON A.DATASOURCE=D.DATA_SOURCE AND A.PRDCODE=D.PRD_CODE;
+
+    COMMIT;
+
+    /******************************************************************************
+    03. DELETE
+    *******************************************************************************/
+    DELETE /*+ PARALLEL(12) */ FROM IFRS_AMORT_GL_OUTBOUND
+    WHERE   DOWNLOAD_DATE >= V_CURRDATE;
+    --AND nmledg = 'JOURNAL AMORT'
+
+    COMMIT;
+    /******************************************************************************
+    04. INSERT INTO GL OUTBOUND
+    *******************************************************************************/
+    INSERT /*+ PARALLEL(12) */ INTO IFRS_AMORT_GL_OUTBOUND
+    (DOWNLOAD_DATE
+    ,BRANCH_CODE
+    ,NARRATIVE_LINE
+    ,COA_CODE
+    ,ACCOUNT_PRODUCT
+    ,CUSTOMER_CODE
+    ,CURRENCY
+    ,DEBIT_CREDIT_FLAG
+    ,AMOUNT
+    ,VALUE_DATE
+    ,EXCHANGE_RATE
+    ,MULTIPLY_DIVIDE_FLAG
+    ,CREATEDDATE
+    ,CREATEDBY
+    )
+
+	SELECT /*+ PARALLEL(12) */ DOWNLOAD_DATE
+        ,BRANCH_CODE
+        ,NARRATIVE_LINE
+        ,GLNO  AS COA_CODE
+        ,'' AS ACCOUNT_PRODUCT
+        ,'' AS CUSTOMER_CODE
+        ,CCY AS CURRENCY
+        ,DRCR AS DEBIT_CREDIT_FLAG
+        ,SUM(ORIG_AMOUNT) AS AMOUNT
+        ,SUBSTR(TO_CHAR((DOWNLOAD_DATE),'YYYYMMDD'), GREATEST(-LENGTH(TO_CHAR((DOWNLOAD_DATE),'YYYYMMDD')),-6)) AS VALUE_DATE
+        ,CCY_RATE AS EXCHANGE_RATE
+        ,'M' AS MULTIPLY_DIVIDE_FLAG
+        ,SYSTIMESTAMP AS CREATEDDATE
+        ,'REGLA' AS CREATEDBY
+	FROM TMP_AMORT_GL_OUTBOUND
+	GROUP BY DOWNLOAD_DATE
+          ,BRANCH_CODE
+          ,NARRATIVE_LINE
+          ,GLNO
+          ,CCY
+          ,CCY_RATE
+          ,DRCR
+	ORDER BY DOWNLOAD_DATE ASC,BRANCH_CODE ASC,NARRATIVE_LINE ASC, CURRENCY ASC, AMOUNT ASC,DEBIT_CREDIT_FLAG DESC, COA_CODE ASC;
+
+  COMMIT;
+
+    INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP ,'END' ,'SP_IFRS_GL_OUTBOUND' ,'');
+
+    COMMIT;
+
+    END;

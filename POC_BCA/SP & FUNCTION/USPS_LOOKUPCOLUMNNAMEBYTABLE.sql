@@ -1,0 +1,15 @@
+CREATE OR REPLACE PROCEDURE  USPS_LOOKUPCOLUMNNAMEBYTABLE
+(
+    v_TableName VARCHAR2,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+
+    OPEN Cur_out FOR
+        SELECT A.COLUMN_NAME
+        FROM user_tab_columns A
+        JOIN user_tables B ON A.TABLE_NAME = B.TABLE_NAME
+        WHERE B.TABLE_NAME = v_TableName;
+
+END;

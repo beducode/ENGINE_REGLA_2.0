@@ -1,0 +1,25 @@
+CREATE OR REPLACE FUNCTION FN_AMT_BATCH_ERROR(vCURRDATE DATE)
+return NUMBER
+AS
+ -- 0= false , 1 = true
+ v_STATUS number(1);
+ v_COUNT number(1);
+BEGIN
+
+    v_STATUS := 0;
+
+    SELECT COUNT(*)
+    INTO v_COUNT
+    FROM IFRS_STATISTIC
+    WHERE DOWNLOAD_DATE = vCURRDATE
+    AND NVL(ISCOMPLETE,' ') <> 'Y'
+    AND PRC_NAME = 'AMT';
+
+    IF (v_COUNT > 0)
+    THEN
+        v_STATUS := 1;
+    END IF;
+
+RETURN v_STATUS;
+
+END;

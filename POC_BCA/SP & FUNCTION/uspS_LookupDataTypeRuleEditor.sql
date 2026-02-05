@@ -1,0 +1,14 @@
+CREATE OR REPLACE PROCEDURE uspS_LookupDataTypeRuleEditor
+(
+  v_columnName IN VARCHAR2 DEFAULT NULL,
+  Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+
+   OPEN  Cur_out FOR
+        SELECT VALUE2  DATA_TYPE
+        FROM TBLM_COMMONCODEDETAIL
+        WHERE COMMONCODE = 'B31'
+        AND VALUE1 = v_columnName;
+END;

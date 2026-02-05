@@ -1,0 +1,14 @@
+CREATE OR REPLACE PROCEDURE uspS_LookupScenarioRuleGL
+    (Cur_out OUT SYS_REFCURSOR)
+AS
+BEGIN
+
+   OPEN  Cur_out FOR
+      SELECT RULE_NAME AS "GL_CONSTNAME"  ,
+             RULE_NAME AS "GL Group"
+        FROM IFRS_SCENARIO_RULES_HEADER
+        WHERE RULE_TYPE = 'GL'
+        GROUP BY RULE_NAME
+        ORDER BY RULE_NAME ;
+
+END;

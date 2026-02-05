@@ -1,0 +1,674 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_JRNL_DATA_SL
+AS
+	V_CURRDATE DATE;
+	V_PREVDATE DATE;
+
+BEGIN
+	/******************************************************************************
+    01. DECLARE VARIABLE
+    *******************************************************************************/
+	SELECT  MAX(CURRDATE), MAX(PREVDATE)
+    INTO V_CURRDATE, V_PREVDATE
+    FROM IFRS_PRC_DATE_AMORT;
+
+	INSERT INTO IFRS_AMORT_LOG ( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES(V_CURRDATE ,SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_ACCT_JOURNAL_DATA_SL' ,'clean up');
+
+    COMMIT;
+
+	EXECUTE IMMEDIATE 'TRUNCATE TABLE GTMP_IFRS_ACCT_JOURNAL_INTM';
+
+    INSERT /*+ PARALLEL(8) */ INTO GTMP_IFRS_ACCT_JOURNAL_INTM
+    (
+        ID,
+        DOWNLOAD_DATE,
+        MASTERID,
+        FACNO,
+        CIFNO,
+        ACCTNO,
+        DATASOURCE,
+        PRDTYPE,
+        PRDCODE,
+        TRXCODE,
+        CCY,
+        JOURNALCODE,
+        JOURNALCODE2,
+        STATUS,
+        REVERSE,
+        FLAG_CF,
+        N_AMOUNT,
+        N_AMOUNT_IDR,
+        SOURCEPROCESS,
+        CREATEDDATE,
+        CREATEDBY,
+        BRANCH,
+        IS_PNL,
+        CF_ID,
+        FLAG_AL,
+        METHOD
+    )
+    SELECT /*+ PARALLEL(8) */
+        ID,
+        DOWNLOAD_DATE,
+        MASTERID,
+        FACNO,
+        CIFNO,
+        ACCTNO,
+        DATASOURCE,
+        PRDTYPE,
+        PRDCODE,
+        TRXCODE,
+        CCY,
+        JOURNALCODE,
+        JOURNALCODE2,
+        STATUS,
+        REVERSE,
+        FLAG_CF,
+        N_AMOUNT,
+        N_AMOUNT_IDR,
+        SOURCEPROCESS,
+        CREATEDDATE,
+        CREATEDBY,
+        BRANCH,
+        IS_PNL,
+        CF_ID,
+        FLAG_AL,
+        METHOD
+	FROM IFRS_ACCT_JOURNAL_INTM
+	WHERE DOWNLOAD_DATE = V_CURRDATE;
+	COMMIT;
+
+	/******************************************************************************
+    02. UPDATE METHOD
+    *******************************************************************************/
+	UPDATE /*+ PARALLEL(8) */ GTMP_IFRS_ACCT_JOURNAL_INTM
+	SET METHOD = 'SL'
+	WHERE DOWNLOAD_DATE = V_CURRDATE
+		AND SUBSTR(SOURCEPROCESS, 1, 2) = 'SL';
+
+	MERGE INTO IFRS_ACCT_JOURNAL_INTM A
+	USING GTMP_IFRS_ACCT_JOURNAL_INTM B
+	ON (A.ID = B.ID)
+	WHEN MATCHED THEN
+	UPDATE SET
+		A.METHOD = B.METHOD;
+	COMMIT;
+
+	/******************************************************************************
+    03. insert itrcg data_source ccy jenis_pinjaman combination
+    *******************************************************************************/
+    INSERT /*+ PARALLEL(8) */ INTO IFRS_ACCT_JOURNAL_DATA
+    ( DOWNLOAD_DATE ,
+      MASTERID ,
+      FACNO ,
+      CIFNO ,
+      ACCTNO ,
+      DATASOURCE ,
+      PRDTYPE ,
+      PRDCODE ,
+      TRXCODE ,
+      CCY ,
+      JOURNALCODE ,
+      STATUS ,
+      REVERSE ,
+      FLAG_CF ,
+      DRCR ,
+      GLNO ,
+      N_AMOUNT ,
+      N_AMOUNT_IDR ,
+      SOURCEPROCESS ,
+      INTMID ,
+      CREATEDDATE ,
+      CREATEDBY ,
+      BRANCH ,
+      JOURNALCODE2 ,
+      JOURNAL_DESC ,
+      NOREF ,
+      VALCTR_CODE ,
+      GL_INTERNAL_CODE ,
+      METHOD,
+--	  RESERVED_VARCHAR_1 ,
+--	  RESERVED_VARCHAR_2 ,
+	  GL_COSTCENTER
+    )
+    SELECT  /*+ PARALLEL(8) */ A.DOWNLOAD_DATE ,
+            A.MASTERID ,
+            A.FACNO ,
+            A.CIFNO ,
+            A.ACCTNO ,
+            A.DATASOURCE ,
+            A.PRDTYPE ,
+            A.PRDCODE ,
+            A.TRXCODE ,
+            A.CCY ,
+            A.JOURNALCODE ,
+            A.STATUS ,
+            A.REVERSE ,
+            A.FLAG_CF ,
+            CASE WHEN ( A.REVERSE = 'N'AND COALESCE(A.FLAG_AL, 'A') = 'A')OR ( A.REVERSE = 'Y'AND COALESCE(A.FLAG_AL, 'A') <> 'A')
+                 THEN CASE WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           ELSE CASE WHEN B.DRCR = 'D' THEN 'C' ELSE 'D' END
+                           END
+                 ELSE CASE WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'ACCRU_SL', 'AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'ACCRU_SL', 'AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           ELSE CASE WHEN B.DRCR = 'D' THEN 'C' ELSE 'D' END
+                           END
+                 END AS DRCR ,
+            B.GLNO ,
+            ABS(A.N_AMOUNT) ,
+            ABS(A.N_AMOUNT_IDR) ,
+            A.SOURCEPROCESS ,
+            A.ID ,
+            SYSTIMESTAMP ,
+            'SP_JOURNAL_DATA_SL' ,
+            A.BRANCH ,
+            B.JOURNALCODE ,
+            B.JOURNAL_DESC ,
+            B.JOURNALCODE ,
+            B.COSTCENTER|| '-' || COALESCE(IMC.APPLICATION_NO,IMP.APPLICATION_NO,'') ,
+            B.GL_INTERNAL_CODE ,
+            METHOD ,
+--			COALESCE(IMC.RESERVED_VARCHAR_1, IMP.RESERVED_VARCHAR_1, '') ,
+--		    COALESCE(IMC.RESERVED_VARCHAR_2, IMP.RESERVED_VARCHAR_2, '') ,
+		    B.COSTCENTER
+    FROM    GTMP_IFRS_ACCT_JOURNAL_INTM A
+    LEFT JOIN IFRS_IMA_AMORT_CURR IMC ON A.MASTERID = IMC.MASTERID
+    LEFT JOIN IFRS_IMA_AMORT_PREV IMP ON A.MASTERID = IMP.MASTERID
+    JOIN IFRS_JOURNAL_PARAM B
+      ON (B.CCY = A.CCY OR B.CCY = 'ALL')
+	  AND B.JOURNALCODE IN ('ITRCG_SL','ITRCG_SL1','ITRCG_SL2','ITRCG_NE')
+      AND B.FLAG_CF = A.FLAG_CF
+      AND B.GL_CONSTNAME = COALESCE(IMC.GL_CONSTNAME,IMP.GL_CONSTNAME,'')
+      AND (A.TRXCODE=B.TRX_CODE  OR B.TRX_CODE = 'ALL'  )
+    WHERE   A.DOWNLOAD_DATE = V_CURRDATE
+    AND A.JOURNALCODE = 'DEFA0'
+    AND A.TRXCODE <> 'BENEFIT'
+    AND A.METHOD = 'SL'
+	AND A.SOURCEPROCESS NOT IN ('SL_REV_SWITCH', 'SL_SWITCH');
+
+    COMMIT;
+
+	/******************************************************************************
+    04. STAFF LOAN DEFA0
+    *******************************************************************************/
+    INSERT /*+ PARALLEL(8) */ INTO IFRS_ACCT_JOURNAL_DATA
+    ( DOWNLOAD_DATE ,
+      MASTERID ,
+      FACNO ,
+      CIFNO ,
+      ACCTNO ,
+      DATASOURCE ,
+      PRDTYPE ,
+      PRDCODE ,
+      TRXCODE ,
+      CCY ,
+      JOURNALCODE ,
+      STATUS ,
+      REVERSE ,
+      FLAG_CF ,
+      DRCR ,
+      GLNO ,
+      N_AMOUNT ,
+      N_AMOUNT_IDR ,
+      SOURCEPROCESS ,
+      INTMID ,
+      CREATEDDATE ,
+      CREATEDBY ,
+      BRANCH ,
+      JOURNALCODE2 ,
+      JOURNAL_DESC ,
+      NOREF ,
+      VALCTR_CODE ,
+      GL_INTERNAL_CODE ,
+      METHOD,
+--	  RESERVED_VARCHAR_1 ,
+--    RESERVED_VARCHAR_2 ,
+	  GL_COSTCENTER
+    )
+    SELECT  /*+ PARALLEL(8) */ A.DOWNLOAD_DATE ,
+            A.MASTERID ,
+            A.FACNO ,
+            A.CIFNO ,
+            A.ACCTNO ,
+            A.DATASOURCE ,
+            A.PRDTYPE ,
+            A.PRDCODE ,
+            A.TRXCODE ,
+            A.CCY ,
+            A.JOURNALCODE ,
+            A.STATUS ,
+            A.REVERSE ,
+            A.FLAG_CF ,
+            CASE WHEN ( A.REVERSE = 'N'AND COALESCE(A.FLAG_AL, 'A') = 'A')OR ( A.REVERSE = 'Y'AND COALESCE(A.FLAG_AL, 'A') <> 'A')
+                 THEN CASE WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'C'AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           ELSE CASE WHEN B.DRCR = 'D' THEN 'C' ELSE 'D' END
+                           END
+                 ELSE CASE WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           ELSE CASE WHEN B.DRCR = 'D' THEN 'C' ELSE 'D' END
+                           END
+            END AS DRCR ,
+            B.GLNO ,
+            ABS(A.N_AMOUNT) ,
+            ABS(A.N_AMOUNT_IDR) ,
+            A.SOURCEPROCESS ,
+            A.ID ,
+            SYSTIMESTAMP ,
+            'SP_JOURNAL_DATA2_SL' ,
+            A.BRANCH ,
+            B.JOURNALCODE ,
+            B.JOURNAL_DESC ,
+            B.JOURNALCODE ,
+			B.COSTCENTER || '-' || COALESCE(IMC.APPLICATION_NO,IMP.APPLICATION_NO,'') ,
+            B.GL_INTERNAL_CODE ,
+            A.METHOD,
+--		    COALESCE (IMC.RESERVED_VARCHAR_1, IMP.RESERVED_VARCHAR_1, ''),
+--		    COALESCE (IMC.RESERVED_VARCHAR_2, IMP.RESERVED_VARCHAR_2, ''),
+		    B.COSTCENTER
+    FROM    GTMP_IFRS_ACCT_JOURNAL_INTM A
+    LEFT JOIN IFRS_IMA_AMORT_CURR IMC ON A.MASTERID = IMC.MASTERID
+    LEFT JOIN IFRS_IMA_AMORT_PREV IMP ON A.MASTERID = IMP.MASTERID
+    JOIN IFRS_JOURNAL_PARAM B
+      ON ( B.CCY = A.CCY OR B.CCY = 'ALL')
+	  AND B.JOURNALCODE IN ('ITRCG_SL','ITRCG_SL1','ITRCG_SL2','ITEMB_SL','ITRCG_NE')
+      AND COALESCE(B.FLAG_CF,'-') NOT IN ('F', 'C')
+      AND B.GL_CONSTNAME = COALESCE(IMC.GL_CONSTNAME,IMP.GL_CONSTNAME,'')
+      AND (A.TRXCODE=B.TRX_CODE  OR B.TRX_CODE = 'ALL'  )
+    WHERE   A.DOWNLOAD_DATE = V_CURRDATE
+    AND A.JOURNALCODE = 'DEFA0'
+    AND A.TRXCODE = 'BENEFIT'
+    AND A.METHOD = 'SL'
+	AND A.SOURCEPROCESS NOT IN ('SL_REV_SWITCH', 'SL_SWITCH');
+
+	COMMIT;
+
+    INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  (V_CURRDATE ,SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_ACCT_JOURNAL_DATA_SL' ,'itrcg 2');
+
+    COMMIT;
+
+	/******************************************************************************
+    05. INSERT ACCRU AMORT DATA SOURCE CCY PRDCODE COMBINATION
+    *******************************************************************************/
+    INSERT /*+ PARALLEL(8) */ INTO IFRS_ACCT_JOURNAL_DATA
+    ( DOWNLOAD_DATE ,
+      MASTERID ,
+      FACNO ,
+      CIFNO ,
+      ACCTNO ,
+      DATASOURCE ,
+      PRDTYPE ,
+      PRDCODE ,
+      TRXCODE ,
+      CCY ,
+      JOURNALCODE ,
+      STATUS ,
+      REVERSE ,
+      FLAG_CF ,
+      DRCR ,
+      GLNO ,
+      N_AMOUNT ,
+      N_AMOUNT_IDR ,
+      SOURCEPROCESS ,
+      INTMID ,
+      CREATEDDATE ,
+      CREATEDBY ,
+      BRANCH ,
+      JOURNALCODE2 ,
+      JOURNAL_DESC ,
+      NOREF ,
+      VALCTR_CODE ,
+      GL_INTERNAL_CODE ,
+      METHOD ,
+--	  RESERVED_VARCHAR_1 ,
+--	  RESERVED_VARCHAR_2 ,
+	  GL_COSTCENTER
+    )
+    SELECT  /*+ PARALLEL(8) */ A.DOWNLOAD_DATE ,
+            A.MASTERID ,
+            A.FACNO ,
+            A.CIFNO ,
+            A.ACCTNO ,
+            A.DATASOURCE ,
+            A.PRDTYPE ,
+            A.PRDCODE ,
+            A.TRXCODE ,
+            A.CCY ,
+            A.JOURNALCODE ,
+            A.STATUS ,
+            A.REVERSE ,
+            A.FLAG_CF ,
+            CASE WHEN ( A.REVERSE = 'N'AND COALESCE(A.FLAG_AL, 'A') = 'A')OR ( A.REVERSE = 'Y'AND COALESCE(A.FLAG_AL, 'A') <> 'A')
+                 THEN CASE WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'C'AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           ELSE CASE WHEN B.DRCR = 'D' THEN 'C' ELSE 'D' END
+                           END
+                 ELSE CASE WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           ELSE CASE WHEN B.DRCR = 'D' THEN 'C' ELSE 'D' END
+                           END
+                 END AS DRCR ,
+            B.GLNO ,
+            ABS(A.N_AMOUNT) ,
+            ABS(A.N_AMOUNT_IDR) ,
+            A.SOURCEPROCESS ,
+            A.ID ,
+            SYSTIMESTAMP ,
+            'SP_ACCT_JOURNAL_DATA2_SL' ,
+            A.BRANCH ,
+            B.JOURNALCODE ,
+            B.JOURNAL_DESC ,
+            B.JOURNALCODE ,
+			B.COSTCENTER || '-' || COALESCE(IMC.APPLICATION_NO,IMP.APPLICATION_NO,'') ,
+            B.GL_INTERNAL_CODE ,
+            METHOD ,
+--			COALESCE (IMC.RESERVED_VARCHAR_1, IMP.RESERVED_VARCHAR_1, '') ,
+--          COALESCE (IMC.RESERVED_VARCHAR_2, IMP.RESERVED_VARCHAR_2, '') ,
+            B.COSTCENTER
+    FROM    GTMP_IFRS_ACCT_JOURNAL_INTM A
+    LEFT JOIN IFRS_IMA_AMORT_CURR IMC ON A.MASTERID = IMC.MASTERID
+    LEFT JOIN IFRS_IMA_AMORT_PREV IMP ON A.MASTERID = IMP.MASTERID
+    JOIN IFRS_JOURNAL_PARAM B
+      ON (B.CCY = A.CCY OR B.CCY = 'ALL')
+      AND B.JOURNALCODE IN ('ACCRU_SL', 'EMPBE_SL','EMACR_SL', 'ACCRU_NE')
+      AND B.FLAG_CF = A.FLAG_CF
+      AND B.GL_CONSTNAME = COALESCE(IMC.GL_CONSTNAME,IMP.GL_CONSTNAME,'')
+      AND (A.TRXCODE=B.TRX_CODE  OR B.TRX_CODE = 'ALL'  )
+    WHERE   A.DOWNLOAD_DATE = V_CURRDATE
+    AND A.JOURNALCODE IN ( 'ACCRU_SL', 'AMORT' )
+    AND A.TRXCODE <> 'BENEFIT'
+    AND A.METHOD = 'SL';
+
+	COMMIT;
+
+	/******************************************************************************
+    06. STAFF LOAN ACCRU
+    *******************************************************************************/
+    INSERT /*+ PARALLEL(8) */ INTO IFRS_ACCT_JOURNAL_DATA
+    ( DOWNLOAD_DATE ,
+      MASTERID ,
+      FACNO ,
+      CIFNO ,
+      ACCTNO ,
+      DATASOURCE ,
+      PRDTYPE ,
+      PRDCODE ,
+      TRXCODE ,
+      CCY ,
+      JOURNALCODE ,
+      STATUS ,
+      REVERSE ,
+      FLAG_CF ,
+      DRCR ,
+      GLNO ,
+      N_AMOUNT ,
+      N_AMOUNT_IDR ,
+      SOURCEPROCESS ,
+      INTMID ,
+      CREATEDDATE ,
+      CREATEDBY ,
+      BRANCH ,
+      JOURNALCODE2 ,
+      JOURNAL_DESC ,
+      NOREF ,
+      VALCTR_CODE ,
+      GL_INTERNAL_CODE ,
+      METHOD ,
+--	  RESERVED_VARCHAR_1 ,
+--	  RESERVED_VARCHAR_2 ,
+      GL_COSTCENTER
+    )
+    SELECT  /*+ PARALLEL(8) */ A.DOWNLOAD_DATE ,
+            A.MASTERID ,
+            A.FACNO ,
+            A.CIFNO ,
+            A.ACCTNO ,
+            A.DATASOURCE ,
+            A.PRDTYPE ,
+            A.PRDCODE ,
+            A.TRXCODE ,
+            A.CCY ,
+            A.JOURNALCODE ,
+            A.STATUS ,
+            A.REVERSE ,
+            A.FLAG_CF ,
+            CASE WHEN ( A.REVERSE = 'N'AND COALESCE(A.FLAG_AL, 'A') = 'A')OR ( A.REVERSE = 'Y'AND COALESCE(A.FLAG_AL, 'A') <> 'A')
+                 THEN CASE WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'C'AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           ELSE CASE WHEN B.DRCR = 'D' THEN 'C' ELSE 'D' END
+                           END
+                 ELSE CASE WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'ACCRU_SL','AMORT' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT >= 0 AND A.FLAG_CF = 'F' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           WHEN A.N_AMOUNT <= 0 AND A.FLAG_CF = 'C' AND A.JOURNALCODE IN ( 'DEFA0' ) THEN B.DRCR
+                           ELSE CASE WHEN B.DRCR = 'D' THEN 'C' ELSE 'D' END
+                           END
+                 END AS DRCR ,
+            B.GLNO ,
+            ABS(A.N_AMOUNT) ,
+            ABS(A.N_AMOUNT_IDR) ,
+            A.SOURCEPROCESS ,
+            A.ID ,
+            SYSTIMESTAMP ,
+            'SP_ACCT_JOURNAL_DATA2_SL' ,
+            A.BRANCH ,
+            B.JOURNALCODE ,
+            B.JOURNAL_DESC ,
+            B.JOURNALCODE ,
+			B.COSTCENTER || '-' || COALESCE(IMC.APPLICATION_NO,IMP.APPLICATION_NO,'') ,
+            B.GL_INTERNAL_CODE ,
+            METHOD ,
+--			COALESCE(IMC.RESERVED_VARCHAR_1, IMP.RESERVED_VARCHAR_1, '') ,
+--		    COALESCE(IMC.RESERVED_VARCHAR_2, IMP.RESERVED_VARCHAR_2, '') ,
+		    B.COSTCENTER
+    FROM    GTMP_IFRS_ACCT_JOURNAL_INTM A
+    LEFT JOIN IFRS_IMA_AMORT_CURR IMC ON A.MASTERID = IMC.MASTERID
+    LEFT JOIN IFRS_IMA_AMORT_PREV IMP ON A.MASTERID = IMP.MASTERID
+    JOIN IFRS_JOURNAL_PARAM B
+      ON (B.CCY = A.CCY OR B.CCY = 'ALL')
+      AND B.JOURNALCODE IN ('ACCRU_SL', 'EMPBE_SL','EMACR_SL', 'EBCTE_SL','ACCRU_NE')
+      AND COALESCE(B.FLAG_CF,'-') NOT IN ('F', 'C' )
+      AND B.GL_CONSTNAME = COALESCE(IMC.GL_CONSTNAME,IMP.GL_CONSTNAME,'')
+      AND (A.TRXCODE=B.TRX_CODE  OR B.TRX_CODE = 'ALL'  )
+    WHERE   A.DOWNLOAD_DATE = V_CURRDATE
+    AND A.JOURNALCODE IN ( 'ACCRU', 'AMORT' )
+    AND A.TRXCODE = 'BENEFIT'
+    AND A.METHOD = 'SL';
+
+	COMMIT;
+
+	INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP ,'DEBUG' ,'SP_IFRS_ACCT_JOURNAL_DATA' ,'amort 2');
+
+	COMMIT;
+
+	-- JOURNAL SWITCH ACCOUNT
+	-- RLCV OLD BRANCH
+	-- INSERT ITRCG DATA_SOURCE CCY JENIS_PINJAMAN COMBINATION
+	INSERT /*+ PARALLEL(8) */ INTO IFRS_ACCT_JOURNAL_DATA
+	(
+	  DOWNLOAD_DATE
+	  ,MASTERID
+	  ,FACNO
+	  ,CIFNO
+	  ,ACCTNO
+	  ,DATASOURCE
+	  ,PRDTYPE
+	  ,PRDCODE
+	  ,TRXCODE
+	  ,CCY
+	  ,JOURNALCODE
+	  ,STATUS
+	  ,REVERSE
+	  ,FLAG_CF
+	  ,DRCR
+	  ,GLNO
+	  ,N_AMOUNT
+	  ,N_AMOUNT_IDR
+	  ,SOURCEPROCESS
+	  ,INTMID
+	  ,CREATEDDATE
+	  ,CREATEDBY
+	  ,BRANCH
+	  ,JOURNALCODE2
+	  ,JOURNAL_DESC
+	  ,NOREF
+	  ,VALCTR_CODE
+	  ,GL_INTERNAL_CODE
+	  ,METHOD
+--	  ,RESERVED_VARCHAR_1
+--	  ,RESERVED_VARCHAR_2
+	  ,GL_COSTCENTER
+	)
+	 SELECT /*+ PARALLEL(8) */ A.DOWNLOAD_DATE
+	  ,A.MASTERID
+	  ,A.FACNO
+	  ,A.CIFNO
+	  ,A.ACCTNO
+	  ,A.DATASOURCE
+	  ,A.PRDTYPE
+	  ,A.PRDCODE
+	  ,A.TRXCODE
+	  ,A.CCY
+	  ,A.JOURNALCODE
+	  ,A.STATUS
+	  ,A.REVERSE
+	  ,A.FLAG_CF
+	  ,B.DRCR
+	  ,B.GLNO
+	  ,ABS(A.N_AMOUNT)
+	  ,ABS(A.N_AMOUNT_IDR)
+	  ,A.SOURCEPROCESS
+	  ,A.ID
+	  ,SYSTIMESTAMP
+	  ,'SP_ACCT_JOURNAL_DATA2_SL'
+	  ,A.BRANCH
+	  ,B.JOURNALCODE
+	  ,B.JOURNAL_DESC
+	  ,B.JOURNALCODE
+	  ,B.COSTCENTER || '-' || COALESCE(IMC.APPLICATION_NO, IMP.APPLICATION_NO,'')
+	  ,B.GL_INTERNAL_CODE
+	  ,METHOD
+--	  ,COALESCE(IMC.RESERVED_VARCHAR_1, IMP.RESERVED_VARCHAR_1, '')
+--	  ,COALESCE(IMC.RESERVED_VARCHAR_2, IMP.RESERVED_VARCHAR_2, '')
+	  ,B.COSTCENTER
+	 FROM GTMP_IFRS_ACCT_JOURNAL_INTM A
+	 LEFT JOIN IFRS_IMA_AMORT_CURR IMC ON A.MASTERID = IMC.MASTERID
+	 LEFT JOIN IFRS_IMA_AMORT_PREV IMP ON A.MASTERID = IMP.MASTERID
+	 JOIN IFRS_JOURNAL_PARAM B ON B.JOURNALCODE ='RCLV'
+	  AND ( B.CCY = A.CCY   OR B.CCY = 'ALL'      )
+	  AND B.FLAG_CF = A.FLAG_CF
+	  AND B.GL_CONSTNAME = COALESCE(IMC.GL_CONSTNAME, IMP.GL_CONSTNAME, '')
+	  AND ( A.TRXCODE = B.TRX_CODE    OR B.TRX_CODE = 'ALL')
+	 WHERE A.DOWNLOAD_DATE = V_CURRDATE
+	  AND A.JOURNALCODE = 'DEFA0'
+	  AND A.METHOD = 'SL'
+	  AND A.SOURCEPROCESS = 'SL_REV_SWITCH';
+
+	COMMIT;
+
+	--  RLCS NEW BRANCH
+	-- INSERT ITRCG DATA_SOURCE CCY JENIS_PINJAMAN COMBINATION
+	INSERT /*+ PARALLEL(8) */ INTO IFRS_ACCT_JOURNAL_DATA
+	(
+	  DOWNLOAD_DATE
+	  ,MASTERID
+	  ,FACNO
+	  ,CIFNO
+	  ,ACCTNO
+	  ,DATASOURCE
+	  ,PRDTYPE
+	  ,PRDCODE
+	  ,TRXCODE
+	  ,CCY
+	  ,JOURNALCODE
+	  ,STATUS
+	  ,REVERSE
+	  ,FLAG_CF
+	  ,DRCR
+	  ,GLNO
+	  ,N_AMOUNT
+	  ,N_AMOUNT_IDR
+	  ,SOURCEPROCESS
+	  ,INTMID
+	  ,CREATEDDATE
+	  ,CREATEDBY
+	  ,BRANCH
+	  ,JOURNALCODE2
+	  ,JOURNAL_DESC
+	  ,NOREF
+	  ,VALCTR_CODE
+	  ,GL_INTERNAL_CODE
+	  ,METHOD
+--	  ,RESERVED_VARCHAR_1
+--	  ,RESERVED_VARCHAR_2
+	  ,GL_COSTCENTER
+	)
+	SELECT /*+ PARALLEL(8) */ A.DOWNLOAD_DATE
+	  ,A.MASTERID
+	  ,A.FACNO
+	  ,A.CIFNO
+	  ,A.ACCTNO
+	  ,A.DATASOURCE
+	  ,A.PRDTYPE
+	  ,A.PRDCODE
+	  ,A.TRXCODE
+	  ,A.CCY
+	  ,A.JOURNALCODE
+	  ,A.STATUS
+	  ,A.REVERSE
+	  ,A.FLAG_CF
+	  ,B.DRCR
+	  ,B.GLNO
+	  ,ABS(A.N_AMOUNT)
+	  ,ABS(A.N_AMOUNT_IDR)
+	  ,A.SOURCEPROCESS
+	  ,A.ID
+	  ,SYSTIMESTAMP
+	  ,'SP_ACCT_JOURNAL_DATA2_SL'
+	  ,A.BRANCH
+	  ,B.JOURNALCODE
+	  ,B.JOURNAL_DESC
+	  ,B.JOURNALCODE
+	  ,B.COSTCENTER || '-' || COALESCE(IMC.APPLICATION_NO, IMP.APPLICATION_NO, '')
+	  ,B.GL_INTERNAL_CODE
+	  ,METHOD
+--	  ,COALESCE(IMC.RESERVED_VARCHAR_1, IMP.RESERVED_VARCHAR_1, '')
+--	  ,COALESCE(IMC.RESERVED_VARCHAR_2, IMP.RESERVED_VARCHAR_2, '')
+	  ,B.COSTCENTER
+	 FROM GTMP_IFRS_ACCT_JOURNAL_INTM A
+	 LEFT JOIN IFRS_IMA_AMORT_CURR IMC ON A.MASTERID = IMC.MASTERID
+	 LEFT JOIN IFRS_IMA_AMORT_PREV IMP ON A.MASTERID = IMP.MASTERID
+	 JOIN IFRS_JOURNAL_PARAM B ON B.JOURNALCODE = 'RCLS'
+	  AND (  B.CCY = A.CCY    OR B.CCY = 'ALL' )
+	  AND B.FLAG_CF = A.FLAG_CF
+	  AND B.GL_CONSTNAME = COALESCE(IMC.GL_CONSTNAME, IMP.GL_CONSTNAME, '')
+	  AND ( A.TRXCODE = B.TRX_CODE  OR B.TRX_CODE = 'ALL')
+	 WHERE A.DOWNLOAD_DATE = V_CURRDATE
+	  AND A.JOURNALCODE = 'DEFA0'
+	  AND A.METHOD = 'SL'
+	  AND A.SOURCEPROCESS = 'SL_SWITCH';
+
+	COMMIT;
+
+	INSERT  INTO IFRS_AMORT_LOG( DOWNLOAD_DATE ,DTM ,OPS ,PROCNAME ,REMARK)
+    VALUES  ( V_CURRDATE ,SYSTIMESTAMP ,'END' ,'SP_IFRS_ACCT_JOURNAL_DATA_SL' ,'');
+
+    COMMIT;
+END;

@@ -1,0 +1,53 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_INSERT_VALIDASI
+AS
+  V_CURRDATE  date;
+  v_TABLE_NAME varchar2(30);
+  V_STR_SQL varchar2(4000);
+  v_Group_Segment varchar2(50);
+
+  CURSOR i IS
+  SELECT
+    TABLE_NAME,
+    GROUP_SEGMENT
+  FROM GTMP_SCENARIO_SEGMENT_GENQUERY WHERE RULE_ID NOT IN (459,460,461,462) ORDER BY RULE_ID;
+
+BEGIN
+
+  EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_STATISTIC';
+
+  SELECT
+    CURRDATE INTO V_CURRDATE
+  FROM IFRS_PRC_DATE;
+
+
+  OPEN i;
+  FETCH i INTO v_TABLE_NAME, V_Group_Segment;
+
+  WHILE i%FOUND
+  LOOP
+
+
+    V_STR_SQL := '  DELETE '||v_TABLE_NAME||'
+                    WHERE DOWNLOAD_DATE =  '''||V_CURRDATE||'''';
+
+    COMMIT;
+   insert into TMP_STATISTIC select v_str_sql from dual; COMMIT;
+    EXECUTE IMMEDIATE V_STR_SQL;
+
+    V_STR_SQL := '  INSERT INTO '||v_TABLE_NAME||'
+                    SELECT * FROM '||v_Group_Segment||'
+                    WHERE DOWNLOAD_DATE =  '''||V_CURRDATE||'''';
+
+    COMMIT;
+
+    EXECUTE IMMEDIATE V_STR_SQL;
+    insert into TMP_STATISTIC select v_str_sql from dual;
+
+    COMMIT;
+
+    FETCH i INTO v_TABLE_NAME, V_Group_Segment;
+
+  END LOOP;
+  CLOSE i;
+END
+;

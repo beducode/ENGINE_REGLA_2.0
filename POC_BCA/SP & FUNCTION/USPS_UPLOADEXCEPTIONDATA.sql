@@ -1,0 +1,18 @@
+CREATE OR REPLACE PROCEDURE USPS_UPLOADEXCEPTIONDATA
+(
+   v_UploadID in number default 0,
+    Cur_out OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+
+open Cur_out for
+    SELECT UPLOADID,
+        ROW_NUMBER,
+        COLUMN_NAME,
+        VALUE,
+        ERROR_MESSAGE
+    FROM TBLU_DOC_TEMP_EXCEPTION
+    WHERE UPLOADID = v_UploadID;
+
+END;

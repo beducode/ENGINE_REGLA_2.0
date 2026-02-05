@@ -1,0 +1,489 @@
+CREATE OR REPLACE PROCEDURE SP_IFRS_ACCT_EIR_ACF_PMTDT
+AS
+    V_CURRDATE    DATE;
+    V_PREVDATE    DATE;
+    V_ROUND NUMBER(10);
+    V_FUNCROUND NUMBER(10);
+
+BEGIN
+
+    SELECT MAX(CURRDATE),MAX(PREVDATE)
+    INTO V_CURRDATE, V_PREVDATE
+    FROM IFRS_PRC_DATE_AMORT;
+
+    BEGIN
+      SELECT CAST(VALUE1 AS NUMBER(10))
+           , CAST(VALUE2 AS NUMBER(10))
+      INTO V_ROUND, V_FUNCROUND
+      FROM TBLM_COMMONCODEDETAIL
+      WHERE COMMONCODE = 'SCM003';
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        V_ROUND := 2;
+        V_FUNCROUND:=0;
+    END;
+
+
+
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'START','SP_IFRS_ACCT_EIR_ACF_PMTDATE','');
+
+    -- stop rev already do delete
+    --delete from IFRS_ACCT_EIR_ACF where DOWNLOAD_DATE=@v_currdate
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_ACCT_EIR_ACF_PMTDATE','CLEAN UP');
+
+    COMMIT;
+
+    -- prepare index
+    --execute immediate 'drop index psak_eir_ecf_idx1';
+    --execute immediate 'drop index IMA_AMORT_CURR_idx1';
+    --execute immediate 'create index psak_eir_ecf_idx1 on IFRS_ACCT_EIR_ECF(masterid,prev_pmt_date,pmt_date,amortstopdate)';
+    --execute immediate 'create index IMA_AMORT_CURR_idx1 on IFRS_ACCT_EIR_ECF(masterid)';
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_IFRS_ACCT_EIR_ECF';
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_IFRS_ACCT_EIR_ECF2';
+
+    INSERT /*+ PARALLEL(12) */ INTO TMP_IFRS_ACCT_EIR_ECF
+    (
+        DOWNLOAD_DATE,
+        MASTERID,
+        N_COST_UNAMORT_AMT,
+        N_FEE_UNAMORT_AMT
+    )
+    SELECT /*+ PARALLEL(12) */
+        DOWNLOAD_DATE,
+        MASTERID,
+        N_COST_UNAMORT_AMT,
+        N_FEE_UNAMORT_AMT
+    FROM IFRS_ACCT_EIR_ECF
+    WHERE AMORTSTOPDATE IS NULL
+      AND PMT_DATE = PREV_PMT_DATE;
+
+    COMMIT;
+
+    INSERT /*+ PARALLEL(12) */ INTO TMP_IFRS_ACCT_EIR_ECF2
+    (
+        MASTERID,
+        DOWNLOAD_DATE,
+        PREV_PMT_DATE,
+        I_DAYS2,
+        N_COST_UNAMORT_AMT_PREV,
+        N_COST_AMORT_AMT,
+        N_COST_UNAMORT_AMT,
+        N_FEE_UNAMORT_AMT_PREV,
+        N_FEE_AMORT_AMT,
+        N_FEE_UNAMORT_AMT,
+        SW_ADJ_COST,
+        SW_ADJ_FEE,
+        NOCF_UNAMORT_AMT_PREV,
+        NOCF_AMORT_AMT,
+        NOCF_UNAMORT_AMT
+    )
+    SELECT /*+ PARALLEL(12) */
+        A.MASTERID,
+        A.DOWNLOAD_DATE,
+        A.PREV_PMT_DATE,
+        A.I_DAYS2,
+        A.N_COST_UNAMORT_AMT_PREV,
+        A.N_COST_AMORT_AMT,
+        A.N_COST_UNAMORT_AMT,
+        A.N_FEE_UNAMORT_AMT_PREV,
+        A.N_FEE_AMORT_AMT,
+        A.N_FEE_UNAMORT_AMT,
+        A.SW_ADJ_COST,
+        A.SW_ADJ_FEE,
+        A.NOCF_UNAMORT_AMT_PREV,
+        A.NOCF_AMORT_AMT,
+        A.NOCF_UNAMORT_AMT
+    FROM IFRS_ACCT_EIR_ECF A
+    WHERE A.AMORTSTOPDATE IS NULL
+    AND A.PMT_DATE = V_CURRDATE
+    AND A.PMT_DATE <> A.PREV_PMT_DATE;
+
+    COMMIT;
+
+    -- insert acf
+    INSERT /*+ PARALLEL(12) */ INTO IFRS_ACCT_EIR_ACF
+       (DOWNLOAD_DATE
+       ,FACNO
+       ,CIFNO
+       ,DATASOURCE
+       ,N_UNAMORT_COST
+       ,N_UNAMORT_FEE
+       ,N_AMORT_COST
+       ,N_AMORT_FEE
+       ,N_ACCRU_COST
+       ,N_ACCRU_FEE
+       ,N_ACCRUFULL_COST
+       ,N_ACCRUFULL_FEE
+       ,ECFDATE
+       ,CREATEDDATE
+       ,CREATEDBY
+       ,MASTERID
+       ,ACCTNO
+       ,DO_AMORT
+       ,BRANCH
+       ,ACF_CODE
+       ,FLAG_AL -- AR : additional asset / liab flag
+       ,N_ACCRU_NOCF -- from no cost fee ecf
+       ,N_UNAMORT_NOCF
+       ,N_UNAMORT_PREV_NOCF
+       )
+    SELECT /*+ PARALLEL(12) */ V_CURRDATE
+          ,M.FACILITY_NUMBER
+          ,M.CUSTOMER_NUMBER
+          ,M.DATA_SOURCE
+          ,A.N_COST_UNAMORT_AMT
+          ,A.N_FEE_UNAMORT_AMT
+          ,C.N_COST_UNAMORT_AMT - A.N_COST_UNAMORT_AMT
+          ,C.N_FEE_UNAMORT_AMT - A.N_FEE_UNAMORT_AMT
+          ,A.N_COST_AMORT_AMT - COALESCE(A.SW_ADJ_COST,0)
+          ,A.N_FEE_AMORT_AMT - COALESCE(A.SW_ADJ_FEE,0)
+          ,A.N_COST_AMORT_AMT - COALESCE(A.SW_ADJ_COST,0) AS N_ACCRUFULL_COST
+          ,A.N_FEE_AMORT_AMT - COALESCE(A.SW_ADJ_FEE,0) AS N_ACCRUFULL_FEE
+          ,A.DOWNLOAD_DATE
+          ,SYSTIMESTAMP
+          ,'SP_ACCT_EIR_ACF_PMTDATE 1'
+          ,M.MASTERID
+          ,M.ACCOUNT_NUMBER
+          ,'Y' DO_AMORT
+          ,M.BRANCH_CODE
+          ,'1' ACFCODE
+          ,M.IAS_CLASS
+          ,A.NOCF_AMORT_AMT
+          ,A.NOCF_UNAMORT_AMT
+          ,A.NOCF_UNAMORT_AMT_PREV
+    FROM TMP_IFRS_ACCT_EIR_ECF2 A
+    JOIN (SELECT M.DATA_SOURCE
+                ,M.BRANCH_CODE
+                ,M.MASTERID
+                ,M.ACCOUNT_NUMBER
+                ,M.FACILITY_NUMBER
+                ,M.CUSTOMER_NUMBER
+                ,M.IAS_CLASS
+          FROM IFRS_IMA_AMORT_CURR  M
+          LEFT JOIN (SELECT DISTINCT DOWNLOAD_DATE,MASTERID FROM IFRS_ACCT_CLOSED WHERE DOWNLOAD_DATE = V_CURRDATE) D
+            ON M.MASTERID=D.MASTERID
+          WHERE D.MASTERID IS NULL) M
+      ON A.MASTERID = M.MASTERID
+    JOIN TMP_IFRS_ACCT_EIR_ECF C
+      ON C.MASTERID = M.MASTERID;
+    /*
+    --test kalo switch jgn bikin amort lagi
+    AND A.MASTERID NOT IN (SELECT MASTERID FROM IFRS_ACCT_SWITCH WHERE DOWNLOAD_DATE = V_CURRDATE);
+    */
+    COMMIT;
+
+    /* Remarks.. Tunning Script 20160602
+    from IMA_AMORT_CURR  m
+    join IFRS_ACCT_EIR_ECF a on a.amortstopdate is null
+        and a.masterid=m.masterid
+        and a.pmt_date=@v_currdate
+        and a.pmt_date<>a.prev_pmt_date
+    join IFRS_ACCT_EIR_ECF c on c.amortstopdate is null
+        and c.masterid=m.masterid
+        and c.pmt_date=c.prev_pmt_date
+    where
+        --dont do if closed
+        m.masterid not in (select masterid from IFRS_ACCT_CLOSED where DOWNLOAD_DATE=@v_currdate)
+    end Remarks.. Tunning Script 20160602*/
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_ACCT_EIR_ACF_PMTDATE','ACF INSERTED');
+
+    -- get eir_acf max(id) to process
+    EXECUTE IMMEDIATE 'truncate table TMP_P1';
+
+    INSERT /*+ PARALLEL(12) */ INTO TMP_P1(ID)
+    SELECT /*+ PARALLEL(12) */ MAX(ID) AS ID
+    FROM IFRS_ACCT_EIR_ACF A
+    -- exclude acct registered @ stop rev
+    --LEFT JOIN (select distinct masterid from psak_acct_eir_stop_rev where DOWNLOAD_DATE=@v_currdate) b
+    --on a.MASTERID = b.masterid
+    WHERE DOWNLOAD_DATE=V_CURRDATE
+    --and b.masterid is null
+      -- exclude acct registered @ stop rev
+      --and MASTERID not in (select masterid from psak_acct_eir_stop_rev where DOWNLOAD_DATE=@v_currdate)
+    GROUP BY A.MASTERID;
+
+    COMMIT;
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_ACCT_EIR_ACF_PMTDATE','P1');
+
+
+    --fee 1
+    EXECUTE IMMEDIATE 'truncate table TMP_T1';
+
+    INSERT /*+ PARALLEL(12) */ INTO TMP_T1(SUM_AMT, DOWNLOAD_DATE,FACNO,CIFNO,DATASOURCE,ACCTNO,MASTERID)
+    SELECT /*+ PARALLEL(12) */ SUM(A.N_AMOUNT) AS SUM_AMT, A.DOWNLOAD_DATE, A.FACNO,A.CIFNO,A.DATASOURCE,A.ACCTNO,A.MASTERID
+    FROM(
+        SELECT CASE WHEN A.FLAG_REVERSE='Y' THEN -1 * A.AMOUNT ELSE A.AMOUNT END AS N_AMOUNT
+        ,A.ECFDATE DOWNLOAD_DATE,A.FACNO,A.CIFNO,A.DATASOURCE,A.ACCTNO,A.MASTERID
+        FROM IFRS_ACCT_EIR_COST_FEE_ECF A
+        WHERE A.FLAG_CF='F' AND A.STATUS = 'ACT'
+    ) A
+    GROUP BY A.DOWNLOAD_DATE,A.FACNO,A.CIFNO,A.DATASOURCE,A.ACCTNO,A.MASTERID;
+
+    COMMIT;
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_ACCT_EIR_ACF_PMTDATE','T1 FEE');
+
+    -- update sum_amt
+    MERGE INTO IFRS_ACCT_EIR_COST_FEE_ECF A
+    USING /*+ PARALLEL(12) */ TMP_T1 B
+    ON (B.MASTERID=A.MASTERID
+              AND B.DOWNLOAD_DATE=A.ECFDATE
+              AND A.FLAG_CF='F'
+       )
+    WHEN MATCHED THEN
+    UPDATE
+    SET A.SUM_AMT=B.SUM_AMT;
+
+    COMMIT;
+
+    --prepare index
+    --execute immediate 'drop index psak_eir_cost_fee_ecf_idx1';
+    --execute immediate 'drop index psak_eir_acf_idx1';
+    --execute immediate 'drop index TMP_T1_idx1';
+    --execute immediate 'create index psak_eir_cost_fee_ecf_idx1 on IFRS_ACCT_EIR_COST_FEE_ECF(masterid,ecfdate,flag_cf)';
+    --execute immediate 'create index psak_eir_acf_idx1 on IFRS_ACCT_EIR_ACF(masterid,ecfdate)';
+    --execute immediate 'create index TMP_T1_idx1 on TMP_T1(masterid,DOWNLOAD_DATE)';
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_IFRS_ACCT_EIR_ACF';
+
+    INSERT /*+ PARALLEL(12) */ INTO TMP_IFRS_ACCT_EIR_ACF
+    (
+        ID,
+        FACILITY_NUMBER,
+        CUSTOMER_NUMBER,
+        DOWNLOAD_DATE,
+        ECFDATE,
+        DATASOURCE,
+        N_UNAMORT_FEE,
+        N_UNAMORT_COST,
+        ACCOUNT_NUMBER,
+        MASTERID,
+        FLAG_AL
+    )
+    SELECT /*+ PARALLEL(12) */ A.ID,
+           A.FACNO,
+           A.CIFNO,
+           A.DOWNLOAD_DATE,
+           A.ECFDATE,
+           A.DATASOURCE,
+           A.N_UNAMORT_FEE,
+           A.N_UNAMORT_COST,
+           A.ACCTNO,
+           A.MASTERID,
+           A.FLAG_AL
+    FROM  IFRS_ACCT_EIR_ACF A
+    WHERE A.DOWNLOAD_DATE = V_CURRDATE;COMMIT;
+
+    -- fee 1
+    INSERT /*+ PARALLEL(12) */ INTO IFRS_ACCT_EIR_COST_FEE_PREV(
+     FACNO
+    ,CIFNO
+    ,DOWNLOAD_DATE
+    ,ECFDATE
+    ,DATASOURCE
+    ,PRDCODE
+    ,TRXCODE
+    ,CCY
+    ,AMOUNT
+    ,STATUS
+    ,CREATEDDATE
+    ,ACCTNO
+    ,MASTERID
+    ,FLAG_CF
+    ,FLAG_REVERSE
+    ,BRCODE
+    ,SRCPROCESS
+    ,CREATEDBY
+    ,METHOD
+    ,SEQ
+    ,AMOUNT_ORG
+    ,ORG_CCY
+    ,ORG_CCY_EXRATE
+    ,PRDTYPE
+    ,CF_ID
+    )
+    SELECT /*+ PARALLEL(12) */ A.FACILITY_NUMBER
+          ,A.CUSTOMER_NUMBER
+          ,A.DOWNLOAD_DATE
+          ,A.ECFDATE
+          ,A.DATASOURCE
+          ,B.PRDCODE
+          ,B.TRXCODE
+          ,B.CCY
+          ,ROUND(CAST(CAST(B.AMOUNT AS BINARY_DOUBLE)/CAST(B.SUM_AMT AS BINARY_DOUBLE) AS NUMBER(32,20)) * A.N_UNAMORT_FEE,V_ROUND) AS N_AMOUNT
+          ,B.STATUS
+          ,SYSTIMESTAMP
+          ,A.ACCOUNT_NUMBER
+          ,A.MASTERID
+          ,B.FLAG_CF
+          ,B.FLAG_REVERSE
+          ,B.BRCODE
+          ,B.SRCPROCESS
+          ,'EIRACF01'
+          ,'EIR'
+          ,'1'
+          ,B.AMOUNT_ORG
+          ,B.ORG_CCY
+          ,B.ORG_CCY_EXRATE
+          ,B.PRDTYPE
+          ,B.CF_ID
+    FROM TMP_IFRS_ACCT_EIR_ACF  A
+    JOIN IFRS_ACCT_EIR_COST_FEE_ECF B
+      ON B.ECFDATE=A.ECFDATE
+      AND A.MASTERID=B.MASTERID
+      AND B.FLAG_CF='F'
+      AND B.STATUS='ACT'
+      AND B.METHOD='EIR'
+    WHERE --A.DOWNLOAD_DATE=V_CURRDATE
+     ((A.N_UNAMORT_FEE < 0 AND A.FLAG_AL='A') OR (A.N_UNAMORT_FEE > 0 AND A.FLAG_AL='L'))
+     AND A.ID IN (SELECT ID FROM TMP_P1);
+
+    COMMIT;
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_ACCT_EIR_ACF_PMTDATE','FEE PREV');
+
+
+    --cost 1
+    EXECUTE IMMEDIATE 'truncate table TMP_T2';
+
+    COMMIT;
+
+    INSERT /*+ PARALLEL(12) */ INTO TMP_T2(SUM_AMT, DOWNLOAD_DATE,FACNO,CIFNO,DATASOURCE,ACCTNO,MASTERID)
+    SELECT /*+ PARALLEL(12) */ SUM(A.N_AMOUNT) AS SUM_AMT, A.DOWNLOAD_DATE, A.FACNO,A.CIFNO,A.DATASOURCE,A.ACCTNO,A.MASTERID
+    FROM(
+        SELECT CASE WHEN A.FLAG_REVERSE='Y' THEN -1 * A.AMOUNT ELSE A.AMOUNT END AS N_AMOUNT
+        ,A.ECFDATE DOWNLOAD_DATE,A.FACNO,A.CIFNO,A.DATASOURCE,A.ACCTNO,A.MASTERID
+        FROM IFRS_ACCT_EIR_COST_FEE_ECF A
+        WHERE A.FLAG_CF='C' AND A.STATUS = 'ACT'
+    ) A
+    GROUP BY A.DOWNLOAD_DATE,A.FACNO,A.CIFNO,A.DATASOURCE,A.ACCTNO,A.MASTERID;
+
+    COMMIT;
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_ACCT_EIR_ACF_PMTDATE','T2');
+
+    --execute immediate 'drop index TMP_T2_idx1';
+    --execute immediate 'create index TMP_T2_idx1 on TMP_T2(masterid,DOWNLOAD_DATE)';
+
+    -- update sum_amt
+    MERGE INTO IFRS_ACCT_EIR_COST_FEE_ECF A
+    USING /*+ PARALLEL(12) */ TMP_T2 B
+    ON (B.MASTERID=A.MASTERID
+              AND B.DOWNLOAD_DATE=A.ECFDATE
+              AND A.FLAG_CF='C'
+       )
+    WHEN MATCHED THEN
+    UPDATE
+    SET A.SUM_AMT=B.SUM_AMT;
+
+    COMMIT;
+
+    INSERT /*+ PARALLEL(12) */ INTO IFRS_ACCT_EIR_COST_FEE_PREV
+    (FACNO
+    ,CIFNO
+    ,DOWNLOAD_DATE
+    ,ECFDATE
+    ,DATASOURCE
+    ,PRDCODE
+    ,TRXCODE
+    ,CCY
+    ,AMOUNT
+    ,STATUS
+    ,CREATEDDATE
+    ,ACCTNO
+    ,MASTERID
+    ,FLAG_CF
+    ,FLAG_REVERSE
+    ,BRCODE
+    ,SRCPROCESS
+    ,CREATEDBY
+    ,METHOD
+    ,SEQ
+    ,AMOUNT_ORG
+    ,ORG_CCY
+    ,ORG_CCY_EXRATE
+    ,PRDTYPE
+    ,CF_ID
+    )
+    SELECT /*+ PARALLEL(12) */ A.FACILITY_NUMBER
+          ,A.CUSTOMER_NUMBER
+          ,A.DOWNLOAD_DATE
+          ,A.ECFDATE
+          ,A.DATASOURCE
+          ,B.PRDCODE
+          ,B.TRXCODE
+          ,B.CCY
+          ,ROUND(CAST(CAST(B.AMOUNT AS BINARY_DOUBLE)/CAST(B.SUM_AMT AS BINARY_DOUBLE) AS NUMBER(32,20)) * A.N_UNAMORT_COST,V_ROUND) AS N_AMOUNT
+          ,B.STATUS
+          ,SYSTIMESTAMP
+          ,A.ACCOUNT_NUMBER
+          ,A.MASTERID
+          ,B.FLAG_CF
+          ,B.FLAG_REVERSE
+          ,B.BRCODE
+          ,B.SRCPROCESS
+          ,'EIRACF01'
+          ,'EIR'
+          ,'1'
+          ,B.AMOUNT_ORG
+          ,B.ORG_CCY
+          ,B.ORG_CCY_EXRATE
+          ,B.PRDTYPE
+          ,B.CF_ID
+    FROM TMP_IFRS_ACCT_EIR_ACF  A
+    JOIN IFRS_ACCT_EIR_COST_FEE_ECF B ON B.ECFDATE=A.ECFDATE
+      AND A.MASTERID=B.MASTERID
+      AND B.FLAG_CF='C'
+      AND B.STATUS='ACT'
+    WHERE --A.DOWNLOAD_DATE=V_CURRDATE AND
+     ((A.N_UNAMORT_COST > 0 AND A.FLAG_AL='A') OR (A.N_UNAMORT_COST < 0 AND A.FLAG_AL='L'))
+    AND A.ID IN (SELECT ID FROM TMP_P1);
+
+    COMMIT;
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_ACCT_EIR_ACF_PMTDATE','COST PREV');
+
+
+    -- amort acru --journal should do the rest
+    UPDATE /*+ PARALLEL(12) */ IFRS_ACCT_EIR_ACCRU_PREV
+    SET STATUS=TO_CHAR(V_CURRDATE,'YYYYMMDD')
+    WHERE STATUS='ACT'
+    AND MASTERID IN (SELECT DISTINCT MASTERID FROM IFRS_ACCT_EIR_ACF WHERE DOWNLOAD_DATE=V_CURRDATE AND DO_AMORT='Y');
+
+    COMMIT;
+
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_ACCT_EIR_ACF_PMTDATE','ACRU PRV UPD');
+
+    -- stop eir ecf end today
+    UPDATE /*+ PARALLEL(12) */ IFRS_ACCT_EIR_ECF
+    SET AMORTSTOPDATE=V_CURRDATE,AMORTSTOPMSG='END_ACF'
+    WHERE ENDAMORTDATE=V_CURRDATE AND AMORTSTOPDATE IS NULL
+    AND MASTERID NOT IN (SELECT MASTERID FROM IFRS_ACCT_CLOSED WHERE DOWNLOAD_DATE=V_CURRDATE);
+
+    COMMIT;
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'DEBUG','SP_IFRS_ACCT_EIR_ACF_PMTDATE','STOP ECF');
+
+    INSERT INTO IFRS_AMORT_LOG(DOWNLOAD_DATE,DTM,OPS,PROCNAME,REMARK)
+    VALUES(V_CURRDATE,SYSTIMESTAMP,'END','SP_IFRS_ACCT_EIR_ACF_PMTDATE','');
+
+    COMMIT;
+
+
+END;

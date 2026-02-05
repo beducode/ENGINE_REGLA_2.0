@@ -1,0 +1,42 @@
+CREATE OR REPLACE PROCEDURE uspS_ModuleApprovalPend
+(
+    v_USERID IN VARCHAR2 DEFAULT ' ',
+    v_CUROUT IN OUT NUMBER
+)
+AS
+    v_SCREENPENDING NUMBER;
+    v_UPLOADPENDING NUMBER;
+BEGIN
+
+    SELECT SUM(ModuleCount)
+    INTO v_SCREENPENDING
+    FROM
+    (
+        (
+            SELECT COUNT(1) ModuleCount
+            FROM TBLM_USER u
+                LEFT JOIN TBLM_REPORTTO r
+                    ON r.USERID = u.USERID
+                JOIN TBLT_APPROVALHEADER h
+                    ON h.CREATEDBY = u.USERID
+            WHERE h.STATUS = 'P'
+                AND UPPER((nvl(r.REPORTTO, u.USERID))) = UPPER(v_USERID)
+                AND h.MASTERID = 0
+        )
+    ) x;
+
+	SELECT SUM(ModuleCount)
+	INTO v_UPLOADPENDING
+    FROM
+    (
+		SELECT COUNT(1) ModuleCount
+		FROM TBLT_UPLOAD_POOL A
+			JOIN TBLM_MAPPINGRULEHEADER_NEW B ON A.MAPPINGID = B.PKID
+			LEFT JOIN TBLM_REPORTTO R ON A.CREATEDBY = R.USERID
+		WHERE nvl(REPORTTO, A.CREATEDBY) = v_USERID
+			AND STATUS = 'PENDING'
+	) x;
+
+	v_CUROUT := v_SCREENPENDING + v_UPLOADPENDING;
+
+END;
