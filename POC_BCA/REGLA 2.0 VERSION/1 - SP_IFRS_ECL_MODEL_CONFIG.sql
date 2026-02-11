@@ -98,7 +98,7 @@ BEGIN
     COMMIT;
 
     ----------------------------------------------------------------
-    -- INSERT INTO GTMP_PD_RUNNING_CONFIG_<RUNID> (CONFIG DATA)
+    -- INSERT INTO IFRS_ECL_MODEL_CONFIG
     
     V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || '(
         DOWNLOAD_DATE,
