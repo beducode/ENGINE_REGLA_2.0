@@ -151,8 +151,7 @@ BEGIN
         V_STR_QUERY := '
             INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' 
             (RULE_TYPE, RULE_ID, TABLE_NAME, PD_RULES_QRY_RESULT)
-            VALUES (:1, :2, :3,
-                    FN_GENERATE_RULE(:2, :1))';         
+            VALUES (:1, :2, :3, FN_GENERATE_RULE(:2, :1))';         
         
         EXECUTE IMMEDIATE V_STR_QUERY
         USING V_DETAIL_TYPE,

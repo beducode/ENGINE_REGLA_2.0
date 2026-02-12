@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_RULE_DATA_BCA (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_RESULT_CALC_BCA (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
@@ -9,7 +9,7 @@ AS
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
-    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_RULE_DATA_BCA';
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_RESULT_CALC_BCA';
     V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);
@@ -80,9 +80,9 @@ BEGIN
     -- TABLE DETERMINATION
     ----------------------------------------------------------------
     IF V_PRC = 'S' THEN 
-        V_TABLEINSERT1 := 'GTMP_IFRS_SCENARIO_DATA_' || V_RUNID;
+        V_TABLEINSERT1 := 'IFRS_MASTER_ACCOUNT_' || V_RUNID;
     ELSE 
-        V_TABLEINSERT1 := 'GTMP_IFRS_SCENARIO_DATA';
+        V_TABLEINSERT1 := 'IFRS_MASTER_ACCOUNT';
     END IF;
 
     IFRS9_BCA.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, V_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
@@ -104,106 +104,25 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_SCENARIO_DATA';
+                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_MASTER_ACCOUNT WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
         EXECUTE IMMEDIATE V_STR_QUERY;
     END IF;
     COMMIT;
 
     ----------------------------------------------------------------
-    -- UNLOCK & CLEAN TARGET TABLE
+    -- MAIN PROCESSING
     ----------------------------------------------------------------
-    V_STR_QUERY := 'BEGIN ' ||
-                   'DBMS_STATS.UNLOCK_TABLE_STATS(:1, ''' || V_TABLEINSERT1 || '''); ' ||
-                   'DBMS_STATS.DELETE_TABLE_STATS(:1, ''' || V_TABLEINSERT1 || '''); ' ||
-                   'END;';
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_OWNER;
 
-    EXECUTE IMMEDIATE 'TRUNCATE TABLE  ' || V_OWNER || '.' || V_TABLEINSERT1;
+    V_STR_QUERY := 'XXXX';
 
-    ----------------------------------------------------------------
-    -- BUILD DYNAMIC CURSOR QUERY
-    ----------------------------------------------------------------
-    V_STR_QUERY := 'SELECT
-            RULE_ID,
-            RULE_TYPE,
-            TABLE_NAME,
-            PD_RULES_QRY_RESULT
-        FROM GTMP_IFRS_SCENARIO_GEN_QUERY';
-
-    ----------------------------------------------------------------
-    -- OPEN DYNAMIC CURSOR
-    ----------------------------------------------------------------
-    OPEN C_RULE FOR V_STR_QUERY;
-
-    LOOP
-        FETCH C_RULE INTO
-            V_RULE_ID,
-            V_RULE_TYPE,
-            V_TABLE_NAME,
-            V_PD_RULES_QRY_RESULT;
-
-        EXIT WHEN C_RULE%NOTFOUND;
-
-        ----------------------------------------------------------------
-        -- INSERT PER ROW (DYNAMIC)
-        ----------------------------------------------------------------
-        V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' (
-                                       DOWNLOAD_DATE,
-                                       RULE_ID,
-                                       RULE_TYPE,
-                                       MASTERID,
-                                       GROUP_SEGMENT,
-                                       SEGMENT,
-                                       SUB_SEGMENT,
-                                       RATING_CODE,
-                                       DAY_PAST_DUE,
-                                       BI_COLLECTABILITY,
-                                       WRITEOFF_FLAG,
-                                       ACCOUNT_NUMBER,
-                                       ACCOUNT_STATUS,
-                                       CUSTOMER_NUMBER,
-                                       CUSTOMER_NAME,
-                                       EXCHANGE_RATE,
-                                       IMPAIRED_FLAG,
-                                       OUTSTANDING,
-                                       DATA_SOURCE,
-                                       KEY_TMP_IMA
-                                       )
-        SELECT DOWNLOAD_DATE,
-                ''' || V_RULE_ID || ''',
-                ''' || V_RULE_TYPE || ''',
-                A.MASTERID,
-                A.GROUP_SEGMENT,
-                A.SEGMENT,
-                A.SUB_SEGMENT,
-                A.RATING_CODE,
-                A.DAY_PAST_DUE,
-                A.BI_COLLECTABILITY,
-                A.WRITEOFF_FLAG,
-                A.ACCOUNT_NUMBER,
-                A.ACCOUNT_STATUS,
-                A.CUSTOMER_NUMBER,
-                A.CUSTOMER_NAME,
-                A.EXCHANGE_RATE,
-                A.IMPAIRED_FLAG,
-                A.OUTSTANDING,
-                A.DATA_SOURCE,
-                '' '' KEY_TMP_IMA
-            FROM  ' || V_TABLE_NAME || ' A '
-            || CASE WHEN V_RULE_TYPE IN ('1','2','3') THEN ' JOIN IFRS_MASTER_PRODUCT_PARAM B ON TRIM(NVL(A.PRODUCT_CODE,''-'')) = B.PRD_CODE' END || ' WHERE  A.DOWNLOAD_DATE =  '''|| V_CURRDATE || ''' AND (' || RTRIM(NVL(V_PD_RULES_QRY_RESULT, '')) || ')';         
-        
-        EXECUTE IMMEDIATE V_STR_QUERY
-        USING V_RULE_TYPE,
-              V_RULE_ID,
-              V_TABLE_NAME,
-              V_PD_RULES_QRY_RESULT;
-
-    END LOOP;
-
-    CLOSE C_RULE;
-
+    EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
 
+    ----------------------------------------------------------------
+    -- MAIN PROCESSING
+    ----------------------------------------------------------------
+
+    
     DBMS_OUTPUT.PUT_LINE('PROCEDURE ' || V_SP_NAME || ' EXECUTED SUCCESSFULLY.');
 
     ----------------------------------------------------------------

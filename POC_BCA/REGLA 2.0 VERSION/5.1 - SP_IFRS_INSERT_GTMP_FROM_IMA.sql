@@ -2,7 +2,8 @@ CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_INSERT_GTMP_FROM_IMA_BCA (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
-    P_PRC           IN VARCHAR2 DEFAULT 'S'
+    P_PRC           IN VARCHAR2 DEFAULT 'S',
+    V_DATASOURCE    IN VARCHAR2 DEFAULT 'IMASYS'
 )
 AUTHID CURRENT_USER
 AS
@@ -65,7 +66,7 @@ BEGIN
             SELECT CURRDATE INTO V_CURRDATE FROM IFRS9_BCA.IFRS_PRC_DATE_AMORT;
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-                RAISE_APPLICATION_ERROR(-20010, 'IFRS_PRC_DATE_AMORT HAS NO CURRDATE ROW');
+                RAISE_APPLICATION_ERROR(-20010, 'IFRS_PRC_DATE_AMORT has no CURRDATE row');
         END;
     ELSE
         V_CURRDATE := P_DOWNLOAD_DATE;
@@ -81,8 +82,10 @@ BEGIN
     ----------------------------------------------------------------
     IF V_PRC = 'S' THEN 
         V_TABLEINSERT1 := 'GTMP_IFRS_MASTER_ACCOUNT_' || V_RUNID;
+        V_TABLESELECT1 := 'IFRS_MASTER_ACCOUNT_' || V_RUNID;
     ELSE 
         V_TABLEINSERT1 := 'GTMP_IFRS_MASTER_ACCOUNT';
+        V_TABLESELECT1 := 'IFRS_MASTER_ACCOUNT';
     END IF;
 
     IFRS9_BCA.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, V_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
@@ -104,109 +107,471 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
+                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_MASTER_ACCOUNT WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+        EXECUTE IMMEDIATE V_STR_QUERY;
+
+
+        -- DROP TABLE IF EXISTS
+        SELECT COUNT(*) INTO V_COUNT
+        FROM ALL_TABLES
+        WHERE OWNER = V_OWNER
+          AND TABLE_NAME = UPPER(V_TABLESELECT1);
+
+        IF V_COUNT > 0 THEN
+            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLESELECT1;
+            EXECUTE IMMEDIATE V_STR_QUERY;
+        END IF;
+
+        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLESELECT1 ||
                        ' AS SELECT * FROM ' || V_OWNER || '.IFRS_MASTER_ACCOUNT WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
         EXECUTE IMMEDIATE V_STR_QUERY;
     END IF;
     COMMIT;
 
+    ----------------------------------------------------------------
+    -- MAIN PROCESSING
+    ----------------------------------------------------------------
 
-    V_STR_QUERY := 'UPDATE ' || V_OWNER || '.' || V_TABLEINSERT1 || ' IMA
-    SET IMA.RESERVED_RATE_8 = 1
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1;
+
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' 
+    (
+        PKID,
+        DOWNLOAD_DATE,
+        MASTERID,
+        MASTER_ACCOUNT_CODE,
+        DATA_SOURCE,
+        GLOBAL_CUSTOMER_NUMBER,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        FACILITY_NUMBER,
+        ACCOUNT_NUMBER,
+        PREVIOUS_ACCOUNT_NUMBER,
+        ACCOUNT_STATUS,
+        INTEREST_RATE,
+        MARKET_RATE,
+        PRODUCT_GROUP,
+        PRODUCT_TYPE,
+        PRODUCT_CODE,
+        PRODUCT_ENTITY,
+        GL_CONSTNAME,
+        BRANCH_CODE,
+        BRANCH_CODE_OPEN,
+        CURRENCY,
+        EXCHANGE_RATE,
+        INITIAL_OUTSTANDING,
+        OUTSTANDING,
+        OUTSTANDING_IDC,
+        OUTSTANDING_JF,
+        OUTSTANDING_BANK,
+        OUTSTANDING_PASTDUE,
+        PLAFOND,
+        PLAFOND_CASH,
+        INTEREST_ACCRUED,
+        INSTALLMENT_AMOUNT,
+        UNUSED_AMOUNT,
+        DOWN_PAYMENT_AMOUNT,
+        JF_FLAG,
+        LOAN_START_DATE,
+        LOAN_DUE_DATE,
+        LOAN_START_AMORTIZATION,
+        LOAN_END_AMORTIZATION,
+        INSTALLMENT_GRACE_PERIOD,
+        NEXT_PAYMENT_DATE,
+        NEXT_INT_PAYMENT_DATE,
+        LAST_PAYMENT_DATE,
+        FIRST_INSTALLMENT_DATE,
+        TENOR,
+        REMAINING_TENOR,
+        PAYMENT_CODE,
+        PAYMENT_TERM,
+        INTEREST_CALCULATION_CODE,
+        INTEREST_PAYMENT_TERM,
+        RESTRUCTURE_DATE,
+        RESTRUCTURE_FLAG,
+        POCI_FLAG,
+        STAFF_LOAN_FLAG,
+        BELOW_MARKET_FLAG,
+        BTB_FLAG,
+        COMMITTED_FLAG,
+        REVOLVING_FLAG,
+        IAS_CLASS,
+        IFRS9_CLASS,
+        BM_RESULT,
+        SPPI_RESULT,
+        AMORT_TYPE,
+        EIR_STATUS,
+        ECF_STATUS,
+        EIR,
+        EIR_AMOUNT,
+        FAIR_VALUE_AMOUNT,
+        INITIAL_UNAMORT_TXN_COST,
+        INITIAL_UNAMORT_ORG_FEE,
+        UNAMORT_COST_AMT,
+        UNAMORT_FEE_AMT,
+        DAILY_AMORT_AMT,
+        UNAMORT_BENEFIT,
+        UNAMORT_AMT_TOTAL_JF,
+        UNAMORT_FEE_AMT_JF,
+        UNAMORT_COST_AMT_JF,
+        ORIGINAL_COLLECTABILITY,
+        BI_COLLECTABILITY,
+        ORIGINAL_DAY_PAST_DUE,
+        DAY_PAST_DUE,
+        DPD_START_DATE,
+        DPD_ZERO_COUNTER,
+        NPL_DATE,
+        NPL_FLAG,
+        DEFAULT_DATE,
+        DEFAULT_FLAG,
+        WRITEOFF_FLAG,
+        WRITEOFF_DATE,
+        OUTSTANDING_WO,
+        IMPAIRED_FLAG,
+        IS_IMPAIRED,
+        GROUP_SEGMENT,
+        SEGMENT,
+        SUB_SEGMENT,
+        CR_STAGE,
+        CCF_RULE_ID,
+        CCF_SEGMENT,
+        LIFETIME_RULE_ID,
+        LIFETIME_SEGMENT,
+        LIFETIME,
+        EAD_RULE_ID,
+        EAD_SEGMENT,
+        EAD_AMOUNT,
+        LGD_RULE_ID,
+        LGD_SEGMENT,
+        PD_RULE_ID,
+        PD_SEGMENT,
+        RATING_CODE,
+        BUCKET_GROUP,
+        BUCKET_ID,
+        ECL_12_AMOUNT,
+        ECL_LIFETIME_AMOUNT,
+        ECL_AMOUNT,
+        CA_UNWINDING_AMOUNT,
+        IA_UNWINDING_AMOUNT,
+        IA_UNWINDING_SUM_AMOUNT,
+        BEGINNING_BALANCE,
+        ENDING_BALANCE,
+        WRITEBACK_AMOUNT,
+        CHARGE_AMOUNT,
+        RESERVED_VARCHAR_1,
+        RESERVED_VARCHAR_2,
+        RESERVED_VARCHAR_3,
+        RESERVED_VARCHAR_4,
+        RESERVED_VARCHAR_5,
+        RESERVED_VARCHAR_6,
+        RESERVED_VARCHAR_7,
+        RESERVED_VARCHAR_8,
+        RESERVED_VARCHAR_9,
+        RESERVED_VARCHAR_10,
+        RESERVED_VARCHAR_11,
+        RESERVED_VARCHAR_12,
+        RESERVED_VARCHAR_13,
+        RESERVED_VARCHAR_14,
+        RESERVED_VARCHAR_15,
+        RESERVED_VARCHAR_16,
+        RESERVED_VARCHAR_17,
+        RESERVED_VARCHAR_18,
+        RESERVED_VARCHAR_19,
+        RESERVED_VARCHAR_20,
+        RESERVED_VARCHAR_21,
+        RESERVED_VARCHAR_22,
+        RESERVED_VARCHAR_23,
+        RESERVED_VARCHAR_24,
+        RESERVED_VARCHAR_25,
+        RESERVED_VARCHAR_26,
+        RESERVED_VARCHAR_27,
+        RESERVED_VARCHAR_28,
+        RESERVED_VARCHAR_29,
+        RESERVED_VARCHAR_30,
+        RESERVED_AMOUNT_1,
+        RESERVED_AMOUNT_2,
+        RESERVED_AMOUNT_3,
+        RESERVED_AMOUNT_4,
+        RESERVED_AMOUNT_5,
+        RESERVED_AMOUNT_6,
+        RESERVED_AMOUNT_7,
+        RESERVED_AMOUNT_8,
+        RESERVED_AMOUNT_9,
+        RESERVED_AMOUNT_10,
+        RESERVED_AMOUNT_11,
+        RESERVED_AMOUNT_12,
+        RESERVED_AMOUNT_13,
+        RESERVED_AMOUNT_14,
+        RESERVED_AMOUNT_15,
+        RESERVED_AMOUNT_16,
+        RESERVED_AMOUNT_17,
+        RESERVED_AMOUNT_18,
+        RESERVED_AMOUNT_19,
+        RESERVED_AMOUNT_20,
+        RESERVED_RATE_1,
+        RESERVED_RATE_2,
+        RESERVED_RATE_3,
+        RESERVED_RATE_4,
+        RESERVED_RATE_5,
+        RESERVED_RATE_6,
+        RESERVED_RATE_7,
+        RESERVED_RATE_8,
+        RESERVED_RATE_9,
+        RESERVED_RATE_10,
+        RESERVED_FLAG_1,
+        RESERVED_FLAG_2,
+        RESERVED_FLAG_3,
+        RESERVED_FLAG_4,
+        RESERVED_FLAG_5,
+        RESERVED_FLAG_6,
+        RESERVED_FLAG_7,
+        RESERVED_FLAG_8,
+        RESERVED_FLAG_9,
+        RESERVED_FLAG_10,
+        RESERVED_DATE_1,
+        RESERVED_DATE_2,
+        RESERVED_DATE_3,
+        RESERVED_DATE_4,
+        RESERVED_DATE_5,
+        RESERVED_DATE_6,
+        RESERVED_DATE_7,
+        RESERVED_DATE_8,
+        RESERVED_DATE_9,
+        RESERVED_DATE_10,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST,
+        SEGMENT_RULE_ID,
+        PREPAYMENT_SEGMENT,
+        PREPAYMENT_RULE_ID
+    )
+    SELECT PKID,
+        DOWNLOAD_DATE,
+        MASTERID,
+        MASTER_ACCOUNT_CODE,
+        DATA_SOURCE,
+        GLOBAL_CUSTOMER_NUMBER,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        FACILITY_NUMBER,
+        ACCOUNT_NUMBER,
+        PREVIOUS_ACCOUNT_NUMBER,
+        ACCOUNT_STATUS,
+        INTEREST_RATE,
+        MARKET_RATE,
+        PRODUCT_GROUP,
+        PRODUCT_TYPE,
+        PRODUCT_CODE,
+        PRODUCT_ENTITY,
+        GL_CONSTNAME,
+        BRANCH_CODE,
+        BRANCH_CODE_OPEN,
+        CURRENCY,
+        EXCHANGE_RATE,
+        INITIAL_OUTSTANDING,
+        OUTSTANDING,
+        OUTSTANDING_IDC,
+        OUTSTANDING_JF,
+        OUTSTANDING_BANK,
+        OUTSTANDING_PASTDUE,
+        PLAFOND,
+        PLAFOND_CASH,
+        INTEREST_ACCRUED,
+        INSTALLMENT_AMOUNT,
+        UNUSED_AMOUNT,
+        DOWN_PAYMENT_AMOUNT,
+        JF_FLAG,
+        LOAN_START_DATE,
+        LOAN_DUE_DATE,
+        LOAN_START_AMORTIZATION,
+        LOAN_END_AMORTIZATION,
+        INSTALLMENT_GRACE_PERIOD,
+        NEXT_PAYMENT_DATE,
+        NEXT_INT_PAYMENT_DATE,
+        LAST_PAYMENT_DATE,
+        FIRST_INSTALLMENT_DATE,
+        TENOR,
+        REMAINING_TENOR,
+        PAYMENT_CODE,
+        PAYMENT_TERM,
+        INTEREST_CALCULATION_CODE,
+        INTEREST_PAYMENT_TERM,
+        RESTRUCTURE_DATE,
+        RESTRUCTURE_FLAG,
+        POCI_FLAG,
+        STAFF_LOAN_FLAG,
+        BELOW_MARKET_FLAG,
+        BTB_FLAG,
+        COMMITTED_FLAG,
+        REVOLVING_FLAG,
+        IAS_CLASS,
+        IFRS9_CLASS,
+        BM_RESULT,
+        SPPI_RESULT,
+        AMORT_TYPE,
+        EIR_STATUS,
+        ECF_STATUS,
+        EIR,
+        EIR_AMOUNT,
+        FAIR_VALUE_AMOUNT,
+        INITIAL_UNAMORT_TXN_COST,
+        INITIAL_UNAMORT_ORG_FEE,
+        UNAMORT_COST_AMT,
+        UNAMORT_FEE_AMT,
+        DAILY_AMORT_AMT,
+        UNAMORT_BENEFIT,
+        UNAMORT_AMT_TOTAL_JF,
+        UNAMORT_FEE_AMT_JF,
+        UNAMORT_COST_AMT_JF,
+        ORIGINAL_COLLECTABILITY,
+        BI_COLLECTABILITY,
+        ORIGINAL_DAY_PAST_DUE,
+        DAY_PAST_DUE,
+        DPD_START_DATE,
+        DPD_ZERO_COUNTER,
+        NPL_DATE,
+        NPL_FLAG,
+        DEFAULT_DATE,
+        DEFAULT_FLAG,
+        WRITEOFF_FLAG,
+        WRITEOFF_DATE,
+        OUTSTANDING_WO,
+        IMPAIRED_FLAG,
+        IS_IMPAIRED,
+        GROUP_SEGMENT,
+        SEGMENT,
+        SUB_SEGMENT,
+        CR_STAGE,
+        CCF_RULE_ID,
+        CCF_SEGMENT,
+        LIFETIME_RULE_ID,
+        LIFETIME_SEGMENT,
+        LIFETIME,
+        EAD_RULE_ID,
+        EAD_SEGMENT,
+        EAD_AMOUNT,
+        LGD_RULE_ID,
+        LGD_SEGMENT,
+        PD_RULE_ID,
+        PD_SEGMENT,
+        RATING_CODE,
+        BUCKET_GROUP,
+        BUCKET_ID,
+        ECL_12_AMOUNT,
+        ECL_LIFETIME_AMOUNT,
+        ECL_AMOUNT,
+        CA_UNWINDING_AMOUNT,
+        IA_UNWINDING_AMOUNT,
+        IA_UNWINDING_SUM_AMOUNT,
+        BEGINNING_BALANCE,
+        ENDING_BALANCE,
+        WRITEBACK_AMOUNT,
+        CHARGE_AMOUNT,
+        RESERVED_VARCHAR_1,
+        RESERVED_VARCHAR_2,
+        RESERVED_VARCHAR_3,
+        RESERVED_VARCHAR_4,
+        RESERVED_VARCHAR_5,
+        RESERVED_VARCHAR_6,
+        RESERVED_VARCHAR_7,
+        RESERVED_VARCHAR_8,
+        RESERVED_VARCHAR_9,
+        RESERVED_VARCHAR_10,
+        RESERVED_VARCHAR_11,
+        RESERVED_VARCHAR_12,
+        RESERVED_VARCHAR_13,
+        RESERVED_VARCHAR_14,
+        RESERVED_VARCHAR_15,
+        RESERVED_VARCHAR_16,
+        RESERVED_VARCHAR_17,
+        RESERVED_VARCHAR_18,
+        RESERVED_VARCHAR_19,
+        RESERVED_VARCHAR_20,
+        RESERVED_VARCHAR_21,
+        RESERVED_VARCHAR_22,
+        RESERVED_VARCHAR_23,
+        RESERVED_VARCHAR_24,
+        RESERVED_VARCHAR_25,
+        RESERVED_VARCHAR_26,
+        RESERVED_VARCHAR_27,
+        RESERVED_VARCHAR_28,
+        RESERVED_VARCHAR_29,
+        RESERVED_VARCHAR_30,
+        RESERVED_AMOUNT_1,
+        RESERVED_AMOUNT_2,
+        RESERVED_AMOUNT_3,
+        RESERVED_AMOUNT_4,
+        RESERVED_AMOUNT_5,
+        RESERVED_AMOUNT_6,
+        RESERVED_AMOUNT_7,
+        RESERVED_AMOUNT_8,
+        RESERVED_AMOUNT_9,
+        RESERVED_AMOUNT_10,
+        RESERVED_AMOUNT_11,
+        RESERVED_AMOUNT_12,
+        RESERVED_AMOUNT_13,
+        RESERVED_AMOUNT_14,
+        RESERVED_AMOUNT_15,
+        RESERVED_AMOUNT_16,
+        RESERVED_AMOUNT_17,
+        RESERVED_AMOUNT_18,
+        RESERVED_AMOUNT_19,
+        RESERVED_AMOUNT_20,
+        RESERVED_RATE_1,
+        RESERVED_RATE_2,
+        RESERVED_RATE_3,
+        RESERVED_RATE_4,
+        RESERVED_RATE_5,
+        RESERVED_RATE_6,
+        RESERVED_RATE_7,
+        RESERVED_RATE_8,
+        RESERVED_RATE_9,
+        RESERVED_RATE_10,
+        RESERVED_FLAG_1,
+        RESERVED_FLAG_2,
+        RESERVED_FLAG_3,
+        RESERVED_FLAG_4,
+        RESERVED_FLAG_5,
+        RESERVED_FLAG_6,
+        RESERVED_FLAG_7,
+        RESERVED_FLAG_8,
+        RESERVED_FLAG_9,
+        RESERVED_FLAG_10,
+        RESERVED_DATE_1,
+        RESERVED_DATE_2,
+        RESERVED_DATE_3,
+        RESERVED_DATE_4,
+        RESERVED_DATE_5,
+        RESERVED_DATE_6,
+        RESERVED_DATE_7,
+        RESERVED_DATE_8,
+        RESERVED_DATE_9,
+        RESERVED_DATE_10,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST,
+        SEGMENT_RULE_ID,
+        PREPAYMENT_SEGMENT,
+        PREPAYMENT_RULE_ID
+    FROM ' || V_OWNER || '.' || V_TABLESELECT1 || ' 
     WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
 
-    EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
-
-
-    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
-        USING (SELECT A2.RULE_ID, A2.MULTIPLIER
-                 FROM ' || V_OWNER || '.IFRS_ECL_MULTIPLIER A2
-                      JOIN (  SELECT RULE_ID,
-                                     MAX (EFFECTIVE_DATE) MAX_EFFECTIVE_DATE
-                                FROM ' || V_OWNER || '.IFRS_ECL_MULTIPLIER
-                               WHERE EFFECTIVE_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-                            GROUP BY RULE_ID) B2
-                         ON A2.RULE_ID = B2.RULE_ID
-                            AND A2.EFFECTIVE_DATE = B2.MAX_EFFECTIVE_DATE
-                      JOIN (  SELECT RULE_ID,
-                                     EFFECTIVE_DATE,
-                                     MAX (CREATEDDATE) MAX_CREATEDDATE
-                                FROM ' || V_OWNER || '.IFRS_ECL_MULTIPLIER
-                               WHERE EFFECTIVE_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-                            GROUP BY RULE_ID, EFFECTIVE_DATE) C2
-                         ON     A2.RULE_ID = C2.RULE_ID
-                            AND A2.EFFECTIVE_DATE = C2.EFFECTIVE_DATE
-                            AND A2.CREATEDDATE = C2.MAX_CREATEDDATE) B
-           ON (B.RULE_ID = A.SEGMENT_RULE_ID
-               AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))
-    WHEN MATCHED
-    THEN
-      UPDATE SET A.RESERVED_RATE_8 = B.MULTIPLIER';
+    IF V_DATASOURCE != 'ALL' THEN
+        V_STR_QUERY := V_STR_QUERY || ' AND DATA_SOURCE IN (''' || REPLACE(V_DATASOURCE,',',''',''') || ''')';
+    END IF;
 
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
 
-    
-    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.IFRS_MASTER_ACCOUNT A
-        USING (SELECT DISTINCT
-                      SUBSTR (SWIFT_CODE, 1, 8) SWIFT_CODE,
-                      NVL (MULTIPLIER, 1) MULTIPLIER
-                 FROM ' || V_OWNER || '.TBLU_RATING_BANK
-                WHERE DOWNLOAD_DATE =
-                         (SELECT MAX (DOWNLOAD_DATE)
-                            FROM ' || V_OWNER || '.TBLU_RATING_BANK
-                           WHERE DOWNLOAD_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))) B
-           ON (B.SWIFT_CODE = SUBSTR (A.RESERVED_VARCHAR_1, 1, 8)
-               AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))
-   WHEN MATCHED
-   THEN
-      UPDATE SET A.RESERVED_RATE_8 = B.MULTIPLIER
-              WHERE ( (A.DATA_SOURCE = ''KTP''
-                       AND PRODUCT_CODE LIKE ''PLACEMENT%'')
-                     OR (A.DATA_SOURCE = ''RKN''))';
-
-    EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
-
-    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
-        USING (SELECT DISTINCT
-                      SUBSTR (SWIFT_CODE, 1, 8) SWIFT_CODE,
-                      NVL (MULTIPLIER, 1) MULTIPLIER
-                 FROM ' || V_OWNER || '.TBLU_RATING_BANK
-                WHERE DOWNLOAD_DATE =
-                         (SELECT MAX (DOWNLOAD_DATE)
-                            FROM ' || V_OWNER || '.TBLU_RATING_BANK
-                           WHERE DOWNLOAD_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))) B
-           ON (B.SWIFT_CODE = SUBSTR (A.RESERVED_VARCHAR_15, 1, 8)
-               AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))
-   WHEN MATCHED
-   THEN
-      UPDATE SETs
-         A.RESERVED_RATE_8 = B.MULTIPLIER
-              WHERE (DATA_SOURCE = ''BTRD''
-                     AND RESERVED_VARCHAR_23 IN (''2'', ''3''))
-                    OR (    DATA_SOURCE = ''BTRD''
-                        AND RESERVED_VARCHAR_23 IN (''4'', ''5'')
-                        AND RESERVED_FLAG_10 = 1)
-                    OR DATA_SOURCE IN (''ILS'', ''LIMIT'')';
-    
-    EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
-
-
-    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
-        USING (SELECT *
-                 FROM ' || V_OWNER || '.IFRS_MDL_NONGOV
-                WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')) B
-           ON (    A.DOWNLOAD_DATE = B.DOWNLOAD_DATE
-               AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-               AND A.RESERVED_VARCHAR_28 = B.FUND_CODE)
-    WHEN MATCHED
-    THEN
-        UPDATE SET A.RESERVED_RATE_7 = B.NONGOVRATE * 100';
-
-    EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
+    ----------------------------------------------------------------
+    -- MAIN PROCESSING
+    ----------------------------------------------------------------
 
     
     DBMS_OUTPUT.PUT_LINE('PROCEDURE ' || V_SP_NAME || ' EXECUTED SUCCESSFULLY.');

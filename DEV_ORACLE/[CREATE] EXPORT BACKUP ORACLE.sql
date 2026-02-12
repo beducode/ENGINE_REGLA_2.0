@@ -236,3 +236,40 @@ impdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.regla.cloud:1521/REGLA_
 expdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.regla.cloud:1521/REGLA_DEV_BSI_ANALYTIC schemas=IFRS9_OLD directory=DATA_PUMP_DIR dumpfile=IFRS9_OLD_05022026.dmp logfile=IFRS9_OLD_05022026.log content=ALL
 
 impdp system/Jq3YNGZREB4PLxDEWeCwfl0@oracle-analytic.bsi.regla.cloud:1521/REGLA_DEV_BSI_ANALYTIC directory=DATA_PUMP_DIR dumpfile=IFRS9_OLD_05022026.dmp logfile=IFRS9_OLDTONEW_05022026.log remap_schema=IFRS9_OLD:IFRS9
+
+
+CREATE TABLESPACE IFRS_DATA_TBS
+DATAFILE '/opt/oracle/oradata/REGLADEV/REGLA_DEV_BSI_ANALYTIC/ifrs_data01.dbf'
+SIZE 5G
+AUTOEXTEND ON
+NEXT 500M
+MAXSIZE 30G
+EXTENT MANAGEMENT LOCAL
+SEGMENT SPACE MANAGEMENT AUTO;
+
+
+ALTER USER IFRS9_BCA
+DEFAULT TABLESPACE IFRS_DATA_TBS;
+
+
+--- MOVE TABLESPACE
+BEGIN
+    FOR r IN (
+        SELECT t.table_name
+        FROM dba_tables t
+        WHERE t.owner = 'IFRS9_BCA'
+        AND t.tablespace_name = 'USERS'
+        AND NOT EXISTS (
+            SELECT 1
+            FROM dba_tab_columns c
+            WHERE c.owner = t.owner
+            AND c.table_name = t.table_name
+            AND c.data_type = 'LONG'
+        )
+    )
+    LOOP
+        EXECUTE IMMEDIATE 
+            'ALTER TABLE IFRS9_BCA.' || r.table_name || 
+            ' MOVE TABLESPACE IFRS_DATA_TBS';
+    END LOOP;
+END;

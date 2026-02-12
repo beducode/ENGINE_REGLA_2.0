@@ -65,7 +65,7 @@ BEGIN
             SELECT CURRDATE INTO V_CURRDATE FROM IFRS9_BCA.IFRS_PRC_DATE_AMORT;
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-                RAISE_APPLICATION_ERROR(-20010, 'IFRS_PRC_DATE_AMORT has no CURRDATE row');
+                RAISE_APPLICATION_ERROR(-20010, 'IFRS_PRC_DATE_AMORT HAS NO CURRDATE ROW');
         END;
     ELSE
         V_CURRDATE := P_DOWNLOAD_DATE;
@@ -118,55 +118,55 @@ BEGIN
     COMMIT;
 
 
-    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
-        USING (SELECT A2.RULE_ID, A2.MULTIPLIER
-                 FROM ' || V_OWNER || '.IFRS_ECL_MULTIPLIER A2
-                      JOIN (  SELECT RULE_ID,
-                                     MAX (EFFECTIVE_DATE) MAX_EFFECTIVE_DATE
-                                FROM ' || V_OWNER || '.IFRS_ECL_MULTIPLIER
-                               WHERE EFFECTIVE_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-                            GROUP BY RULE_ID) B2
-                         ON A2.RULE_ID = B2.RULE_ID
-                            AND A2.EFFECTIVE_DATE = B2.MAX_EFFECTIVE_DATE
-                      JOIN (  SELECT RULE_ID,
-                                     EFFECTIVE_DATE,
-                                     MAX (CREATEDDATE) MAX_CREATEDDATE
-                                FROM ' || V_OWNER || '.IFRS_ECL_MULTIPLIER
-                               WHERE EFFECTIVE_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-                            GROUP BY RULE_ID, EFFECTIVE_DATE) C2
-                         ON     A2.RULE_ID = C2.RULE_ID
-                            AND A2.EFFECTIVE_DATE = C2.EFFECTIVE_DATE
-                            AND A2.CREATEDDATE = C2.MAX_CREATEDDATE) B
-           ON (B.RULE_ID = A.SEGMENT_RULE_ID
-               AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))
-    WHEN MATCHED
-    THEN
-      UPDATE SET A.RESERVED_RATE_8 = B.MULTIPLIER';
+     V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
+         USING (SELECT A2.RULE_ID, A2.MULTIPLIER
+                  FROM ' || V_OWNER || '.IFRS_ECL_MULTIPLIER A2
+                       JOIN (  SELECT RULE_ID,
+                                      MAX (EFFECTIVE_DATE) MAX_EFFECTIVE_DATE
+                                 FROM ' || V_OWNER || '.IFRS_ECL_MULTIPLIER
+                                WHERE EFFECTIVE_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+                             GROUP BY RULE_ID) B2
+                          ON A2.RULE_ID = B2.RULE_ID
+                             AND A2.EFFECTIVE_DATE = B2.MAX_EFFECTIVE_DATE
+                       JOIN (  SELECT RULE_ID,
+                                      EFFECTIVE_DATE,
+                                      MAX (CREATEDDATE) MAX_CREATEDDATE
+                                 FROM ' || V_OWNER || '.IFRS_ECL_MULTIPLIER
+                                WHERE EFFECTIVE_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+                             GROUP BY RULE_ID, EFFECTIVE_DATE) C2
+                          ON     A2.RULE_ID = C2.RULE_ID
+                             AND A2.EFFECTIVE_DATE = C2.EFFECTIVE_DATE
+                             AND A2.CREATEDDATE = C2.MAX_CREATEDDATE) B
+            ON (B.RULE_ID = A.SEGMENT_RULE_ID
+                AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))
+     WHEN MATCHED
+     THEN
+       UPDATE SET A.RESERVED_RATE_8 = B.MULTIPLIER';
 
-    EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
+     EXECUTE IMMEDIATE V_STR_QUERY;
+     COMMIT;
 
     
-    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.IFRS_MASTER_ACCOUNT A
-        USING (SELECT DISTINCT
-                      SUBSTR (SWIFT_CODE, 1, 8) SWIFT_CODE,
-                      NVL (MULTIPLIER, 1) MULTIPLIER
-                 FROM ' || V_OWNER || '.TBLU_RATING_BANK
-                WHERE DOWNLOAD_DATE =
-                         (SELECT MAX (DOWNLOAD_DATE)
-                            FROM ' || V_OWNER || '.TBLU_RATING_BANK
-                           WHERE DOWNLOAD_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))) B
-           ON (B.SWIFT_CODE = SUBSTR (A.RESERVED_VARCHAR_1, 1, 8)
-               AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))
-   WHEN MATCHED
-   THEN
-      UPDATE SET A.RESERVED_RATE_8 = B.MULTIPLIER
-              WHERE ( (A.DATA_SOURCE = ''KTP''
-                       AND PRODUCT_CODE LIKE ''PLACEMENT%'')
-                     OR (A.DATA_SOURCE = ''RKN''))';
+     V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
+         USING (SELECT DISTINCT
+                       SUBSTR (SWIFT_CODE, 1, 8) SWIFT_CODE,
+                       NVL (MULTIPLIER, 1) MULTIPLIER
+                  FROM ' || V_OWNER || '.TBLU_RATING_BANK
+                 WHERE DOWNLOAD_DATE =
+                          (SELECT MAX (DOWNLOAD_DATE)
+                             FROM ' || V_OWNER || '.TBLU_RATING_BANK
+                            WHERE DOWNLOAD_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))) B
+            ON (B.SWIFT_CODE = SUBSTR (A.RESERVED_VARCHAR_1, 1, 8)
+                AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))
+    WHEN MATCHED
+    THEN
+       UPDATE SET A.RESERVED_RATE_8 = B.MULTIPLIER
+               WHERE ( (A.DATA_SOURCE = ''KTP''
+                        AND PRODUCT_CODE LIKE ''PLACEMENT%'')
+                      OR (A.DATA_SOURCE = ''RKN''))';
 
-    EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
+     EXECUTE IMMEDIATE V_STR_QUERY;
+     COMMIT;
 
     V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
         USING (SELECT DISTINCT
@@ -181,7 +181,7 @@ BEGIN
                AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))
    WHEN MATCHED
    THEN
-      UPDATE SETs
+      UPDATE SET
          A.RESERVED_RATE_8 = B.MULTIPLIER
               WHERE (DATA_SOURCE = ''BTRD''
                      AND RESERVED_VARCHAR_23 IN (''2'', ''3''))
@@ -194,19 +194,19 @@ BEGIN
     COMMIT;
 
 
-    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
-        USING (SELECT *
-                 FROM ' || V_OWNER || '.IFRS_MDL_NONGOV
-                WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')) B
-           ON (    A.DOWNLOAD_DATE = B.DOWNLOAD_DATE
-               AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-               AND A.RESERVED_VARCHAR_28 = B.FUND_CODE)
-    WHEN MATCHED
-    THEN
-        UPDATE SET A.RESERVED_RATE_7 = B.NONGOVRATE * 100';
+     V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
+         USING (SELECT *
+                  FROM ' || V_OWNER || '.IFRS_MDL_NONGOV
+                 WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')) B
+            ON (    A.DOWNLOAD_DATE = B.DOWNLOAD_DATE
+                AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+                AND A.RESERVED_VARCHAR_28 = B.FUND_CODE)
+     WHEN MATCHED
+     THEN
+         UPDATE SET A.RESERVED_RATE_7 = B.NONGOVRATE * 100';
 
-    EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
+     EXECUTE IMMEDIATE V_STR_QUERY;
+     COMMIT;
 
     
     DBMS_OUTPUT.PUT_LINE('PROCEDURE ' || V_SP_NAME || ' EXECUTED SUCCESSFULLY.');
