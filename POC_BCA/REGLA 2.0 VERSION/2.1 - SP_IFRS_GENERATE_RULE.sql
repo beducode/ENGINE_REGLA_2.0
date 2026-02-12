@@ -130,12 +130,12 @@ BEGIN
         FROM IFRS_SCENARIO_RULES_HEADER A
         JOIN IFRS_SCENARIO_RULES_DETAIL B
           ON A.PKID = B.RULE_ID
-        WHERE (' || NVL(P_CONSTNAME, 'NULL') || ' IS NULL OR A.RULE_TYPE = :1)';  
+        WHERE (:1 IS NULL OR A.RULE_TYPE = :2)';
 
     ----------------------------------------------------------------
     -- OPEN DYNAMIC CURSOR
     ----------------------------------------------------------------
-    OPEN C_RULE FOR V_STR_QUERY USING P_CONSTNAME;
+    OPEN C_RULE FOR V_STR_QUERY USING P_CONSTNAME, P_CONSTNAME;
 
     LOOP
         FETCH C_RULE INTO

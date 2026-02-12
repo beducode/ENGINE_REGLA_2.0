@@ -4,10 +4,14 @@ CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_UPDATE_STAGE_BCA (
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
     P_PRC           IN VARCHAR2 DEFAULT 'S'
 )
+AUTHID CURRENT_USER
 AS
-    -- DATES / COUNTERS
+    ----------------------------------------------------------------
+    -- VARIABLES
+    ----------------------------------------------------------------
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_UPDATE_STAGE_BCA';
+    V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
-    V_PREVDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);
     V_COUNT         NUMBER;
 
@@ -15,41 +19,47 @@ AS
     V_STR_QUERY     VARCHAR2(32767);
 
     -- TABLE NAMES (UNQUALIFIED PARTS)
-    V_TAB_OWNER     CONSTANT VARCHAR2(30) := 'IFRS9_BCA';
     V_TABLEINSERT1  VARCHAR2(100);
     V_TABLEINSERT2  VARCHAR2(100);
     V_TABLESELECT1  VARCHAR2(100);
     V_TABLEPDCONFIG VARCHAR2(100);
+
+
+    -- CURSOR
+    TYPE REF_CURSOR IS REF CURSOR;
+    C_RULE        REF_CURSOR;
+
+    -- FETCH VARIABLES
+    V_RULE_ID     VARCHAR2(250);
+    V_DETAIL_TYPE VARCHAR2(25);
+    V_TABLE_NAME  VARCHAR2(100);
+
 
     -- MISC
     V_RETURNROWS    NUMBER := 0;
     V_RETURNROWS2   NUMBER := 0;
     V_TABLEDEST     VARCHAR2(100);
     V_COLUMNDEST    VARCHAR2(100);
-    V_SP_NAME       VARCHAR2(100);
     V_OPERATION     VARCHAR2(100);
+    V_RUNID        VARCHAR2(30);
+    V_SYSCODE      VARCHAR2(10);
+    V_PRC         VARCHAR2(5);
+    V_CONSTNAME     VARCHAR2(100);
 
     -- RESULT QUERY
     V_QUERYS        CLOB;
 
-    -- helper to print long text
-    PROCEDURE PRINT_LONG(p_txt CLOB) IS
-        v_pos INTEGER := 1;
-        v_len INTEGER := DBMS_LOB.getlength(p_txt);
-        v_step INTEGER := 30000;
-        v_part VARCHAR2(32767);
-    BEGIN
-        WHILE v_pos <= v_len LOOP
-            v_part := DBMS_LOB.SUBSTR(p_txt, v_step, v_pos);
-            DBMS_OUTPUT.PUT_LINE(v_part);
-            v_pos := v_pos + v_step;
-        END LOOP;
-    END PRINT_LONG;
 
 BEGIN
-    V_SP_NAME := 'SP_IFRS_ECL_UPDATE_STAGE_BCA';
 
-    -- DETERMINE CURRENT DATE
+    ----------------------------------------------------------------
+    -- GET OWNER
+    ----------------------------------------------------------------
+    SELECT USERNAME INTO V_OWNER FROM USER_USERS;
+
+    ----------------------------------------------------------------
+    -- INSERT VCURRDATE DETERMINATION IF NULL
+    ----------------------------------------------------------------
     IF P_DOWNLOAD_DATE IS NULL THEN
         BEGIN
             SELECT CURRDATE INTO V_CURRDATE FROM IFRS9_BCA.IFRS_PRC_DATE;
@@ -61,149 +71,219 @@ BEGIN
         V_CURRDATE := P_DOWNLOAD_DATE;
     END IF;
 
-    V_MODEL_ID := NVL(P_SYSCODE, '0');
+    V_RUNID := NVL(P_RUNID, 'P_00000_0000');
+    V_SYSCODE := NVL(P_SYSCODE, '0');
+    V_MODEL_ID := V_SYSCODE;
+    V_PRC := NVL(P_PRC, 'P');
+    V_CONSTNAME := 'STAGE';
 
-    IF P_PRC = 'S' THEN 
-        V_TABLEINSERT1 := 'IFRS_ECL_MODEL_CONFIG_' || P_RUNID;
+    ----------------------------------------------------------------
+    -- TABLE DETERMINATION
+    ----------------------------------------------------------------
+    IF V_PRC = 'S' THEN 
+        V_TABLEINSERT1 := 'IFRS_MASTER_ACCOUNT_' || V_RUNID;
     ELSE 
-        V_TABLEINSERT1 := 'IFRS_ECL_MODEL_CONFIG';
+        V_TABLEINSERT1 := 'IFRS_MASTER_ACCOUNT';
     END IF;
 
-    IFRS9_BCA.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
+    IFRS9_BCA.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, V_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
     COMMIT;
 
-    -- SIMULATION
-    IF P_PRC = 'S' THEN
-        -- CREATE/SELECT COPY FOR CONFIG
+    ----------------------------------------------------------------
+    -- PRE-PROCESSING SIMULATION TABLES
+    ----------------------------------------------------------------
+    IF V_PRC = 'S' THEN
+        -- DROP TABLE IF EXISTS
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
-        WHERE OWNER = V_TAB_OWNER
+        WHERE OWNER = V_OWNER
           AND TABLE_NAME = UPPER(V_TABLEINSERT1);
 
         IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1;
+            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT1;
             EXECUTE IMMEDIATE V_STR_QUERY;
         END IF;
 
-        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 ||
-                       ' AS SELECT * FROM ' || V_TAB_OWNER || '.IFRS_ECL_MODEL_CONFIG';
+        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
+                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_MASTER_ACCOUNT WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
         EXECUTE IMMEDIATE V_STR_QUERY;
     END IF;
     COMMIT;
 
-    SP_IFRS_GENERATE_RULE ('STAGE');
-    SP_IFRS_RULE_DATA (v_DOWNLOADDATE);
-
-    V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' WHERE ECL_MODEL_ID = ' || V_MODEL_ID || ' AND DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
-    
-    EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
-
     ----------------------------------------------------------------
-    -- INSERT INTO GTMP_PD_RUNNING_CONFIG_<RUNID> (CONFIG DATA)
+    -- EXECUTE DATA PROCEDURE
+    ----------------------------------------------------------------
+    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_GENERATE_RULE_BCA(:1, :2, :3, :4, :5); END;';
+
+    EXECUTE IMMEDIATE V_STR_QUERY
+    USING V_RUNID, V_CURRDATE, V_SYSCODE, V_PRC, V_CONSTNAME;
+    COMMIT;
+
+    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_RULE_DATA_BCA(:1, :2, :3, :4); END;';
+
+    EXECUTE IMMEDIATE V_STR_QUERY
+    USING V_RUNID, V_CURRDATE, V_SYSCODE, V_PRC;
+    COMMIT;
+    ----------------------------------------------------------------
+
+    BEGIN
+        EXECUTE IMMEDIATE
+            'SELECT DISTINCT SICR_RULE_ID
+            FROM IFRS_ECL_MODEL_CONFIG
+            WHERE ECL_MODEL_ID = :1'
+        INTO V_RULE_ID
+        USING V_SYSCODE;
+
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            V_RULE_ID := 0;
+    END;
+
+    V_STR_QUERY := 'UPDATE ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+                    SET CR_STAGE = NULL
+                    WHERE DOWNLOAD_DATE = TO_DATE(:1,''YYYY-MM-DD'')';
     
-    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || '(
-        DOWNLOAD_DATE,
-        ECL_MODEL_ID,
-        PF_SEGMENT_ID,
-        GROUP_SEGMENT,
-        SEGMENT,
-        SUB_SEGMENT,
-        BUCKET_GROUP,
-        EAD_MODEL_ID,
-        LT_RULE_ID,
-        LT_EFF_DATE,
-        SICR_RULE_ID,
-        CCF_FLAG,
-        CCF_RULES_ID,
-        CCF_REVOLVING_FLAG,
-        CCF_COMMITED_FLAG,
-        CCF_EFF_DATE,
-        PREPAYMENT_FLAG,
-        PREPAYMENT_RULES_ID,
-        PREPAYMENT_EFF_DATE,
-        LGD_MODEL_ID,
-        LGD_FL_FLAG,
-        LGD_FL_MODEL,
-        LGD_EFF_STARTTYPE,
-        LGD_EFF_STARTMONTH,
-        LGD_EFF_DATE,
-        PD_MODEL_ID,
-        PD_FL_FLAG,
-        PD_FL_MODEL,
-        PD_EFF_STARTTYPE,
-        PD_EFF_STARTMONTH,
-        PD_EFF_DATE
-    )
-    SELECT DISTINCT TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS DOWNLOAD_DATE
-            ,A.PKID AS ECL_MODEL_ID
-            ,F.PF_SEGMENT_ID
-            ,H.GROUP_SEGMENT
-            ,H.SEGMENT
-            ,H.SUB_SEGMENT
-            ,G.BUCKET_GROUP
-            ,B.EAD_MODEL_ID
-            ,F.LT_RULE_ID
-            ,F.EFFECTIVE_DATE AS LT_EFF_DATE
-            ,F.SICR_RULE_ID
-            ,C.CCF_FLAG
-            ,CASE WHEN C.CCF_FLAG = 1 THEN C.CCF_RULES_ID END AS CCF_RULES_ID
-            ,CASE WHEN C.CCF_FLAG = 1 THEN C.CCF_REVOLVING_FLAG END AS CCF_REVOLVING_FLAG
-            ,CASE WHEN C.CCF_FLAG = 1 THEN C.CCF_COMMITED_FLAG END AS CCF_COMMITED_FLAG
-            ,B.EFFECTIVE_DATE   AS CCF_EFF_DATE
-            ,C.PREPAYMENT_FLAG
-            ,CASE WHEN C.PREPAYMENT_FLAG = 1 THEN C.PREPAYMENT_RULES_ID END AS PREPAYMENT_RULES_ID
-            ,B.EFFECTIVE_DATE   AS PREPAYMENT_EFF_DATE
-            ,D.LGD_MODEL_ID     AS LGD_MODEL_ID
-            ,D.FL_FLAG          AS LGD_FL_FLAG
-            ,D.FL_MODEL_ID      AS LGD_FL_MODEL
-            ,D.LGD_EFF_PERIOD   AS LGD_EFF_STARTTYPE
-            ,D.LGD_MONTH        AS LGD_EFF_STARTMONTH
-            ,D.LGD_DATE         AS LGD_EFF_DATE
-            ,E.PD_MODEL_ID      AS PD_MODEL_ID
-            ,E.FL_FLAG          AS PD_FL_FLAG
-            ,E.FL_MODEL_ID      AS PD_FL_MODEL
-            ,E.PD_EFF_PERIOD    AS PD_EFF_STARTTYPE
-            ,E.PD_MONTH         AS PD_EFF_STARTMONTH
-            ,E.PD_DATE          AS PD_EFF_DATE
-        FROM IFRS_ECL_MODEL_HEADER A
-        JOIN IFRS_ECL_MODEL_DETAIL_PF F     ON A.PKID = F.ECL_MODEL_ID
-        JOIN IFRS_MSTR_SEGMENT_RULES_HEADER H ON H.PKID = F.PF_SEGMENT_ID AND H.IS_DELETED = 0
-        JOIN IFRS_ECL_MODEL_DETAIL_EAD B    ON A.PKID = B.ECL_MODEL_ID AND F.PF_SEGMENT_ID = B.PF_SEGMENT_ID
-        JOIN IFRS_EAD_RULES_CONFIG C        ON B.EAD_MODEL_ID = C.PKID AND C.IS_DELETED = 0
-        JOIN IFRS_ECL_MODEL_DETAIL_LGD D    ON A.PKID = D.ECL_MODEL_ID AND F.PF_SEGMENT_ID = D.PF_SEGMENT_ID
-        JOIN IFRS_ECL_MODEL_DETAIL_PD E     ON A.PKID = E.ECL_MODEL_ID AND F.PF_SEGMENT_ID = E.PF_SEGMENT_ID
-        JOIN IFRS_PD_RULES_CONFIG G         ON G.PKID = E.PD_MODEL_ID AND G.IS_DELETED = 0
-        WHERE C.IS_DELETED = 0
-        AND A.PKID = ' || V_MODEL_ID || '';
-    
-    EXECUTE IMMEDIATE V_STR_QUERY;
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_CURRDATE;
+    COMMIT;
+
+
+    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
+        USING (  SELECT DOWNLOAD_DATE,
+                        CUSTOMER_NUMBER,
+                        MAX (RULE_TYPE) AS CR_STAGE
+                   FROM ' || V_OWNER || '.GTMP_IFRS_SCENARIO_DATA
+                  WHERE RULE_ID = :1
+                        AND (ACCOUNT_STATUS = ''A''
+                             OR (    DATA_SOURCE = ''CRD''
+                                 AND ACCOUNT_STATUS = ''C''
+                                 AND OUTSTANDING > 0))
+               --        AND GROUP_SEGMENT != ''BANK_BTRD''
+               GROUP BY DOWNLOAD_DATE, CUSTOMER_NUMBER) B
+           ON (A.DOWNLOAD_DATE = TO_DATE(:2,''YYYY-MM-DD'')
+               AND A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER)
+    WHEN MATCHED
+    THEN
+      UPDATE SET A.CR_STAGE = B.CR_STAGE';
+
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_RULE_ID, V_CURRDATE;
+    COMMIT;
+
+    V_STR_QUERY := 'UPDATE ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+    SET CR_STAGE = ''1''
+    WHERE DOWNLOAD_DATE = TO_DATE(:1,''YYYY-MM-DD'') AND (GROUP_SEGMENT = ''BANK_BTRD'')';
+
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_CURRDATE;
+    COMMIT;
+
+    V_STR_QUERY := 'UPDATE ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+    SET CR_STAGE = ''1''
+    WHERE     DOWNLOAD_DATE = TO_DATE(:1,''YYYY-MM-DD'')
+            AND DATA_SOURCE = ''LIMIT''
+            AND CR_STAGE IS NULL';
+
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_CURRDATE;
     COMMIT;
     
-    DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY,1,30000));
+
+    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
+    USING (SELECT DISTINCT CUSTOMER_NUMBER
+                FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+            WHERE (GROUP_SEGMENT IN
+                        (''COMMERCIAL'',
+                        ''COMMERCIAL BG'',
+                        ''CORPORATE'',
+                        ''CORPORATE BG'')
+                    AND DATA_SOURCE = ''ILS''
+                    AND BI_COLLECTABILITY = ''1''
+                    AND RESERVED_FLAG_4 = 1)
+                    AND DOWNLOAD_DATE = TO_DATE(:1,''YYYY-MM-DD'')
+                    AND CUSTOMER_NUMBER NOT IN
+                            (SELECT CUSTOMER_NUMBER FROM ' || V_OWNER || '.TBLU_WORSTCASE_LIST)) B
+        ON (A.DOWNLOAD_DATE = TO_DATE(:2,''YYYY-MM-DD'')
+            AND A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
+            AND A.GROUP_SEGMENT IN
+                    (''COMMERCIAL'',
+                    ''COMMERCIAL BG'',
+                    ''CORPORATE'',
+                    ''CORPORATE BG'')
+            AND A.DATA_SOURCE = ''ILS''
+            AND A.BI_COLLECTABILITY = ''1''
+            AND A.RESERVED_FLAG_4 = 1)
+    WHEN MATCHED
+    THEN
+      UPDATE SET CR_STAGE = 1';
+
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_CURRDATE, V_CURRDATE;
+    COMMIT;
+
+
+    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
+        USING ' || V_OWNER || '.TBLU_WORSTCASE_LIST B
+           ON (A.DOWNLOAD_DATE = B.DOWNLOAD_DATE
+               AND A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER)
+    WHEN MATCHED
+    THEN
+        UPDATE SET CR_STAGE = 2
+                WHERE A.DOWNLOAD_DATE = TO_DATE(:1,''YYYY-MM-DD'') AND A.CR_STAGE = 1';
+
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_CURRDATE;
+    COMMIT;
+
+
+    V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
+        USING (SELECT DISTINCT A.CUSTOMER_NUMBER, B.STAGE_OVERRIDE
+                 FROM    ' || V_OWNER || '.IFRS_STAGE_OVERRIDE_H A
+                      JOIN
+                         ' || V_OWNER || '.IFRS_STAGE_OVERRIDE_D B
+                      ON A.PKID = B.MASTERID AND A.IGNORE_OVERRIDE = 0) B
+           ON (A.DOWNLOAD_DATE = TO_DATE(:1,''YYYY-MM-DD'')
+               AND A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER)
+    WHEN MATCHED
+    THEN
+        UPDATE SET CR_STAGE = B.STAGE_OVERRIDE';
+
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_CURRDATE;
+    COMMIT;
+
+
+    V_STR_QUERY := 'UPDATE ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+    SET CR_STAGE = NULL
+    WHERE DOWNLOAD_DATE = TO_DATE(:1,''YYYY-MM-DD'')
+          AND TRIM (NVL (PRODUCT_CODE, ''-'')) NOT IN
+                 (SELECT PRD_CODE FROM ' || V_OWNER || '.IFRS_MASTER_PRODUCT_PARAM)';
+
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_CURRDATE;
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('PROCEDURE ' || V_SP_NAME || ' EXECUTED SUCCESSFULLY.');
 
     ----------------------------------------------------------------
     -- LOG: CALL EXEC_AND_LOG (ASSUMED SIGNATURE)
     ----------------------------------------------------------------
-    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLEINSERT1;
+    V_TABLEDEST := V_OWNER || '.' || V_TABLEINSERT1;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
 
-    IFRS9_BCA.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
+    IFRS9_BCA.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;
 
     ----------------------------------------------------------------
     -- RESULT PREVIEW
     ----------------------------------------------------------------
-    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 ||
+    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1 ||
                 ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
                 ' AND (' || CASE WHEN V_MODEL_ID = '0' THEN '1=1' ELSE 'PD_RULE_ID = ' || V_MODEL_ID END || ')';
 
-    IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
+    IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;
 
 EXCEPTION
     WHEN OTHERS THEN
+        IF C_RULE%ISOPEN THEN
+            CLOSE C_RULE;
+        END IF;
+
         ROLLBACK;
-        RAISE_APPLICATION_ERROR(-20002, 'SP_IFRS_ECL_UPDATE_STAGE_BCA FAILED: ' || SQLERRM);
+
+        RAISE_APPLICATION_ERROR(-20001,'ERROR IN ' || V_SP_NAME || ' : ' || SQLERRM);
 END;
