@@ -120,6 +120,21 @@ BEGIN
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
                        ' AS SELECT * FROM ' || V_OWNER || '.IFRS_ECL_RESULT_DETAIL_CALC WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
         EXECUTE IMMEDIATE V_STR_QUERY;
+
+        -- DROP TABLE IF EXISTS
+        SELECT COUNT(*) INTO V_COUNT
+        FROM ALL_TABLES
+        WHERE OWNER = V_OWNER
+          AND TABLE_NAME = UPPER(V_TABLEINSERT2);
+
+        IF V_COUNT > 0 THEN
+            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT2;
+            EXECUTE IMMEDIATE V_STR_QUERY;
+        END IF;
+
+        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT2 ||
+                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_ECL_RESULT_DETAIL WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+        EXECUTE IMMEDIATE V_STR_QUERY;
     END IF;
     COMMIT;
 
@@ -374,12 +389,6 @@ BEGIN
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
 
-    V_STR_QUERY := 'XXX'
-
-    EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
-
-
     V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.TMP_SBLC_OVERRIDE A
          USING ' || V_OWNER || '.IFRS_BUCKET_DETAIL B
             ON (A.CURRENCY != ''IDR''
@@ -396,8 +405,7 @@ BEGIN
     COMMIT;
 
 
-    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || ' 
-                (DOWNLOAD_DATE,
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.IFRS_ECL_RESULT_DETAIL_CALC (DOWNLOAD_DATE,
                     ECL_MODEL_ID,
                     MASTERID,
                     BUCKET_GROUP,
@@ -420,158 +428,334 @@ BEGIN
                     CCF_RATE,
                     CCF_AMOUNT,
                     ECL_AMOUNT)
-            SELECT A.DOWNLOAD_DATE,
-                G.ECL_MODEL_ID,
-                A.MASTERID,
-                B.BUCKET_GROUP,
-                B.BUCKET_ID,
-                A.CR_STAGE,
-                CASE
-                    WHEN    (    A.CR_STAGE = ''1''
-                                AND (NVL(A.REVOLVING_FLAG, 0) = 1
-                                    OR A.SEGMENT_RULE_ID = 448))
-                            OR A.DATA_SOURCE = ''LIMIT''
-                    THEN
-                        12
-                    ELSE
-                        LEAST (NVL(C.MAX_COUNTER, 120),
-                                NVL(L.LIFETIME_PERIOD, 120))
-                END AS LIFETIME_PERIOD,
-                B.FL_YEAR,
-                B.FL_MONTH,
-                B.FL_SEQ,
-                CASE
-                    WHEN    (    A.CR_STAGE = ''1''
-                                AND (   NVL (A.REVOLVING_FLAG, 0) = 1
-                                    OR A.SEGMENT_RULE_ID = 448))
-                            OR A.DATA_SOURCE = ''LIMIT''
-                    THEN
-                        NVL (B.PD, 0)
-                    WHEN A.CR_STAGE = ''3'' AND B.FL_YEAR = 1
-                    THEN
-                        1
-                    WHEN A.CR_STAGE = ''3'' AND B.FL_YEAR > 1
-                    THEN
-                        0
-                    WHEN B.FL_YEAR = CEIL(LEAST ((NVL(C.MAX_COUNTER, 120) / 12),(NVL(L.LIFETIME_PERIOD, 120) / 12))) 
-                        THEN 
-                            NVL (B.PD, 0) * CASE WHEN MOD (LEAST(NVL(C.MAX_COUNTER, 120), NVL(L.LIFETIME_PERIOD, 120)),12) = 0
-                        THEN
-                            12
-                        ELSE
-                            MOD(LEAST (NVL(C.MAX_COUNTER, 120), NVL(L.LIFETIME_PERIOD, 120)),12) END / 12
-                        ELSE
-                            NVL (B.PD, 0)
-                            END AS PD_RATE,
-                D.OVERRIDE_LGD AS LGD_RATE,
-                CASE
-                    WHEN B.FL_YEAR = 1
-                    THEN
-                        1
-                    WHEN A.EIR < 0
-                    THEN
-                        (1 / POWER (1 + NVL((INTEREST_RATE / 100),A.INTEREST_RATE) / 100, B.FL_YEAR - 1))
-                    ELSE
-                        (1 / POWER (1 + NVL (A.EIR, A.INTEREST_RATE) / 100,B.FL_YEAR - 1))
-                    END AS DISCOUNT_RATE,
-                C.COUNTER AS COUNTER_PAYSCHD,
-                C.EAD_AMOUNT,
-                C.FAIRVALUE,
-                C.INTEREST_ACCRUED,
-                C.UNUSED_AMOUNT,
-                C.PREPAYMENT_RATE,
-                C.PREPAYMENT_AMOUNT,
-                C.CCF_RATE,
-                C.CCF_AMOUNT,
-                C.EAD_AMOUNT * (
-                    CASE WHEN B.FL_YEAR = 1 --OR (A.DATA_SOURCE IN (''BTRD'', ''RKN'')) THEN 1 
-                    WHEN A.EIR < 0 
-                    THEN (1 / POWER(1 + NVL((INTEREST_RATE / 100), A.INTEREST_RATE) / 100, B.FL_YEAR - 1))
-                        ELSE
-                        (1 / POWER (1 + NVL (A.EIR, A.INTEREST_RATE) / 100, B.FL_YEAR - 1)) 
-                        END) * 
-                        CASE WHEN (A.CR_STAGE = ''1'' AND (NVL (A.REVOLVING_FLAG, 0) = 1 OR A.SEGMENT_RULE_ID = 448)) OR A.DATA_SOURCE = ''LIMIT''
-                        THEN
-                            NVL (B.PD, 0)
-                        WHEN A.CR_STAGE = ''3'' AND B.FL_YEAR = 1
-                        THEN
-                            1
-                        WHEN A.CR_STAGE = ''3'' AND B.FL_YEAR > 1
-                        THEN
-                            0
-                        WHEN B.FL_YEAR = CEIL (LEAST ((NVL (C.MAX_COUNTER, 120) / 12), (NVL (L.LIFETIME_PERIOD, 120) / 12)))
-                        THEN
-                            NVL (B.PD, 0) * CASE
-                            WHEN MOD(LEAST (NVL (C.MAX_COUNTER, 120), NVL (L.LIFETIME_PERIOD, 120)), 12) = 0
-                                THEN
-                                    12
-                                ELSE
-                                    MOD (LEAST (NVL (C.MAX_COUNTER, 120),NVL (L.LIFETIME_PERIOD, 120)),12)
-                            END / 12
-                        ELSE
-                            NVL (B.PD, 0)
-                        END * NVL (D.OVERRIDE_LGD, 1) AS ECL_AMOUNT
-            FROM (SELECT * FROM ' || V_OWNER || '.' || V_TABLESELECT3 || ' WHERE DOWNLOAD_DATE= TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))  A
-                INNER JOIN ' || V_OWNER || '.' || V_TABLECONFIG || ' G
-                    ON     A.DOWNLOAD_DATE = G.DOWNLOAD_DATE
-                        AND A.SEGMENT_RULE_ID = G.PF_SEGMENT_ID
-                LEFT JOIN IFRS_LIFETIME_HEADER L
-                    ON     G.LT_RULE_ID = L.LIFETIME_CONFIG_ID
-                        AND L.DOWNLOAD_DATE = G.LT_EFF_DATE
-                LEFT JOIN TMP_SBLC_OVERRIDE E
-                    ON A.ACCOUNT_NUMBER = E.ACCOUNT_NUMBER
-                INNER JOIN TMP_PD_TERM_STRUCTURE B
-                    ON B.PD_RULE_ID =
-                            CASE
-                                WHEN NVL(E.BUCKET_ID, 0) = 0
-                                    AND A.BUCKET_GROUP != ''BR9_1''
-                                THEN
-                                    G.PD_MODEL_ID
-                                WHEN NVL (E.BUCKET_ID, 0) > 0
-                                THEN
-                                    E.PD_RULE_ID
-                                ELSE
-                                    23
-                            END
-                        AND B.BUCKET_ID = NVL (E.BUCKET_ID, A.BUCKET_ID)
-                        AND B.EFF_DATE = G.PD_EFF_DATE --YTA: PERLU DIUPDATE DENGAN LOGIC EFFECTIVE DATE HASIL ECL CONFIG
-                INNER JOIN TMP_IFRS_EAD_RESULT C
-                    ON     A.MASTERID = C.MASTERID
-                        AND A.DOWNLOAD_DATE = C.DOWNLOAD_DATE
-                        AND C.ECL_MODEL_ID = G.ECL_MODEL_ID
-                        AND B.FL_YEAR = CEIL (C.COUNTER / 12)
-                        AND B.FL_YEAR <=
-                            CASE
-                                WHEN    A.CR_STAGE = 1
-                                    OR A.CR_STAGE IS NULL
-                                    OR A.DATA_SOURCE = ''LIMIT''
-                                THEN
-                                    1
-                                ELSE
-                                    CEIL (
-                                        LEAST (
-                                            (NVL (C.MAX_COUNTER, 120) / 12),
-                                            (NVL (L.LIFETIME_PERIOD, 120) / 12)))
-                            END
-                LEFT JOIN IFRS_LGD_TERM_STRUCTURE D
-                    ON     D.LGD_RULE_ID = NVL (E.LGD_RULE_ID, G.LGD_MODEL_ID)
-                        AND D.EFF_DATE = G.LGD_EFF_DATE --YTA: PERLU DIUPDATE DENGAN LOGIC EFFECTIVE DATE HASIL ECL CONFIG
-                        AND B.FL_SEQ = D.FL_SEQ
-                        AND D.FL_YEAR <=
-                            CASE
-                                WHEN    A.CR_STAGE = 1
-                                    OR A.CR_STAGE IS NULL
-                                    OR A.DATA_SOURCE = ''LIMIT''
-                                THEN
-                                    1
-                                ELSE
-                                    CEIL (
-                                        LEAST (
-                                            (NVL (C.MAX_COUNTER, 120) / 12),
-                                            (NVL (L.LIFETIME_PERIOD, 120) / 12)))
-                            END
-            WHERE G.ECL_MODEL_ID = ' || V_MODEL_ID || '
-            AND NVL (A.IFRS9_CLASS, ' ') != ''FVTPL''';
+        SELECT A.DOWNLOAD_DATE,
+               G.ECL_MODEL_ID,
+               A.MASTERID,
+               B.BUCKET_GROUP,
+               B.BUCKET_ID,
+               A.CR_STAGE,
+               CASE
+                   WHEN    (    A.CR_STAGE = ''1''
+                            AND (   NVL (A.REVOLVING_FLAG, 0) = 1
+                                 OR A.SEGMENT_RULE_ID = 448))
+                        OR A.DATA_SOURCE = ''LIMIT''
+                   THEN
+                       12
+                   ELSE
+                       LEAST (NVL (C.MAX_COUNTER, 120),
+                              NVL (L.LIFETIME_PERIOD, 120))
+               END AS LIFETIME_PERIOD,
+               B.FL_YEAR,
+               B.FL_MONTH,
+               B.FL_SEQ,
+               CASE
+                   WHEN    (    A.CR_STAGE = ''1''
+                            AND (   NVL (A.REVOLVING_FLAG, 0) = 1
+                                 OR A.SEGMENT_RULE_ID = 448))
+                        OR A.DATA_SOURCE = ''LIMIT''
+                   THEN
+                       NVL (B.PD, 0)
+                   WHEN A.CR_STAGE = ''3'' AND B.FL_YEAR = 1
+                   THEN
+                       1
+                   WHEN A.CR_STAGE = ''3'' AND B.FL_YEAR > 1
+                   THEN
+                       0
+                   WHEN B.FL_YEAR =
+                        CEIL (
+                            LEAST ((NVL (C.MAX_COUNTER, 120) / 12),
+                                   (NVL (L.LIFETIME_PERIOD, 120) / 12)))
+                   THEN
+                         NVL (B.PD, 0)
+                       * CASE
+                             WHEN MOD (
+                                      LEAST (NVL (C.MAX_COUNTER, 120),
+                                             NVL (L.LIFETIME_PERIOD, 120)),
+                                      12) =
+                                  0
+                             THEN
+                                 12
+                             ELSE
+                                 MOD (
+                                     LEAST (NVL (C.MAX_COUNTER, 120),
+                                            NVL (L.LIFETIME_PERIOD, 120)),
+                                     12)
+                         END
+                       / 12
+                   ELSE
+                       NVL (B.PD, 0)
+               END                          AS PD_RATE,
+               D.OVERRIDE_LGD               AS LGD_RATE,
+               CASE
+                   WHEN B.FL_YEAR = 1  --OR (A.DATA_SOURCE IN (''BTRD'', ''RKN''))
+                   THEN
+                       1
+                   WHEN A.EIR < 0
+                   THEN
+                       (  1
+                        / POWER (
+                                1
+                              +   NVL ((INTEREST_RATE / 100),
+                                       A.INTEREST_RATE)
+                                / 100,
+                              B.FL_YEAR - 1))
+                   ELSE
+                       (  1
+                        / POWER (1 + NVL (A.EIR, A.INTEREST_RATE) / 100,
+                                 B.FL_YEAR - 1))
+               END AS DISCOUNT_RATE,
+               C.COUNTER AS COUNTER_PAYSCHD,
+               C.EAD_AMOUNT,
+               C.FAIRVALUE,
+               C.INTEREST_ACCRUED,
+               C.UNUSED_AMOUNT,
+               C.PREPAYMENT_RATE,
+               C.PREPAYMENT_AMOUNT,
+               C.CCF_RATE,
+               C.CCF_AMOUNT,
+               C.EAD_AMOUNT
+               * (CASE
+                      WHEN B.FL_YEAR = 1
+                      THEN
+                          1
+                      WHEN A.EIR < 0
+                      THEN
+                          (  1
+                           / POWER (
+                                   1
+                                 +   NVL ((INTEREST_RATE / 100),
+                                          A.INTEREST_RATE)
+                                   / 100,
+                                 B.FL_YEAR - 1))
+                      ELSE
+                          (  1
+                           / POWER (1 + NVL (A.EIR, A.INTEREST_RATE) / 100,
+                                    B.FL_YEAR - 1))
+                  END)
+               * CASE
+                     WHEN    (    A.CR_STAGE = ''1''
+                              AND (   NVL (A.REVOLVING_FLAG, 0) = 1
+                                   OR A.SEGMENT_RULE_ID = 448))
+                          OR A.DATA_SOURCE = ''LIMIT''
+                     THEN
+                         NVL (B.PD, 0)
+                     WHEN A.CR_STAGE = ''3'' AND B.FL_YEAR = 1
+                     THEN
+                         1
+                     WHEN A.CR_STAGE = ''3'' AND B.FL_YEAR > 1
+                     THEN
+                         0
+                     WHEN B.FL_YEAR =
+                          CEIL (
+                              LEAST ((NVL (C.MAX_COUNTER, 120) / 12),
+                                     (NVL (L.LIFETIME_PERIOD, 120) / 12)))
+                     THEN
+                           NVL (B.PD, 0)
+                         * CASE
+                               WHEN MOD (
+                                        LEAST (NVL (C.MAX_COUNTER, 120),
+                                               NVL (L.LIFETIME_PERIOD, 120)),
+                                        12) =
+                                    0
+                               THEN
+                                   12
+                               ELSE
+                                   MOD (
+                                       LEAST (NVL (C.MAX_COUNTER, 120),
+                                              NVL (L.LIFETIME_PERIOD, 120)),
+                                       12)
+                           END
+                         / 12
+                     ELSE
+                         NVL (B.PD, 0)
+                 END
+               * NVL (D.OVERRIDE_LGD, 1) AS ECL_AMOUNT
+          FROM (SELECT * FROM IFRS_MASTER_ACCOUNT WHERE DOWNLOAD_DATE=TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''))  A
+               INNER JOIN IFRS_ECL_MODEL_CONFIG G
+                   ON A.DOWNLOAD_DATE = G.DOWNLOAD_DATE
+                      AND A.SEGMENT_RULE_ID = G.PF_SEGMENT_ID
+               LEFT JOIN IFRS_LIFETIME_HEADER L
+                   ON     G.LT_RULE_ID = L.LIFETIME_CONFIG_ID
+                      AND L.DOWNLOAD_DATE = G.LT_EFF_DATE
+               LEFT JOIN TMP_SBLC_OVERRIDE E
+                   ON A.ACCOUNT_NUMBER = E.ACCOUNT_NUMBER
+               INNER JOIN TMP_PD_TERM_STRUCTURE B
+                   ON     B.PD_RULE_ID =
+                          CASE
+                              WHEN     NVL (E.BUCKET_ID, 0) = 0
+                                   AND A.BUCKET_GROUP != ''BR9_1''
+                              THEN
+                                  G.PD_MODEL_ID
+                              WHEN NVL (E.BUCKET_ID, 0) > 0
+                              THEN
+                                  E.PD_RULE_ID
+                              ELSE
+                                  23
+                          END
+                      AND B.BUCKET_ID = NVL (E.BUCKET_ID, A.BUCKET_ID)
+                      AND B.EFF_DATE = G.PD_EFF_DATE
+               INNER JOIN TMP_IFRS_EAD_RESULT C
+                   ON     A.MASTERID = C.MASTERID
+                      AND A.DOWNLOAD_DATE = C.DOWNLOAD_DATE
+                      AND C.ECL_MODEL_ID = G.ECL_MODEL_ID
+                      AND B.FL_YEAR = CEIL (C.COUNTER / 12)
+                      AND B.FL_YEAR <=
+                          CASE
+                              WHEN A.CR_STAGE = 1
+                                   OR A.CR_STAGE IS NULL
+                                   OR A.DATA_SOURCE = ''LIMIT''
+                              THEN
+                                  1
+                              ELSE
+                                  CEIL (
+                                      LEAST (
+                                          (NVL (C.MAX_COUNTER, 120) / 12),
+                                          (NVL (L.LIFETIME_PERIOD, 120) / 12)))
+                          END
+               LEFT JOIN IFRS_LGD_TERM_STRUCTURE D
+                   ON     D.LGD_RULE_ID = NVL (E.LGD_RULE_ID, G.LGD_MODEL_ID)
+                      AND D.EFF_DATE = G.LGD_EFF_DATE --YTA: PERLU DIUPDATE DENGAN LOGIC EFFECTIVE DATE HASIL ECL CONFIG
+                      AND B.FL_SEQ = D.FL_SEQ
+                      AND D.FL_YEAR <=
+                          CASE
+                              WHEN    A.CR_STAGE = 1
+                                   OR A.CR_STAGE IS NULL
+                                   OR A.DATA_SOURCE = ''LIMIT''
+                              THEN
+                                  1
+                              ELSE
+                                  CEIL (
+                                      LEAST (
+                                          (NVL (C.MAX_COUNTER, 120) / 12),
+                                          (NVL (L.LIFETIME_PERIOD, 120) / 12)))
+                          END
+         WHERE G.ECL_MODEL_ID = ' || V_MODEL_ID || '
+               AND NVL (A.IFRS9_CLASS, '' '') != ''FVTPL''';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+    V_STR_QUERY := 'INSERT INTO IFRS_ECL_RESULT_DETAIL (DOWNLOAD_DATE,
+                    ECL_MODEL_ID,
+                    MASTERID,
+                    PF_SEGMENT_ID,
+                    GROUP_SEGMENT,
+                    SEGMENT,
+                    SUB_SEGMENT,
+                    ACCOUNT_NUMBER,
+                    CUSTOMER_NUMBER,
+                    CUSTOMER_NAME,
+                    DATA_SOURCE,
+                    PRODUCT_GROUP,
+                    PRODUCT_TYPE,
+                    PRODUCT_CODE,
+                    CURRENCY,
+                    EXCHANGE_RATE,
+                    EIR,
+                    INTEREST_RATE,
+                    OUTSTANDING,
+                    FAIR_VALUE_AMOUNT,
+                    INTEREST_ACCRUED,
+                    UNUSED_AMOUNT,
+                    BI_COLLECTABILITY,
+                    DAY_PAST_DUE,
+                    BUCKET_GROUP,
+                    BUCKET_ID,
+                    CR_STAGE,
+                    IMPAIRED_FLAG,
+                    LIFETIME_PERIOD,
+                    PREPAYMENT_AMOUNT,
+                    CCF_AMOUNT,
+                    ECL_AMOUNT,
+                    SPECIAL_REASON,
+                    MULTIPLIER)
+        SELECT A.DOWNLOAD_DATE,
+               B.ECL_MODEL_ID,
+               B.MASTERID,
+               A.SEGMENT_RULE_ID AS PF_SEGMENT_ID,
+               A.GROUP_SEGMENT,
+               A.SEGMENT,
+               A.SUB_SEGMENT,
+               A.ACCOUNT_NUMBER,
+               A.CUSTOMER_NUMBER,
+               A.CUSTOMER_NAME,
+               A.DATA_SOURCE,
+               A.PRODUCT_GROUP,
+               A.PRODUCT_TYPE,
+               A.PRODUCT_CODE,
+               A.CURRENCY,
+               A.EXCHANGE_RATE,
+               A.EIR,
+               A.INTEREST_RATE,
+               NVL (A.OUTSTANDING, 0) AS OUTSTANDING,
+               NVL (B.FAIR_VALUE_AMOUNT, 0) AS FAIR_VALUE_AMOUNT,
+               NVL (A.INTEREST_ACCRUED, 0) AS INTEREST_ACCRUED,
+               B.UNUSED_AMOUNT,
+               A.BI_COLLECTABILITY,
+               A.DAY_PAST_DUE,
+               A.BUCKET_GROUP,
+               B.BUCKET_ID,
+               B.CR_STAGE,
+               ''C'' AS IMPAIRED_FLAG,
+               B.LIFETIME_PERIOD,
+               B.PREPAYMENT_AMOUNT,
+               B.CCF_AMOUNT,
+               CASE
+                   WHEN NVL (B.EAD_AMOUNT, 0) > 0
+                        AND NVL (B.ECL_AMOUNT, 0) > NVL (B.EAD_AMOUNT, 0)
+                   THEN
+                       NVL (B.EAD_AMOUNT, 0)
+                   ELSE
+                       NVL (B.ECL_AMOUNT, 0)
+               END AS ECL_AMOUNT,
+               '' AS SPECIAL_REASON,
+               NVL (RESERVED_RATE_8, 1)
+          FROM GTMP_IFRS_MASTER_ACCOUNT  A
+               JOIN
+               (  SELECT DOWNLOAD_DATE,
+                         ECL_MODEL_ID,
+                         MASTERID,
+                         BUCKET_ID,
+                         CR_STAGE,
+                         LIFETIME_PERIOD,
+                         MAX (FAIR_VALUE_AMOUNT) AS FAIR_VALUE_AMOUNT,
+                         UNUSED_AMOUNT,
+                         SUM (
+                             CASE
+                                 WHEN COUNTER_PAYSCHD = 1
+                                 THEN
+                                     NVL (EAD_AMOUNT, 0)
+                                 ELSE
+                                     0
+                             END) AS EAD_AMOUNT,
+                         SUM (
+                             CASE
+                                 WHEN COUNTER_PAYSCHD = 1
+                                 THEN
+                                     NVL (PREPAYMENT_AMOUNT, 0)
+                                 ELSE
+                                     0
+                             END) AS PREPAYMENT_AMOUNT,
+                         SUM (
+                             CASE
+                                 WHEN COUNTER_PAYSCHD = 1
+                                 THEN
+                                     NVL (CCF_AMOUNT, 0)
+                                 ELSE
+                                     0
+                             END) AS CCF_AMOUNT,
+                         SUM (NVL (ECL_AMOUNT, 0)) AS ECL_AMOUNT
+                    FROM IFRS_ECL_RESULT_DETAIL_CALC
+                   WHERE     DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+                         AND ECL_MODEL_ID = ' || V_MODEL_ID || '
+                GROUP BY DOWNLOAD_DATE,
+                         ECL_MODEL_ID,
+                         MASTERID,
+                         BUCKET_ID,
+                         CR_STAGE,
+                         LIFETIME_PERIOD,
+                         UNUSED_AMOUNT) B
+                   ON A.MASTERID = B.MASTERID';
 
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
