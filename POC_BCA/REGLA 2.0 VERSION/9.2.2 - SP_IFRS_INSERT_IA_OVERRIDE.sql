@@ -1,0 +1,1019 @@
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_INSERT_IA_OVERRIDE_BCA (
+    P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
+    P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
+    P_SYSCODE       IN VARCHAR2 DEFAULT '0',
+    P_PRC           IN VARCHAR2 DEFAULT 'S',
+    P_UPLOADID      IN NUMBER DEFAULT 0
+)
+AUTHID CURRENT_USER
+AS
+    ----------------------------------------------------------------
+    -- VARIABLES
+    ----------------------------------------------------------------
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_INSERT_IA_OVERRIDE_BCA';
+    V_OWNER       VARCHAR2(30);
+    V_CURRDATE      DATE;
+    V_MODEL_ID      VARCHAR2(22);
+    V_COUNT         NUMBER;
+
+    -- DYNAMIC SQL (USE VARCHAR2 LARGE)
+    V_STR_QUERY     VARCHAR2(32767);
+
+    -- TABLE NAMES (UNQUALIFIED PARTS)
+    V_TABLEINSERT1  VARCHAR2(100);
+    V_TABLEINSERT2  VARCHAR2(100);
+    V_TABLESELECT1  VARCHAR2(100);
+    V_TABLESELECT2  VARCHAR2(100);
+    V_TABLESELECT3  VARCHAR2(100);
+    V_TABLESELECT4  VARCHAR2(100);
+    V_TABLESELECT5  VARCHAR2(100);
+    V_TABLESELECT6  VARCHAR2(100);
+    V_TABLECONFIG   VARCHAR2(100);
+
+
+    -- CURSOR
+    TYPE REF_CURSOR IS REF CURSOR;
+    C_RULE        REF_CURSOR;
+
+    -- FETCH VARIABLES
+    V_RULE_ID     VARCHAR2(250);
+    V_RULE_TYPE VARCHAR2(25);
+    V_TABLE_NAME  VARCHAR2(100);
+    V_PD_RULES_QRY_RESULT CLOB;
+
+
+    -- MISC
+    V_RETURNROWS    NUMBER := 0;
+    V_RETURNROWS2   NUMBER := 0;
+    V_TABLEDEST     VARCHAR2(100);
+    V_COLUMNDEST    VARCHAR2(100);
+    V_OPERATION     VARCHAR2(100);
+    V_RUNID         VARCHAR2(30);
+    V_SYSCODE       VARCHAR2(10);
+    V_PRC           VARCHAR2(5);
+    V_UPLOADID      NUMBER(18);
+    V_CONSTNAME     VARCHAR2(100) := 'THRESHOLD';
+
+    -- RESULT QUERY
+    V_QUERYS        CLOB;
+
+
+BEGIN
+
+    ----------------------------------------------------------------
+    -- GET OWNER
+    ----------------------------------------------------------------
+    SELECT USERNAME INTO V_OWNER FROM USER_USERS;
+
+    ----------------------------------------------------------------
+    -- INSERT VCURRDATE DETERMINATION IF NULL
+    ----------------------------------------------------------------
+    IF P_DOWNLOAD_DATE IS NULL THEN
+        BEGIN
+            SELECT CURRDATE INTO V_CURRDATE FROM IFRS9_BCA.IFRS_PRC_DATE_AMORT;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(-20010, 'IFRS_PRC_DATE_AMORT HAS NO CURRDATE ROW');
+        END;
+    ELSE
+        V_CURRDATE := P_DOWNLOAD_DATE;
+    END IF;
+
+    V_RUNID := NVL(P_RUNID, 'P_00000_0000');
+    V_SYSCODE := NVL(P_SYSCODE, '0');
+    V_MODEL_ID := V_SYSCODE;
+    V_PRC := NVL(P_PRC, 'P');
+
+    ----------------------------------------------------------------
+    -- TABLE DETERMINATION
+    ----------------------------------------------------------------
+    IF V_PRC = 'S' THEN 
+        V_TABLEINSERT1 := 'IFRS_IA_OVERRIDED_HIST_' || V_RUNID;
+        V_TABLESELECT1 := 'GTMP_IFRS_MASTER_ACCOUNT_' || V_RUNID;
+        V_TABLESELECT2 := 'IFRS_MASTER_ACCOUNT_' || V_RUNID;
+        V_TABLESELECT3 := 'IFRS_IA_OVERRIDED_' || V_RUNID;
+        V_TABLESELECT4 := 'GTMP_IFRS_SCENARIO_GEN_QUERY_' || V_RUNID;
+        V_TABLESELECT5 := 'IFRS_IA_OVERRIDEH_' || V_RUNID;
+        V_TABLESELECT6 := 'IFRS_IA_OVERRIDEH_HIST_' || V_RUNID;
+    ELSE 
+        V_TABLEINSERT1 := 'IFRS_IA_OVERRIDED_HIST';
+        V_TABLESELECT1 := 'GTMP_IFRS_MASTER_ACCOUNT';
+        V_TABLESELECT2 := 'IFRS_MASTER_ACCOUNT';
+        V_TABLESELECT3 := 'IFRS_IA_OVERRIDED';
+        V_TABLESELECT4 := 'GTMP_IFRS_SCENARIO_GEN_QUERY';
+        V_TABLESELECT5 := 'IFRS_IA_OVERRIDEH';
+        V_TABLESELECT6 := 'IFRS_IA_OVERRIDEH_HIST';
+    END IF;
+
+    IFRS9_BCA.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, V_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
+    COMMIT;
+
+    ----------------------------------------------------------------
+    -- PRE-PROCESSING SIMULATION TABLES
+    ----------------------------------------------------------------
+    IF V_PRC = 'S' THEN
+        -- DROP TABLE IF EXISTS
+        SELECT COUNT(*) INTO V_COUNT
+        FROM ALL_TABLES
+        WHERE OWNER = V_OWNER
+          AND TABLE_NAME = UPPER(V_TABLEINSERT1);
+
+        IF V_COUNT > 0 THEN
+            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT1;
+            EXECUTE IMMEDIATE V_STR_QUERY;
+        END IF;
+
+        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
+                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_IA_OVERRIDED_HIST WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+        EXECUTE IMMEDIATE V_STR_QUERY;
+    END IF;
+    COMMIT;
+
+    ----------------------------------------------------------------
+    -- MAIN PROCESSING
+    ----------------------------------------------------------------
+    V_STR_QUERY := 'TRUNCATE TABLE ' || V_OWNER || '.' || V_TABLESELECT1;
+    EXECUTE IMMEDIATE V_STR_QUERY;
+
+
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || '
+    (
+        PKID,
+        DOWNLOAD_DATE,
+        MASTERID,
+        MASTER_ACCOUNT_CODE,
+        DATA_SOURCE,
+        GLOBAL_CUSTOMER_NUMBER,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        FACILITY_NUMBER,
+        ACCOUNT_NUMBER,
+        PREVIOUS_ACCOUNT_NUMBER,
+        ACCOUNT_STATUS,
+        INTEREST_RATE,
+        MARKET_RATE,
+        PRODUCT_GROUP,
+        PRODUCT_TYPE,
+        PRODUCT_CODE,
+        PRODUCT_ENTITY,
+        GL_CONSTNAME,
+        BRANCH_CODE,
+        BRANCH_CODE_OPEN,
+        CURRENCY,
+        EXCHANGE_RATE,
+        INITIAL_OUTSTANDING,
+        OUTSTANDING,
+        OUTSTANDING_IDC,
+        OUTSTANDING_JF,
+        OUTSTANDING_BANK,
+        OUTSTANDING_PASTDUE,
+        PLAFOND,
+        PLAFOND_CASH,
+        INTEREST_ACCRUED,
+        INSTALLMENT_AMOUNT,
+        UNUSED_AMOUNT,
+        DOWN_PAYMENT_AMOUNT,
+        JF_FLAG,
+        LOAN_START_DATE,
+        LOAN_DUE_DATE,
+        LOAN_START_AMORTIZATION,
+        LOAN_END_AMORTIZATION,
+        INSTALLMENT_GRACE_PERIOD,
+        NEXT_PAYMENT_DATE,
+        NEXT_INT_PAYMENT_DATE,
+        LAST_PAYMENT_DATE,
+        FIRST_INSTALLMENT_DATE,
+        TENOR,
+        REMAINING_TENOR,
+        PAYMENT_CODE,
+        PAYMENT_TERM,
+        INTEREST_CALCULATION_CODE,
+        INTEREST_PAYMENT_TERM,
+        RESTRUCTURE_DATE,
+        RESTRUCTURE_FLAG,
+        POCI_FLAG,
+        STAFF_LOAN_FLAG,
+        BELOW_MARKET_FLAG,
+        BTB_FLAG,
+        COMMITTED_FLAG,
+        REVOLVING_FLAG,
+        IAS_CLASS,
+        IFRS9_CLASS,
+        BM_RESULT,
+        SPPI_RESULT,
+        AMORT_TYPE,
+        EIR_STATUS,
+        ECF_STATUS,
+        EIR,
+        EIR_AMOUNT,
+        FAIR_VALUE_AMOUNT,
+        INITIAL_UNAMORT_TXN_COST,
+        INITIAL_UNAMORT_ORG_FEE,
+        UNAMORT_COST_AMT,
+        UNAMORT_FEE_AMT,
+        UNAMORT_BENEFIT,
+        DAILY_AMORT_AMT,
+        UNAMORT_AMT_TOTAL_JF,
+        UNAMORT_FEE_AMT_JF,
+        UNAMORT_COST_AMT_JF,
+        ORIGINAL_COLLECTABILITY,
+        BI_COLLECTABILITY,
+        DAY_PAST_DUE,
+        DPD_START_DATE,
+        DPD_ZERO_COUNTER,
+        NPL_DATE,
+        NPL_FLAG,
+        DEFAULT_DATE,
+        DEFAULT_FLAG,
+        WRITEOFF_FLAG,
+        WRITEOFF_DATE,
+        OUTSTANDING_WO,
+        IMPAIRED_FLAG,
+        IS_IMPAIRED,
+        GROUP_SEGMENT,
+        SEGMENT,
+        SUB_SEGMENT,
+        CR_STAGE,
+        LIFETIME,
+        EAD_RULE_ID,
+        EAD_SEGMENT,
+        EAD_AMOUNT,
+        LGD_RULE_ID,
+        LGD_SEGMENT,
+        PD_RULE_ID,
+        PD_SEGMENT,
+        BUCKET_GROUP,
+        BUCKET_ID,
+        RATING_CODE,
+        ECL_12_AMOUNT,
+        ECL_LIFETIME_AMOUNT,
+        ECL_AMOUNT,
+        CA_UNWINDING_AMOUNT,
+        IA_UNWINDING_AMOUNT,
+        IA_UNWINDING_SUM_AMOUNT,
+        BEGINNING_BALANCE,
+        ENDING_BALANCE,
+        WRITEBACK_AMOUNT,
+        CHARGE_AMOUNT,
+        RESERVED_VARCHAR_1,
+        RESERVED_VARCHAR_2,
+        RESERVED_VARCHAR_3,
+        RESERVED_VARCHAR_4,
+        RESERVED_VARCHAR_5,
+        RESERVED_VARCHAR_6,
+        RESERVED_VARCHAR_7,
+        RESERVED_VARCHAR_8,
+        RESERVED_VARCHAR_9,
+        RESERVED_VARCHAR_10,
+        RESERVED_VARCHAR_11,
+        RESERVED_VARCHAR_12,
+        RESERVED_VARCHAR_13,
+        RESERVED_VARCHAR_14,
+        RESERVED_VARCHAR_15,
+        RESERVED_VARCHAR_16,
+        RESERVED_VARCHAR_17,
+        RESERVED_VARCHAR_18,
+        RESERVED_VARCHAR_19,
+        RESERVED_VARCHAR_20,
+        RESERVED_VARCHAR_21,
+        RESERVED_VARCHAR_22,
+        RESERVED_VARCHAR_23,
+        RESERVED_VARCHAR_24,
+        RESERVED_VARCHAR_25,
+        RESERVED_VARCHAR_26,
+        RESERVED_VARCHAR_27,
+        RESERVED_VARCHAR_28,
+        RESERVED_VARCHAR_29,
+        RESERVED_VARCHAR_30,
+        RESERVED_AMOUNT_1,
+        RESERVED_AMOUNT_2,
+        RESERVED_AMOUNT_3,
+        RESERVED_AMOUNT_4,
+        RESERVED_AMOUNT_5,
+        RESERVED_AMOUNT_6,
+        RESERVED_AMOUNT_7,
+        RESERVED_AMOUNT_8,
+        RESERVED_AMOUNT_9,
+        RESERVED_AMOUNT_10,
+        RESERVED_AMOUNT_11,
+        RESERVED_AMOUNT_12,
+        RESERVED_AMOUNT_13,
+        RESERVED_AMOUNT_14,
+        RESERVED_AMOUNT_15,
+        RESERVED_AMOUNT_16,
+        RESERVED_AMOUNT_17,
+        RESERVED_AMOUNT_18,
+        RESERVED_AMOUNT_19,
+        RESERVED_AMOUNT_20,
+        RESERVED_RATE_1,
+        RESERVED_RATE_2,
+        RESERVED_RATE_3,
+        RESERVED_RATE_4,
+        RESERVED_RATE_5,
+        RESERVED_RATE_6,
+        RESERVED_RATE_7,
+        RESERVED_RATE_8,
+        RESERVED_RATE_9,
+        RESERVED_RATE_10,
+        RESERVED_FLAG_1,
+        RESERVED_FLAG_2,
+        RESERVED_FLAG_3,
+        RESERVED_FLAG_4,
+        RESERVED_FLAG_5,
+        RESERVED_FLAG_6,
+        RESERVED_FLAG_7,
+        RESERVED_FLAG_8,
+        RESERVED_FLAG_9,
+        RESERVED_FLAG_10,
+        RESERVED_DATE_1,
+        RESERVED_DATE_2,
+        RESERVED_DATE_3,
+        RESERVED_DATE_4,
+        RESERVED_DATE_5,
+        RESERVED_DATE_6,
+        RESERVED_DATE_7,
+        RESERVED_DATE_8,
+        RESERVED_DATE_9,
+        RESERVED_DATE_10,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    )
+    SELECT
+        PKID,
+        DOWNLOAD_DATE,
+        MASTERID,
+        MASTER_ACCOUNT_CODE,
+        DATA_SOURCE,
+        GLOBAL_CUSTOMER_NUMBER,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        FACILITY_NUMBER,
+        ACCOUNT_NUMBER,
+        PREVIOUS_ACCOUNT_NUMBER,
+        ACCOUNT_STATUS,
+        INTEREST_RATE,
+        MARKET_RATE,
+        PRODUCT_GROUP,
+        PRODUCT_TYPE,
+        PRODUCT_CODE,
+        PRODUCT_ENTITY,
+        GL_CONSTNAME,
+        BRANCH_CODE,
+        BRANCH_CODE_OPEN,
+        CURRENCY,
+        EXCHANGE_RATE,
+        INITIAL_OUTSTANDING,
+        OUTSTANDING,
+        OUTSTANDING_IDC,
+        OUTSTANDING_JF,
+        OUTSTANDING_BANK,
+        OUTSTANDING_PASTDUE,
+        PLAFOND,
+        PLAFOND_CASH,
+        INTEREST_ACCRUED,
+        INSTALLMENT_AMOUNT,
+        UNUSED_AMOUNT,
+        DOWN_PAYMENT_AMOUNT,
+        JF_FLAG,
+        LOAN_START_DATE,
+        LOAN_DUE_DATE,
+        LOAN_START_AMORTIZATION,
+        LOAN_END_AMORTIZATION,
+        INSTALLMENT_GRACE_PERIOD,
+        NEXT_PAYMENT_DATE,
+        NEXT_INT_PAYMENT_DATE,
+        LAST_PAYMENT_DATE,
+        FIRST_INSTALLMENT_DATE,
+        TENOR,
+        REMAINING_TENOR,
+        PAYMENT_CODE,
+        PAYMENT_TERM,
+        INTEREST_CALCULATION_CODE,
+        INTEREST_PAYMENT_TERM,
+        RESTRUCTURE_DATE,
+        RESTRUCTURE_FLAG,
+        POCI_FLAG,
+        STAFF_LOAN_FLAG,
+        BELOW_MARKET_FLAG,
+        BTB_FLAG,
+        COMMITTED_FLAG,
+        REVOLVING_FLAG,
+        IAS_CLASS,
+        IFRS9_CLASS,
+        BM_RESULT,
+        SPPI_RESULT,
+        AMORT_TYPE,
+        EIR_STATUS,
+        ECF_STATUS,
+        EIR,
+        EIR_AMOUNT,
+        FAIR_VALUE_AMOUNT,
+        INITIAL_UNAMORT_TXN_COST,
+        INITIAL_UNAMORT_ORG_FEE,
+        UNAMORT_COST_AMT,
+        UNAMORT_FEE_AMT,
+        UNAMORT_BENEFIT,
+        DAILY_AMORT_AMT,
+        UNAMORT_AMT_TOTAL_JF,
+        UNAMORT_FEE_AMT_JF,
+        UNAMORT_COST_AMT_JF,
+        ORIGINAL_COLLECTABILITY,
+        BI_COLLECTABILITY,
+        DAY_PAST_DUE,
+        DPD_START_DATE,
+        DPD_ZERO_COUNTER,
+        NPL_DATE,
+        NPL_FLAG,
+        DEFAULT_DATE,
+        DEFAULT_FLAG,
+        WRITEOFF_FLAG,
+        WRITEOFF_DATE,
+        OUTSTANDING_WO,
+        IMPAIRED_FLAG,
+        IS_IMPAIRED,
+        GROUP_SEGMENT,
+        SEGMENT,
+        SUB_SEGMENT,
+        CR_STAGE,
+        LIFETIME,
+        EAD_RULE_ID,
+        EAD_SEGMENT,
+        EAD_AMOUNT,
+        LGD_RULE_ID,
+        LGD_SEGMENT,
+        PD_RULE_ID,
+        PD_SEGMENT,
+        BUCKET_GROUP,
+        BUCKET_ID,
+        RATING_CODE,
+        ECL_12_AMOUNT,
+        ECL_LIFETIME_AMOUNT,
+        ECL_AMOUNT,
+        CA_UNWINDING_AMOUNT,
+        IA_UNWINDING_AMOUNT,
+        IA_UNWINDING_SUM_AMOUNT,
+        BEGINNING_BALANCE,
+        ENDING_BALANCE,
+        WRITEBACK_AMOUNT,
+        CHARGE_AMOUNT,
+        RESERVED_VARCHAR_1,
+        RESERVED_VARCHAR_2,
+        RESERVED_VARCHAR_3,
+        RESERVED_VARCHAR_4,
+        RESERVED_VARCHAR_5,
+        RESERVED_VARCHAR_6,
+        RESERVED_VARCHAR_7,
+        RESERVED_VARCHAR_8,
+        RESERVED_VARCHAR_9,
+        RESERVED_VARCHAR_10,
+        RESERVED_VARCHAR_11,
+        RESERVED_VARCHAR_12,
+        RESERVED_VARCHAR_13,
+        RESERVED_VARCHAR_14,
+        RESERVED_VARCHAR_15,
+        RESERVED_VARCHAR_16,
+        RESERVED_VARCHAR_17,
+        RESERVED_VARCHAR_18,
+        RESERVED_VARCHAR_19,
+        RESERVED_VARCHAR_20,
+        RESERVED_VARCHAR_21,
+        RESERVED_VARCHAR_22,
+        RESERVED_VARCHAR_23,
+        RESERVED_VARCHAR_24,
+        RESERVED_VARCHAR_25,
+        RESERVED_VARCHAR_26,
+        RESERVED_VARCHAR_27,
+        RESERVED_VARCHAR_28,
+        RESERVED_VARCHAR_29,
+        '''' RESERVED_VARCHAR_30,
+        RESERVED_AMOUNT_1,
+        RESERVED_AMOUNT_2,
+        RESERVED_AMOUNT_3,
+        RESERVED_AMOUNT_4,
+        RESERVED_AMOUNT_5,
+        RESERVED_AMOUNT_6,
+        RESERVED_AMOUNT_7,
+        RESERVED_AMOUNT_8,
+        RESERVED_AMOUNT_9,
+        RESERVED_AMOUNT_10,
+        RESERVED_AMOUNT_11,
+        RESERVED_AMOUNT_12,
+        RESERVED_AMOUNT_13,
+        RESERVED_AMOUNT_14,
+        RESERVED_AMOUNT_15,
+        RESERVED_AMOUNT_16,
+        RESERVED_AMOUNT_17,
+        RESERVED_AMOUNT_18,
+        RESERVED_AMOUNT_19,
+        RESERVED_AMOUNT_20,
+        RESERVED_RATE_1,
+        RESERVED_RATE_2,
+        RESERVED_RATE_3,
+        RESERVED_RATE_4,
+        RESERVED_RATE_5,
+        RESERVED_RATE_6,
+        RESERVED_RATE_7,
+        RESERVED_RATE_8,
+        RESERVED_RATE_9,
+        RESERVED_RATE_10,
+        RESERVED_FLAG_1,
+        RESERVED_FLAG_2,
+        RESERVED_FLAG_3,
+        RESERVED_FLAG_4,
+        RESERVED_FLAG_5,
+        RESERVED_FLAG_6,
+        RESERVED_FLAG_7,
+        RESERVED_FLAG_8,
+        RESERVED_FLAG_9,
+        RESERVED_FLAG_10,
+        RESERVED_DATE_1,
+        RESERVED_DATE_2,
+        RESERVED_DATE_3,
+        RESERVED_DATE_4,
+        RESERVED_DATE_5,
+        RESERVED_DATE_6,
+        RESERVED_DATE_7,
+        RESERVED_DATE_8,
+        RESERVED_DATE_9,
+        RESERVED_DATE_10,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    FROM ' || V_OWNER || '.' || V_TABLESELECT2 || '
+    WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+    AND CUSTOMER_NUMBER IN
+    (
+        SELECT A.CUSTOMER_NUMBER
+        FROM ' || V_OWNER || '.TBLU_DCF_BULK A
+        WHERE UPLOADID = ' || V_UPLOADID || ')';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+
+    V_STR_QUERY := 'UPDATE ' || V_OWNER || '.' || V_TABLESELECT1 || '
+    SET RESERVED_VARCHAR_30 = ''ACCOUNT DETAIL UNCHANGED''
+    WHERE ACCOUNT_NUMBER NOT IN
+    (
+        SELECT A.ACCOUNT_NUMBER
+        FROM ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
+        JOIN ' || V_OWNER || '.TBLU_DCF_BULK B
+        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
+        JOIN
+        (
+            SELECT A2.CUSTOMER_NUMBER, A2.EXPECTED_PERIOD, A2.EXPECTED_CF_PERCENT
+            FROM ' || V_OWNER || '.TBLU_DCF_BULK A2
+            JOIN
+            (
+                SELECT CUSTOMER_NUMBER, MAX(UPLOADID) UPLOADID
+                FROM ' || V_OWNER || '.TBLU_DCF_BULK
+                WHERE UPLOADID < ' || V_UPLOADID || '
+                GROUP BY CUSTOMER_NUMBER
+            ) B2
+            ON A2.CUSTOMER_NUMBER = B2.CUSTOMER_NUMBER
+            AND A2.UPLOADID = B2.UPLOADID
+        ) C
+        ON B.CUSTOMER_NUMBER = C.CUSTOMER_NUMBER
+        JOIN ' || V_OWNER || '.' || V_TABLESELECT3 || ' D
+        ON A.MASTERID = D.MASTERID
+        JOIN
+        (
+            SELECT MASTERID, MAX(OVERRIDEID) OVERRIDEID
+            FROM ' || V_OWNER || '.' || V_TABLESELECT3 || '
+            GROUP BY MASTERID
+        ) E
+        ON D.OVERRIDEID = E.OVERRIDEID
+        AND D.MASTERID = E.MASTERID
+        WHERE B.UPLOADID = ' || V_UPLOADID || '
+        AND (A.OUTSTANDING != D.OUTSTANDING OR A.INTEREST_RATE != D.INTEREST_RATE OR B.EXPECTED_PERIOD != C.EXPECTED_PERIOD OR B.EXPECTED_CF_PERCENT != C.EXPECTED_CF_PERCENT)
+		UNION
+		SELECT A.ACCOUNT_NUMBER
+		FROM ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
+        JOIN ' || V_OWNER || '.TBLU_DCF_BULK B
+        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
+        WHERE B.UPLOADID = ' || V_UPLOADID || '
+		AND A.ACCOUNT_NUMBER NOT IN
+		(SELECT DISTINCT ACCOUNT_NUMBER FROM ' || V_OWNER || '.' || V_TABLESELECT3 || ')
+		UNION
+		SELECT A.ACCOUNT_NUMBER
+        FROM ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
+        JOIN ' || V_OWNER || '.TBLU_DCF_BULK B
+        ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
+        WHERE B.UPLOADID = ' || V_UPLOADID || '
+		AND A.CUSTOMER_NUMBER IN
+		(SELECT DISTINCT CUSTOMER_NUMBER FROM IFRS_IA_OVERRIDEH_HIST WHERE RESERVED_DATE_2 = ADD_MONTHS(TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''), -1)))';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+
+    IF V_CURRDATE = LAST_DAY(V_CURRDATE) THEN
+
+        V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_GENERATE_RULE_BCA(:1, :2, :3, :4, :5); END;';
+
+        EXECUTE IMMEDIATE V_STR_QUERY
+        USING V_RUNID, V_CURRDATE, V_SYSCODE, V_PRC, V_CONSTNAME;
+        COMMIT;
+
+
+        V_STR_QUERY := 'SELECT PD_RULES_QRY_RESULT FROM ' || V_OWNER || '.' || V_TABLESELECT4;
+
+        BEGIN
+            EXECUTE IMMEDIATE V_STR_QUERY 
+            INTO V_PD_RULES_QRY_RESULT;
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    V_PD_RULES_QRY_RESULT := '1=0'; -- DEFAULT TO ALL IF NO RULES RETURNED
+            END;
+        COMMIT;
+
+
+        V_STR_QUERY := 'DELETE ' || V_OWNER || '.' || V_TABLESELECT1 || ' A WHERE NOT(' || V_PD_RULES_QRY_RESULT || ') OR OUTSTANDING <= 0 OR ACCOUNT_STATUS != ''A''';
+        
+        EXECUTE IMMEDIATE V_STR_QUERY;
+        COMMIT;
+
+
+        V_STR_QUERY := 'UPDATE ' || V_OWNER || '.' || V_TABLESELECT1 || '
+        SET IMPAIRED_FLAG = ''I''
+        WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
+
+        EXECUTE IMMEDIATE V_STR_QUERY;
+        COMMIT;
+    END IF;
+
+
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT5 || '
+    (
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        DOWNLOAD_DATE,
+        OVERRIDE_DATE,
+        EFFECTIVE_DATE,
+        CURRENCY,
+        CR_STAGE,
+        BI_COLLECTABILITY,
+        PRODUCT_ENTITY,
+        RATING_CODE,
+        IMPAIRED_FLAG,
+        ECL_AMOUNT,
+        PV_AMOUNT,
+        STATUS,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    )
+    SELECT DISTINCT A.CUSTOMER_NUMBER,
+        MAX(NVL(A.CUSTOMER_NAME, '' '')),
+        v_CURRDATE,
+        TRUNC(SYSDATE) AS OVERRIDE_DATE,
+        B.EFFECTIVE_DATE,
+        '' '' CURRENCY,
+        MAX(NVL(CR_STAGE, '' '')),
+        MAX(NVL(BI_COLLECTABILITY,'' '')),
+        MAX(NVL(A.PRODUCT_ENTITY, ''C'')),
+        MAX(NVL(A.RATING_CODE, '' '')),
+        MAX(NVL(A.IMPAIRED_FLAG, ''C'')),
+        0 ECL_AMOUNT,
+        0 PV_AMOUNT,
+        0 STATUS,
+        B.UPLOADBY,
+        B.UPLOADDATE,
+        B.UPLOADHOST,
+        B.APPROVEDBY,
+        B.APPROVEDDATE,
+        B.APPROVEDHOST
+    FROM  ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
+    JOIN ' || V_OWNER || '.TBLU_DCF_BULK B
+    ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
+    AND A.RESERVED_VARCHAR_30 IS NULL
+    AND B.UPLOADID = ' || V_UPLOADID || '
+    GROUP BY A.CUSTOMER_NUMBER,
+        B.EFFECTIVE_DATE,
+        B.UPLOADBY,
+        B.UPLOADDATE,
+        B.UPLOADHOST,
+        B.APPROVEDBY,
+        B.APPROVEDDATE,
+        B.APPROVEDHOST';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT6 || '
+    (
+        PKID,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        DOWNLOAD_DATE,
+        OVERRIDE_DATE,
+        EFFECTIVE_DATE,
+        CURRENCY,
+        CR_STAGE,
+        BI_COLLECTABILITY,
+        PRODUCT_ENTITY,
+        RATING_CODE,
+        IMPAIRED_FLAG,
+        ECL_AMOUNT,
+        PV_AMOUNT,
+        STATUS,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    )
+    SELECT PKID,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        DOWNLOAD_DATE,
+        OVERRIDE_DATE,
+        EFFECTIVE_DATE,
+        CURRENCY,
+        CR_STAGE,
+        BI_COLLECTABILITY,
+        PRODUCT_ENTITY,
+        RATING_CODE,
+        IMPAIRED_FLAG,
+        ECL_AMOUNT,
+        PV_AMOUNT,
+        STATUS,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    FROM ' || V_OWNER || '.' || V_TABLESELECT5 || '
+    WHERE EFFECTIVE_DATE IN
+    (
+        SELECT EFFECTIVE_DATE FROM ' || V_OWNER || '.TBLU_DCF_BULK B
+        WHERE UPLOADID = ' || V_UPLOADID || ')';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT3 || '
+    (
+        OVERRIDEID,
+        CUSTOMER_NUMBER,
+        FACILITY_NUMBER,
+        ACCOUNT_NUMBER,
+        MASTERID,
+        CURRENCY,
+        EIR,
+        INTEREST_RATE,
+        CR_STAGE,
+        BI_COLLECTABILITY,
+        PRODUCT_ENTITY,
+        RATING_CODE,
+        DAY_PAST_DUE,
+        IMPAIRED_FLAG,
+        EAD_AMOUNT,
+        OUTSTANDING,
+        DATA_SOURCE,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    )
+    SELECT DISTINCT
+        C.PKID AS OVERRIDEID,
+        C.CUSTOMER_NUMBER,
+        A.FACILITY_NUMBER,
+        A.ACCOUNT_NUMBER,
+        A.MASTERID,
+        NVL(A.CURRENCY,'' ''),
+        NVL(A.EIR,0),
+        NVL(A.INTEREST_RATE,0),
+        NVL(A.CR_STAGE, '' ''),
+        NVL(A.BI_COLLECTABILITY, '' ''),
+        A.PRODUCT_ENTITY,
+        NVL(A.RATING_CODE, '' ''),
+        NVL(A.DAY_PAST_DUE,0),
+        ''I'' IMPAIRED_FLAG,
+        NVL(A.OUTSTANDING, 0),
+        NVL(A.OUTSTANDING, 0),
+        A.DATA_SOURCE,
+        B.UPLOADBY,
+        B.UPLOADDATE,
+        B.UPLOADHOST,
+        B.APPROVEDBY,
+        B.APPROVEDDATE,
+        B.APPROVEDHOST
+    FROM  ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
+    JOIN ' || V_OWNER || '.TBLU_DCF_BULK B
+    ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
+    AND A.RESERVED_VARCHAR_30 IS NULL
+    AND B.UPLOADID = ' || V_UPLOADID || '
+    JOIN  ' || V_OWNER || '.' || V_TABLESELECT5 || ' C
+    ON A.CUSTOMER_NUMBER = C.CUSTOMER_NUMBER
+    AND B.EFFECTIVE_DATE = C.EFFECTIVE_DATE';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT3 || '
+    (
+        OVERRIDEID,
+        CUSTOMER_NUMBER,
+        FACILITY_NUMBER,
+        ACCOUNT_NUMBER,
+        MASTERID,
+        CURRENCY,
+        EIR,
+        INTEREST_RATE,
+        CR_STAGE,
+        BI_COLLECTABILITY,
+        PRODUCT_ENTITY,
+        RATING_CODE,
+        DAY_PAST_DUE,
+        IMPAIRED_FLAG,
+        EAD_AMOUNT,
+        OUTSTANDING,
+        DATA_SOURCE,
+        RESERVED_VARCHAR_1,
+        RESERVED_VARCHAR_2,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    )
+    SELECT DISTINCT
+        C.PKID AS OVERRIDEID,
+        D.CUSTOMER_NUMBER,
+        D.FACILITY_NUMBER,
+        D.ACCOUNT_NUMBER,
+        D.MASTERID,
+        D.CURRENCY,
+        D.EIR,
+        D.INTEREST_RATE,
+        A.CR_STAGE,
+        A.BI_COLLECTABILITY,
+        A.PRODUCT_ENTITY,
+        A.RATING_CODE,
+        A.DAY_PAST_DUE,
+        D.IMPAIRED_FLAG,
+        D.EAD_AMOUNT,
+        D.OUTSTANDING,
+        D.DATA_SOURCE,
+        A.RESERVED_VARCHAR_30 AS RESERVED_VARCHAR_1,
+        D.OVERRIDEID AS RESERVED_VARCHAR_2,
+        D.CREATEDBY,
+        D.CREATEDDATE,
+        D.CREATEDHOST,
+        D.UPDATEDBY,
+        D.UPDATEDDATE,
+        D.UPDATEDHOST
+    FROM  ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
+    JOIN ' || V_OWNER || '.TBLU_DCF_BULK B
+    ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
+    AND A.RESERVED_VARCHAR_30 = ''ACCOUNT DETAIL UNCHANGED''
+    AND B.UPLOADID = ' || V_UPLOADID || '
+    JOIN  ' || V_OWNER || '.' || V_TABLESELECT5 || ' C
+    ON A.CUSTOMER_NUMBER = C.CUSTOMER_NUMBER
+    AND B.EFFECTIVE_DATE = C.EFFECTIVE_DATE
+    JOIN
+    (
+        SELECT A2.*
+        FROM ' || V_OWNER || '.' || V_TABLESELECT3 || ' A2
+        JOIN
+        (
+            SELECT A3.CUSTOMER_NUMBER, MAX(A3.OVERRIDEID) MAX_OVERRIDEID
+            FROM ' || V_OWNER || '.' || V_TABLESELECT3 || ' A3
+            JOIN ' || V_OWNER || '.' || V_TABLESELECT1 || ' B3
+            ON A3.CUSTOMER_NUMBER = B3.CUSTOMER_NUMBER
+            AND B3.RESERVED_VARCHAR_30 IS NULL
+            JOIN ' || V_OWNER || '.TBLU_DCF_BULK D3
+            ON A3.CREATEDDATE < D3.UPLOADDATE
+            AND B3.CUSTOMER_NUMBER = D3.CUSTOMER_NUMBER
+            AND D3.UPLOADID = ' || V_UPLOADID || '
+            GROUP BY A3.CUSTOMER_NUMBER
+        ) B2
+        ON A2.CUSTOMER_NUMBER = B2.CUSTOMER_NUMBER
+        AND A2.OVERRIDEID = B2.MAX_OVERRIDEID
+    ) D
+    ON A.MASTERID = D.MASTERID';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+    (
+        PKID,
+        OVERRIDEID,
+        CUSTOMER_NUMBER,
+        FACILITY_NUMBER,
+        ACCOUNT_NUMBER,
+        MASTERID,
+        CURRENCY,
+        EIR,
+        INTEREST_RATE,
+        CR_STAGE,
+        BI_COLLECTABILITY,
+        PRODUCT_ENTITY,
+        RATING_CODE,
+        DAY_PAST_DUE,
+        IMPAIRED_FLAG,
+        EAD_AMOUNT,
+        OUTSTANDING,
+        DATA_SOURCE,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    )
+    SELECT PKID,
+        OVERRIDEID,
+        CUSTOMER_NUMBER,
+        FACILITY_NUMBER,
+        ACCOUNT_NUMBER,
+        MASTERID,
+        CURRENCY,
+        EIR,
+        INTEREST_RATE,
+        CR_STAGE,
+        BI_COLLECTABILITY,
+        PRODUCT_ENTITY,
+        RATING_CODE,
+        DAY_PAST_DUE,
+        IMPAIRED_FLAG,
+        EAD_AMOUNT,
+        OUTSTANDING,
+        DATA_SOURCE,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    FROM ' || V_OWNER || '.' || V_TABLESELECT3 || '
+    WHERE OVERRIDEID IN
+    (
+        SELECT A.PKID FROM ' || V_OWNER || '.' || V_TABLESELECT5 || ' A
+        JOIN ' || V_OWNER || '.TBLU_DCF_BULK B
+        ON A.EFFECTIVE_DATE = B.EFFECTIVE_DATE
+        AND B.UPLOADID = ' || V_UPLOADID || ')';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+
+    ----------------------------------------------------------------
+    -- MAIN PROCESSING
+    ----------------------------------------------------------------
+
+    
+    DBMS_OUTPUT.PUT_LINE('PROCEDURE ' || V_SP_NAME || ' EXECUTED SUCCESSFULLY.');
+
+    ----------------------------------------------------------------
+    -- LOG: CALL EXEC_AND_LOG (ASSUMED SIGNATURE)
+    ----------------------------------------------------------------
+    V_TABLEDEST := V_OWNER || '.' || V_TABLEINSERT1;
+    V_COLUMNDEST := '-';
+    V_OPERATION := 'INSERT';
+
+    IFRS9_BCA.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), V_RUNID);
+    COMMIT;
+
+    ----------------------------------------------------------------
+    -- RESULT PREVIEW
+    ----------------------------------------------------------------
+    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1 ||
+                ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
+                ' AND (' || CASE WHEN V_MODEL_ID = '0' THEN '1=1' ELSE 'PD_RULE_ID = ' || V_MODEL_ID END || ')';
+
+    IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
+    COMMIT;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        IF C_RULE%ISOPEN THEN
+            CLOSE C_RULE;
+        END IF;
+
+        ROLLBACK;
+
+        RAISE_APPLICATION_ERROR(-20001,'ERROR IN ' || V_SP_NAME || ' : ' || SQLERRM);
+END;

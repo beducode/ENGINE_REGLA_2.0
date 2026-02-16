@@ -1,15 +1,16 @@
-CREATE OR REPLACE PROCEDURE IFRS9_BCA.XXX (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_INSERT_DCF_BCA (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
-    P_PRC           IN VARCHAR2 DEFAULT 'S'
+    P_PRC           IN VARCHAR2 DEFAULT 'S',
+    P_UPLOADID      IN NUMBER DEFAULT 0
 )
 AUTHID CURRENT_USER
 AS
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
-    V_SP_NAME     VARCHAR2(100) := 'XXX';
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_INSERT_DCF_BCA';
     V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);
@@ -22,6 +23,9 @@ AS
     V_TABLEINSERT1  VARCHAR2(100);
     V_TABLEINSERT2  VARCHAR2(100);
     V_TABLESELECT1  VARCHAR2(100);
+    V_TABLESELECT2  VARCHAR2(100);
+    V_TABLESELECT3  VARCHAR2(100);
+    V_TABLESELECT4  VARCHAR2(100);
     V_TABLECONFIG   VARCHAR2(100);
 
 
@@ -42,9 +46,10 @@ AS
     V_TABLEDEST     VARCHAR2(100);
     V_COLUMNDEST    VARCHAR2(100);
     V_OPERATION     VARCHAR2(100);
-    V_RUNID        VARCHAR2(30);
-    V_SYSCODE      VARCHAR2(10);
-    V_PRC         VARCHAR2(5);
+    V_RUNID         VARCHAR2(30);
+    V_SYSCODE       VARCHAR2(10);
+    V_PRC           VARCHAR2(5);
+    V_UPLOADID      NUMBER(18);
 
     -- RESULT QUERY
     V_QUERYS        CLOB;
@@ -80,46 +85,106 @@ BEGIN
     -- TABLE DETERMINATION
     ----------------------------------------------------------------
     IF V_PRC = 'S' THEN 
-        V_TABLEINSERT1 := 'XXX_' || V_RUNID;
-        V_TABLEINSERT2 := 'XXX_' || V_RUNID;
-        V_TABLESELECT1 := 'XXX_' || V_RUNID;
-        V_TABLECONFIG := 'XXX_' || V_RUNID;
+        V_TABLESELECT1 := 'TBLU_DCF_INFO_' || V_RUNID;
+        V_TABLESELECT2 := 'IFRS_IA_OVERRIDEH_' || V_RUNID;
+        V_TABLESELECT3 := 'TBLU_DCF_DETAIL_' || V_RUNID;
+        V_TABLESELECT4 := 'IFRS_IA_OVERRIDED_' || V_RUNID;
     ELSE 
-        V_TABLEINSERT1 := 'XXX';
-        V_TABLEINSERT2 := 'XXX';
-        V_TABLESELECT1 := 'XXX';
-        V_TABLECONFIG := 'XXX';
+        V_TABLESELECT1 := 'TBLU_DCF_INFO';
+        V_TABLESELECT2 := 'IFRS_IA_OVERRIDEH';
+        V_TABLESELECT3 := 'TBLU_DCF_DETAIL';
+        V_TABLESELECT4 := 'IFRS_IA_OVERRIDED';
     END IF;
 
     IFRS9_BCA.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, V_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
     COMMIT;
 
     ----------------------------------------------------------------
-    -- PRE-PROCESSING SIMULATION TABLES
-    ----------------------------------------------------------------
-    IF V_PRC = 'S' THEN
-        -- DROP TABLE IF EXISTS
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEINSERT1);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT1;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.XXX WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-    END IF;
-    COMMIT;
-
-    ----------------------------------------------------------------
     -- MAIN PROCESSING
     ----------------------------------------------------------------
 
-    V_STR_QUERY := 'XXXX';
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || '
+    (
+        OVERRIDEID,
+        FILENAME,
+        UPLOAD_STATUS,
+        CUSTOMER_NUMBER,
+        UPLOADBY,
+        UPLOADDATE,
+        UPLOADHOST,
+        APPROVEDBY,
+        APPROVEDDATE,
+        APPROVEDHOST
+    )
+    SELECT DISTINCT B.PKID OVERRIDEID,
+        C.FILENAME,
+        C.STATUS UPLOAD_STATUS,
+        B.CUSTOMER_NUMBER,
+        A.UPLOADBY,
+        A.UPLOADDATE,
+        A.UPLOADHOST,
+        A.APPROVEDBY,
+        A.APPROVEDDATE,
+        A.APPROVEDHOST
+    FROM ' || V_OWNER || '.TBLU_DCF_BULK A
+    JOIN ' || V_OWNER || '.' || V_TABLESELECT2 || ' B
+    ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
+    AND A.EFFECTIVE_DATE = B.EFFECTIVE_DATE
+    AND A.UPLOADID = ' || V_UPLOADID || '
+    JOIN ' || V_OWNER || '.TBLT_UPLOAD_POOL C
+    ON A.UPLOADID = C.PKID';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT3 || '
+    (
+        UPLOADID,
+        OVERRIDEID,
+        ROW_NUMBER,
+        CUSTOMER_NUMBER,
+        ACCOUNT_NUMBER,
+        MASTERID,
+        ESTIMATED_REALIZE_DATE,
+        ESTIMATED_CF_PERCENT,
+        DISCOUNT_RATE_TRS,
+        DISCOUNT_RATE_TRF,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST,
+        UPDATEDBY,
+        UPDATEDDATE,
+        UPDATEDHOST
+    )
+    SELECT DISTINCT ' || V_UPLOADID || ' AS UPLOADID,
+        B.OVERRIDEID,
+        A.ROW_NUMBER,
+        A.CUSTOMER_NUMBER,
+        B.ACCOUNT_NUMBER,
+        B.MASTERID,
+        A.EXPECTED_PERIOD,
+        A.EXPECTED_CF_PERCENT,
+        A.DISCOUNT_RATE_TRS,
+        A.DISCOUNT_RATE_TRF,
+        B.CREATEDBY,
+        B.CREATEDDATE,
+        B.CREATEDHOST,
+        B.UPDATEDBY,
+        B.UPDATEDDATE,
+        B.UPDATEDHOST
+    FROM
+    (
+        SELECT ROW_NUMBER() OVER(ORDER BY A2.CUSTOMER_NUMBER, A2.EXPECTED_PERIOD) ROW_NUMBER, A2.*
+        FROM ' || V_OWNER || '.TBLU_DCF_BULK A2
+        WHERE A2.UPLOADID = ' || V_UPLOADID || '
+    ) A
+    JOIN ' || V_OWNER || '.' || V_TABLESELECT4 || ' B
+    ON A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
+    JOIN ' || V_OWNER || '.' || V_TABLESELECT2 || ' C
+    ON A.EFFECTIVE_DATE = C.EFFECTIVE_DATE
+    AND B.OVERRIDEID = C.PKID
+    ORDER BY A.ROW_NUMBER, B.ACCOUNT_NUMBER';
 
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;

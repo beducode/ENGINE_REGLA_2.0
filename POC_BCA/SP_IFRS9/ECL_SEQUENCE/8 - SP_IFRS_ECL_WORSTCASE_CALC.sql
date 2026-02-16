@@ -38,7 +38,7 @@ BEGIN
                       AND A.ECL_MODEL_ID = v_ECLID
                       AND A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER
                       AND (A.OUTSTANDING + A.UNUSED_AMOUNT) > 0
-                      AND (   NVL (A."SEGMENT", ' ') LIKE ('%COMMERCIAL%')
+                      AND (NVL (A."SEGMENT", ' ') LIKE ('%COMMERCIAL%')
                            OR NVL (A."SEGMENT", ' ') LIKE ('%CORPORATE%')
                            OR NVL (A."SEGMENT", ' ') LIKE
                                   ('%KOMERSIAL_BTRD%')
