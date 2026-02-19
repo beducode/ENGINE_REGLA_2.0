@@ -83,6 +83,7 @@ BEGIN
     V_SYSCODE := NVL(P_SYSCODE, '0');
     V_MODEL_ID := V_SYSCODE;
     V_PRC := NVL(P_PRC, 'P');
+    V_UPLOADID := NVL(P_UPLOADID, 0);
 
     ----------------------------------------------------------------
     -- TABLE DETERMINATION
@@ -135,7 +136,7 @@ BEGIN
     V_STR_QUERY := 'TRUNCATE TABLE ' || V_OWNER || '.' || V_TABLESELECT1;
     EXECUTE IMMEDIATE V_STR_QUERY;
 
-
+    
     V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || '
     (
         PKID,
@@ -489,7 +490,7 @@ BEGIN
         RESERVED_VARCHAR_27,
         RESERVED_VARCHAR_28,
         RESERVED_VARCHAR_29,
-        '''' RESERVED_VARCHAR_30,
+        '''' AS RESERVED_VARCHAR_30,
         RESERVED_AMOUNT_1,
         RESERVED_AMOUNT_2,
         RESERVED_AMOUNT_3,
@@ -675,10 +676,10 @@ BEGIN
     )
     SELECT DISTINCT A.CUSTOMER_NUMBER,
         MAX(NVL(A.CUSTOMER_NAME, '' '')),
-        v_CURRDATE,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''),
         TRUNC(SYSDATE) AS OVERRIDE_DATE,
         B.EFFECTIVE_DATE,
-        '' '' CURRENCY,
+        '' '' AS CURRENCY,
         MAX(NVL(CR_STAGE, '' '')),
         MAX(NVL(BI_COLLECTABILITY,'' '')),
         MAX(NVL(A.PRODUCT_ENTITY, ''C'')),
@@ -806,7 +807,7 @@ BEGIN
         A.PRODUCT_ENTITY,
         NVL(A.RATING_CODE, '' ''),
         NVL(A.DAY_PAST_DUE,0),
-        ''I'' IMPAIRED_FLAG,
+        ''I'' AS IMPAIRED_FLAG,
         NVL(A.OUTSTANDING, 0),
         NVL(A.OUTSTANDING, 0),
         A.DATA_SOURCE,
@@ -1000,9 +1001,14 @@ BEGIN
     ----------------------------------------------------------------
     -- RESULT PREVIEW
     ----------------------------------------------------------------
-    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
-                ' AND (' || CASE WHEN V_MODEL_ID = '0' THEN '1=1' ELSE 'PD_RULE_ID = ' || V_MODEL_ID END || ')';
+    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
+                ' AND (' ||
+                CASE 
+                    WHEN V_MODEL_ID IS NULL OR V_MODEL_ID = '0' THEN '1=1'
+                    ELSE 'PD_RULE_ID = ''' || V_MODEL_ID || ''''
+                END
+                || ')';
+
 
     IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;
