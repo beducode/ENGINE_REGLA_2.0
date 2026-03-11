@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_DISASTER_LOAN_CALC_BCA (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_DISASTER_LOAN_CALC (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
@@ -9,7 +9,7 @@ AS
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
-    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_DISASTER_LOAN_CALC_BCA';
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_DISASTER_LOAN_CALC';
     V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);

@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_UNPROCESSED_IA_BCA (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_UNPROCESSED_IA (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
@@ -9,7 +9,7 @@ AS
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
-    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_UNPROCESSED_IA_BCA';
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_UNPROCESSED_IA';
     V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);
@@ -48,7 +48,7 @@ AS
     V_RUNID         VARCHAR2(30);
     V_SYSCODE       VARCHAR2(10);
     V_PRC           VARCHAR2(5);
-    V_CONSTNAME     VARCHAR2(100) := 'THRESHOLD';
+    V_CONSTNAME     VARCHAR2(100) := '0';
 
     -- RESULT QUERY
     V_QUERYS        CLOB;
@@ -126,7 +126,7 @@ BEGIN
     ----------------------------------------------------------------
     -- EXECUTE DATA PROCEDURE
     ----------------------------------------------------------------
-    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_GENERATE_RULE_BCA(:1, :2, :3, :4, :5); END;';
+    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_GENERATE_RULE(:1, :2, :3, :4, :5); END;';
 
     EXECUTE IMMEDIATE V_STR_QUERY
     USING V_RUNID, V_CURRDATE, V_SYSCODE, V_PRC, V_CONSTNAME;

@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_INSERT_GTMP_FROM_IMA_BCA (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_INSERT_GTMP_FROM_IMA (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
@@ -10,7 +10,7 @@ AS
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
-    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_INSERT_GTMP_FROM_IMA_BCA';
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_INSERT_GTMP_FROM_IMA';
     V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);

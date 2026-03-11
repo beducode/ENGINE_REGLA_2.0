@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_IA_INITIAL_RUN_BCA (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_IA_INITIAL_RUN (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
@@ -9,7 +9,7 @@ AS
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
-    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_IA_INITIAL_RUN_BCA';
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_IA_INITIAL_RUN';
     V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);
@@ -115,7 +115,7 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.TBLT_PAYMENTEXPECTED WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+                       ' AS SELECT * FROM ' || V_OWNER || '.TBLT_PAYMENTEXPECTED';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
 
@@ -131,7 +131,7 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT2 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.TBLT_PAYMENTEXPECTEDH WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+                       ' AS SELECT * FROM ' || V_OWNER || '.TBLT_PAYMENTEXPECTEDH';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
 
@@ -147,7 +147,7 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT3 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_IA_OVERRIDED WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_IA_OVERRIDED';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
 
@@ -163,7 +163,7 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT4 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_IA_OVERRIDEH WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_IA_OVERRIDEH';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
 
@@ -179,7 +179,7 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT5 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_IA_OVERRIDEH_HIST WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_IA_OVERRIDEH_HIST';
         EXECUTE IMMEDIATE V_STR_QUERY;
     END IF;
     COMMIT;

@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_UPDATE_BUCKET_BCA (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_UPDATE_BUCKET (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
@@ -9,7 +9,7 @@ AS
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
-    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_UPDATE_BUCKET_BCA';
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_UPDATE_BUCKET';
     V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);
@@ -120,7 +120,7 @@ BEGIN
     ----------------------------------------------------------------
     -- EXECUTE DATA PROCEDURE
     ----------------------------------------------------------------
-    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_INSERT_GTMP_FROM_IMA_BCA(:1, :2, :3, :4, :5); END;';
+    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_INSERT_GTMP_FROM_IMA(:1, :2, :3, :4, :5); END;';
 
     EXECUTE IMMEDIATE V_STR_QUERY
     USING V_RUNID, V_CURRDATE, V_SYSCODE, V_PRC, V_DATASOURCE;

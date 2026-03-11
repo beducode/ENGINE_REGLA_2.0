@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_UPDATE_STAGE_BCA (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_ECL_UPDATE_STAGE (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
@@ -9,7 +9,7 @@ AS
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
-    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_UPDATE_STAGE_BCA';
+    V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_ECL_UPDATE_STAGE';
     V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);
@@ -75,7 +75,7 @@ BEGIN
     V_SYSCODE := NVL(P_SYSCODE, '0');
     V_MODEL_ID := V_SYSCODE;
     V_PRC := NVL(P_PRC, 'P');
-    V_CONSTNAME := 'STAGE';
+    V_CONSTNAME := '0';
 
     ----------------------------------------------------------------
     -- TABLE DETERMINATION
@@ -113,13 +113,13 @@ BEGIN
     ----------------------------------------------------------------
     -- EXECUTE DATA PROCEDURE
     ----------------------------------------------------------------
-    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_GENERATE_RULE_BCA(:1, :2, :3, :4, :5); END;';
+    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_GENERATE_RULE(:1, :2, :3, :4, :5); END;';
 
     EXECUTE IMMEDIATE V_STR_QUERY
     USING V_RUNID, V_CURRDATE, V_SYSCODE, V_PRC, V_CONSTNAME;
     COMMIT;
 
-    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_RULE_DATA_BCA(:1, :2, :3, :4); END;';
+    V_STR_QUERY := 'BEGIN IFRS9_BCA.SP_IFRS_RULE_DATA(:1, :2, :3, :4); END;';
 
     EXECUTE IMMEDIATE V_STR_QUERY
     USING V_RUNID, V_CURRDATE, V_SYSCODE, V_PRC;
