@@ -129,26 +129,6 @@ BEGIN
     
     DBMS_OUTPUT.PUT_LINE('PROCEDURE ' || V_SP_NAME || ' EXECUTED SUCCESSFULLY.');
 
-    ----------------------------------------------------------------
-    -- LOG: CALL EXEC_AND_LOG (ASSUMED SIGNATURE)
-    ----------------------------------------------------------------
-    V_TABLEDEST := V_OWNER || '.' || V_TABLEINSERT1;
-    V_COLUMNDEST := '-';
-    V_OPERATION := 'INSERT';
-
-    IFRS9_BCA.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), V_RUNID);
-    COMMIT;
-
-    ----------------------------------------------------------------
-    -- RESULT PREVIEW
-    ----------------------------------------------------------------
-    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
-                ' AND (' || CASE WHEN V_MODEL_ID = '0' THEN '1=1' ELSE 'PD_RULE_ID = ' || V_MODEL_ID END || ')';
-
-    IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
-    COMMIT;
-
 EXCEPTION
     WHEN OTHERS THEN
         IF C_RULE%ISOPEN THEN

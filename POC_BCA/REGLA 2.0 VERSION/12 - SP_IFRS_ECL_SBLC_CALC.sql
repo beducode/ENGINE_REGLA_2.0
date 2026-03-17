@@ -82,11 +82,11 @@ BEGIN
     -- TABLE DETERMINATION
     ----------------------------------------------------------------
     IF V_PRC = 'S' THEN 
-        V_TABLESELECT1  := 'GTMP_IFRS_MASTER_ACCOUNT_' || V_RUNID;
+        V_TABLESELECT1  := 'GTMP_IFRS_MASTER_ACCOUNT_BCA_' || V_RUNID;
         V_TABLESELECT2  := 'IFRS_ECL_RESULT_DETAIL_' || V_RUNID;
         V_TABLESELECT3  := 'IFRS_ECL_RESULT_DETAIL_CALC_' || V_RUNID;
     ELSE 
-        V_TABLESELECT1 := 'GTMP_IFRS_MASTER_ACCOUNT';
+        V_TABLESELECT1 := 'GTMP_IFRS_MASTER_ACCOUNT_BCA';
         V_TABLESELECT2 := 'IFRS_ECL_RESULT_DETAIL';
         V_TABLESELECT3 := 'IFRS_ECL_RESULT_DETAIL_CALC';
     END IF;
@@ -177,7 +177,7 @@ BEGIN
     ----------------------------------------------------------------
     -- LOG: CALL EXEC_AND_LOG (ASSUMED SIGNATURE)
     ----------------------------------------------------------------
-    V_TABLEDEST := V_OWNER || '.' || V_TABLEINSERT1;
+    V_TABLEDEST := V_OWNER || '.' || V_TABLESELECT1;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
 
@@ -187,9 +187,8 @@ BEGIN
     ----------------------------------------------------------------
     -- RESULT PREVIEW
     ----------------------------------------------------------------
-    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
-                ' AND (' || CASE WHEN V_MODEL_ID = '0' THEN '1=1' ELSE 'PD_RULE_ID = ' || V_MODEL_ID END || ')';
+    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLESELECT1 ||
+                ' WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
 
     IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;

@@ -81,11 +81,11 @@ BEGIN
     ----------------------------------------------------------------
     IF V_PRC = 'S' THEN 
         V_TABLEINSERT1 := 'IFRS_MASTER_ACCOUNT_' || V_RUNID;
-        V_TABLEINSERT2 := 'GTMP_IFRS_MASTER_ACCOUNT_' || V_RUNID;
+        V_TABLEINSERT2 := 'GTMP_IFRS_MASTER_ACCOUNT_BCA_' || V_RUNID;
         V_TABLECONFIG := 'IFRS_ECL_MODEL_CONFIG_' || V_RUNID;
     ELSE 
         V_TABLEINSERT1 := 'IFRS_MASTER_ACCOUNT';
-        V_TABLEINSERT2 := 'GTMP_IFRS_MASTER_ACCOUNT';
+        V_TABLEINSERT2 := 'GTMP_IFRS_MASTER_ACCOUNT_BCA';
         V_TABLECONFIG := 'IFRS_ECL_MODEL_CONFIG';
     END IF;
 
@@ -334,8 +334,7 @@ BEGIN
     -- RESULT PREVIEW
     ----------------------------------------------------------------
     V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
-                ' AND (' || CASE WHEN V_MODEL_ID = '0' THEN '1=1' ELSE 'PD_RULE_ID = ' || V_MODEL_ID END || ')';
+                ' WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
 
     IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;

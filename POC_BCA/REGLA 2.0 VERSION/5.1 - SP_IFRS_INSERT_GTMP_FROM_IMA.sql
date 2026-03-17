@@ -81,10 +81,10 @@ BEGIN
     -- TABLE DETERMINATION
     ----------------------------------------------------------------
     IF V_PRC = 'S' THEN 
-        V_TABLEINSERT1 := 'GTMP_IFRS_MASTER_ACCOUNT_' || V_RUNID;
+        V_TABLEINSERT1 := 'GTMP_IFRS_MASTER_ACCOUNT_BCA_' || V_RUNID;
         V_TABLESELECT1 := 'IFRS_MASTER_ACCOUNT_' || V_RUNID;
     ELSE 
-        V_TABLEINSERT1 := 'GTMP_IFRS_MASTER_ACCOUNT';
+        V_TABLEINSERT1 := 'GTMP_IFRS_MASTER_ACCOUNT_BCA';
         V_TABLESELECT1 := 'IFRS_MASTER_ACCOUNT';
     END IF;
 
@@ -107,7 +107,7 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_MASTER_ACCOUNT WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_MASTER_ACCOUNT_BCA WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
 
@@ -567,7 +567,6 @@ BEGIN
     END IF;
 
     EXECUTE IMMEDIATE V_STR_QUERY;
-    COMMIT;
 
     ----------------------------------------------------------------
     -- MAIN PROCESSING
@@ -590,8 +589,7 @@ BEGIN
     -- RESULT PREVIEW
     ----------------------------------------------------------------
     V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
-                ' AND (' || CASE WHEN V_MODEL_ID = '0' THEN '1=1' ELSE 'PD_RULE_ID = ' || V_MODEL_ID END || ')';
+                ' WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
 
     IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;
