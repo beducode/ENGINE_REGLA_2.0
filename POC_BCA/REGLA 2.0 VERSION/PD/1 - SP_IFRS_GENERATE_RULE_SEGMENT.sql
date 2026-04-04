@@ -114,9 +114,9 @@ BEGIN
     ----------------------------------------------------------------
     V_STR_QUERY := 'BEGIN ' ||
                    'DBMS_STATS.UNLOCK_TABLE_STATS(:1, ''' || V_TABLEINSERT1 || '''); ' ||
-                   'DBMS_STATS.DELETE_TABLE_STATS(:1, ''' || V_TABLEINSERT1 || '''); ' ||
+                   'DBMS_STATS.DELETE_TABLE_STATS(:2, ''' || V_TABLEINSERT1 || '''); ' ||
                    'END;';
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_OWNER;
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_OWNER, V_OWNER;
 
     EXECUTE IMMEDIATE 'TRUNCATE TABLE  ' || V_OWNER || '.' || V_TABLEINSERT1;
 
