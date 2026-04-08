@@ -1,0 +1,208 @@
+CREATE OR REPLACE EDITIONABLE PROCEDURE PSAK413.SP_IFRS_LGD_UR_HEADER
+ P_RUNID		 IN VARCHAR2 DEFAULT 'S_00000_0000',
+ P_DOWNLOAD_DATE IN DATE, 
+ P_SYSCODE		 IN VARCHAR2 DEFAULT '0',
+ P_PRC			 IN VARCHAR2 DEFAULT 'X'
+) 
+AS
+	---- DATE   
+    V_CURRDATE DATE;
+    V_PREVDATE DATE;
+    V_MODEL_ID VARCHAR2(22);
+	V_COUNT NUMBER;
+
+    ---- QUERY  
+    V_STR_QUERY VARCHAR2(32767);
+
+	---- TABLE LIST 
+	V_TAB_OWNER CONSTANT VARCHAR2(30) := 'PSAK413';
+    V_TABLEINSERT1 VARCHAR2(100);
+    V_TABLEINSERT2 VARCHAR2(100);
+    V_TABLESELECT1 VARCHAR2(100);
+    V_TABLESELECT2 VARCHAR2(100);
+    V_TABLELGDCONFIG VARCHAR2(100);
+	V_TABLE_NAME VARCHAR2(100);
+
+    ---- CONDITION
+    V_RETURNROWS NUMBER;
+    V_RETURNROWS2 NUMBER;
+    V_TABLEDEST VARCHAR2(100);
+    V_COLUMNDEST VARCHAR2(100);
+    V_SPNAME VARCHAR2(100) := 'SP_IFRS_LGD_UR_HEADER';
+    V_OPERATION VARCHAR2(100);
+
+    ---- RESULT
+    V_QUERYS CLOB;
+BEGIN
+   
+	-- Handle default values for P_DOWNLOAD_DATE
+    IF P_DOWNLOAD_DATE IS NULL THEN
+        SELECT CURRDATE
+        INTO V_CURRDATE
+        FROM PSAK413.IFRS_PRC_DATE;
+    ELSE
+        V_CURRDATE := P_DOWNLOAD_DATE;
+    END IF;
+
+    V_MODEL_ID := NVL(P_SYSCODE, '0');
+	V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, - 1));
+	
+    IF P_PRC = 'S' THEN  
+        V_TABLEINSERT1 := 'IFRS_LGD_UR_HEADER_' || P_RUNID || '';
+        V_TABLESELECT1 := 'IFRS_LGD_UR_DETAIL_' || P_RUNID || ''; 
+    ELSE  
+        V_TABLEINSERT1 := 'IFRS_LGD_UR_HEADER';
+        V_TABLESELECT1 := 'IFRS_LGD_UR_DETAIL'; 
+    END IF;
+
+    -------- RECORD RUN_ID --------
+    PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SPNAME, P_RUNID, 0, CURRENT_DATE); 
+	COMMIT;
+    -------- RECORD RUN_ID --------
+ 
+    IF P_PRC = 'S' THEN
+		SELECT COUNT(*) INTO V_COUNT
+		FROM ALL_TABLES
+		WHERE OWNER = V_TAB_OWNER 
+		 AND TABLE_NAME = UPPER(V_TABLEINSERT1);
+        
+		IF V_COUNT = 0 THEN
+		V_STR_QUERY := '';
+        V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' AS SELECT * FROM ' || V_TAB_OWNER || '.IFRS_LGD_UR_HEADER WHERE 0=1';
+        EXECUTE IMMEDIATE (V_STR_QUERY);
+		END IF;
+ 
+    END IF;
+	COMMIT;
+
+	 EXECUTE IMMEDIATE 'TRUNCATE TABLE GTMP_IFRS_LGD_RULES_CONFIG ';
+
+     V_STR_QUERY := 'INSERT INTO GTMP_IFRS_LGD_RULES_CONFIG
+	               SELECT * FROM IFRS_LGD_RULES_CONFIG
+	               WHERE LGD_METHOD = ''Expected Recovery'' AND IS_DELETED = 0  AND (  
+	                 UPPER(TRIM(SYSCODE_LGD)) IN ( 
+	                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+	                   FROM DUAL
+	                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+	                 )
+	                 OR :p2 = 0 
+	               )';
+	 
+	    EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
+ 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+    -------- ====== BODY ======
+	-- Clear Session
+    IF V_MODEL_ID = '0' THEN 
+    V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 ||' A
+    WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') ';
+    ELSE
+	V_STR_QUERY := '';
+    V_STR_QUERY := V_STR_QUERY || 'DELETE FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 ||' A
+     WHERE  A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') 
+	AND EXISTS (sELECT 1 FROM GTMP_IFRS_LGD_RULES_CONFIG X WHERE A.LGD_RULE_ID = X.PKID)	';
+    END IF;
+    EXECUTE IMMEDIATE (V_STR_QUERY);
+    COMMIT;
+
+
+    DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));
+	-- End Clear Session
+	
+   EXECUTE IMMEDIATE 'TRUNCATE TABLE GTMP_IFRS_LGD_UR_HEADER' ;
+   
+	-- SUM TOTAL RECOVERY AND NPV RECOVERY PER FACILITY_NUMBER (UNIQUE BY MASTERID/FACNO/CUSTNO)
+	V_STR_QUERY := '';
+	V_STR_QUERY := V_STR_QUERY || '
+	INSERT INTO GTMP_IFRS_LGD_UR_HEADER ( 
+	 EFF_DATE,
+	 LGD_RULE_ID, 
+	 LGD_UNIQUE_ID,
+	 EQV_OS_AT_DEFAULT, 
+	 EQV_REC_OS ,
+	-- NPV_EQV_REC_OS, 
+	 OS_AT_DEFAULT , 
+	 REC_OS --, 
+	-- NPV_REC_OS 
+) 
+	SELECT TO_DATE(''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') AS EFF_DATE, 
+	 A.LGD_RULE_ID,  
+	 CASE B.CALCULATION_METHOD WHEN ''FAC'' THEN  A.FACILITY_NUMBER WHEN ''CUS'' THEN A.CUSTOMER_NUMBER ELSE A.MASTERID END,
+	 SUM(A.EQV_OS_AT_DEFAULT), 
+	 SUM(A.EQV_REC_OS), 
+	-- SUM(A.NPV_EQV_REC_OS), 
+	 SUM(A.OS_AT_DEFAULT), 
+	 SUM(A.REC_OS)
+	-- SUM(A.NPV_REC_OS), 
+	FROM ' || V_TAB_OWNER || '.' || V_TABLESELECT1 || ' A 
+	JOIN GTMP_IFRS_LGD_RULES_CONFIG B ON A.LGD_RULE_ID = B.PKID  
+	WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') 
+	GROUP BY A.LGD_RULE_ID,  CASE B.CALCULATION_METHOD WHEN ''FAC'' THEN  A.FACILITY_NUMBER WHEN ''CUS'' THEN A.CUSTOMER_NUMBER ELSE A.MASTERID END ';
+
+    DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));	
+
+EXECUTE IMMEDIATE (V_STR_QUERY);
+	COMMIT;
+
+
+	-- SUM TOTAL RECOVERY AND NPV RECOVERY PER AVERAGE METHOD (SIMPLE / WEIGHTED)
+	V_STR_QUERY := '';
+	V_STR_QUERY := V_STR_QUERY || '
+	INSERT INTO ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' ( 
+	 EFF_DATE,
+	 LGD_RULE_ID, 
+	 EQV_OS_AT_DEFAULT, 
+	 EQV_REC_OS, 
+	-- NPV_EQV_REC_OS, 
+	 OS_AT_DEFAULT , 
+	 REC_OS , 
+--	 NPV_REC_OS , 
+	 UR,
+	 CREATEDBY,
+	 CREATEDDATE)  
+	SELECT TO_DATE(''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') AS EFF_DATE,  
+	 A.LGD_RULE_ID,  
+	 SUM(A.EQV_OS_AT_DEFAULT), 
+	 SUM(A.EQV_REC_OS), 
+	 --SUM(A.NPV_EQV_REC_OS), 
+	 SUM(A.OS_AT_DEFAULT), 
+	 SUM(A.REC_OS), 
+	 --SUM(A.NPV_REC_OS), 
+	 --CASE WHEN B.AVERAGE_METHOD = ''WEIGHTED''
+	--  THEN  
+	   CASE WHEN SUM(A.EQV_OS_AT_DEFAULT)  = 0 THEN 0 
+	    ELSE CAST (SUM(A.EQV_REC_OS)  AS FLOAT) / SUM(A.EQV_OS_AT_DEFAULT)  
+	 --  END
+	--  ELSE AVG(CASE WHEN ((A.OS_AT_DEFAULT) + (A.OS_INT_AT_DEFAULT)) = 0 THEN 0 
+	--    ELSE CAST (((A.NPV_REC_OS) + (A.NPV_REC_OS_INT)) AS FLOAT) / ((A.OS_AT_DEFAULT) + (A.OS_INT_AT_DEFAULT))
+	--   END)
+	 END UR,
+	 ''SP_IFRS_LGD_UR_HEADER'' CREATEDBY,
+	 SYSDATE CREATEDDATE
+	FROM GTMP_IFRS_LGD_UR_HEADER A 
+	JOIN GTMP_IFRS_LGD_RULES_CONFIG B ON A.LGD_RULE_ID = B.PKID
+	WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') 
+	GROUP BY A.LGD_RULE_ID' ; -- B.AVERAGE_METHOD ';
+ DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));	
+
+EXECUTE IMMEDIATE (V_STR_QUERY);
+	COMMIT;
+    -------- ====== BODY ======
+
+    -------- ====== LOG ======
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLEINSERT2;
+    V_COLUMNDEST := '-'; 
+    V_OPERATION := 'INSERT';
+    
+    PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, nvl(V_RETURNROWS2,0), P_RUNID);
+	COMMIT;
+    -------- ====== LOG ======
+
+    -------- ====== RESULT ======
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') AND (LGD_RULE_ID = ''' || V_MODEL_ID || ''' OR ''' || V_MODEL_ID || ''' = ''0'') ';
+    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, NVL(V_RETURNROWS2,0), P_RUNID);
+	COMMIT;
+    -------- ====== RESULT ======
+
+END

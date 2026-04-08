@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE IFRS9_BCA.XXX (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.TEMPLATE (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
@@ -9,7 +9,7 @@ AS
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
-    V_SP_NAME     VARCHAR2(100) := 'XXX';
+    V_SP_NAME     VARCHAR2(100) := 'TEMPLATE';
     V_OWNER       VARCHAR2(30);
     V_CURRDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);
@@ -22,7 +22,7 @@ AS
     V_TABLEINSERT1  VARCHAR2(100);
     V_TABLEINSERT2  VARCHAR2(100);
     V_TABLESELECT1  VARCHAR2(100);
-    V_TABLECONFIG   VARCHAR2(100);
+    V_TABLEPDCONFIG VARCHAR2(100);
 
 
     -- CURSOR
@@ -31,9 +31,8 @@ AS
 
     -- FETCH VARIABLES
     V_RULE_ID     VARCHAR2(250);
-    V_RULE_TYPE VARCHAR2(25);
+    V_DETAIL_TYPE VARCHAR2(25);
     V_TABLE_NAME  VARCHAR2(100);
-    V_PD_RULES_QRY_RESULT CLOB;
 
 
     -- MISC
@@ -62,10 +61,10 @@ BEGIN
     ----------------------------------------------------------------
     IF P_DOWNLOAD_DATE IS NULL THEN
         BEGIN
-            SELECT CURRDATE INTO V_CURRDATE FROM IFRS9_BCA.IFRS_PRC_DATE_AMORT;
+            SELECT CURRDATE INTO V_CURRDATE FROM IFRS9_BCA.IFRS_PRC_DATE;
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-                RAISE_APPLICATION_ERROR(-20010, 'IFRS_PRC_DATE_AMORT HAS NO CURRDATE ROW');
+                RAISE_APPLICATION_ERROR(-20010, 'IFRS_PRC_DATE has no CURRDATE row');
         END;
     ELSE
         V_CURRDATE := P_DOWNLOAD_DATE;
@@ -81,8 +80,12 @@ BEGIN
     ----------------------------------------------------------------
     IF V_PRC = 'S' THEN 
         V_TABLEINSERT1 := 'XXX_' || V_RUNID;
+        V_TABLESELECT1 := 'TMP_IFRS_PD_RUNNING_DATE_' || V_RUNID;
+        V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG_' || V_RUNID;
     ELSE 
         V_TABLEINSERT1 := 'XXX';
+        V_TABLESELECT1 := 'TMP_IFRS_PD_RUNNING_DATE';
+        V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG';
     END IF;
 
     IFRS9_BCA.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, V_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
@@ -104,25 +107,32 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.XXX WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND 1=0';
+                       ' AS SELECT * FROM ' || V_OWNER || '.XXX';
         EXECUTE IMMEDIATE V_STR_QUERY;
     END IF;
     COMMIT;
 
     ----------------------------------------------------------------
-    -- MAIN PROCESSING
+    -- UNLOCK & CLEAN TARGET TABLE
     ----------------------------------------------------------------
+    V_STR_QUERY := 'BEGIN ' ||
+                   'DBMS_STATS.UNLOCK_TABLE_STATS(:1, ''' || V_TABLEINSERT1 || '''); ' ||
+                   'DBMS_STATS.DELETE_TABLE_STATS(:1, ''' || V_TABLEINSERT1 || '''); ' ||
+                   'END;';
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_OWNER;
 
-    V_STR_QUERY := 'XXXX';
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE  ' || V_OWNER || '.' || V_TABLEINSERT1;
 
-    EXECUTE IMMEDIATE V_STR_QUERY;
+    ----------------------------------------------------------------
+    -- BUILD DYNAMIC QUERY
+    ----------------------------------------------------------------
+    V_STR_QUERY := 'XXX';
+    V_STR_QUERY := 'XXX';
+    V_STR_QUERY := 'XXX';
+    V_STR_QUERY := 'XXX';
+
     COMMIT;
 
-    ----------------------------------------------------------------
-    -- MAIN PROCESSING
-    ----------------------------------------------------------------
-
-    
     DBMS_OUTPUT.PUT_LINE('PROCEDURE ' || V_SP_NAME || ' EXECUTED SUCCESSFULLY.');
 
     ----------------------------------------------------------------
@@ -138,9 +148,7 @@ BEGIN
     ----------------------------------------------------------------
     -- RESULT PREVIEW
     ----------------------------------------------------------------
-    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
-                ' AND (' || CASE WHEN V_MODEL_ID = '0' THEN '1=1' ELSE 'PD_RULE_ID = ' || V_MODEL_ID END || ')';
+    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1;
 
     IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;

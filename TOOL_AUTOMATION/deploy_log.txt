@@ -1,0 +1,1039 @@
+=== ORACLE DEPLOY LOG ===
+[2026-04-05 09:13:44] Starting Oracle DDL deployment...
+[2026-04-05 09:13:44] DDL folder : D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\ddl
+[2026-04-05 09:13:44] User       : PSAK413_BSI
+[2026-04-05 09:13:44] Service    : REGLA_DEV_BSI_ANALYTIC
+[2026-04-05 09:13:44] Dry run    : False
+[2026-04-05 09:13:44] Safe table : True
+[2026-04-05 09:13:45] 
+==============================
+[2026-04-05 09:13:45] DEPLOY CATEGORY: TABLES
+[2026-04-05 09:13:45] FOLDER         : D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\ddl\tables
+[2026-04-05 09:13:45] TOTAL FILES    : 1196
+[2026-04-05 09:13:45] ==============================
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: 2019_COMMITMENT.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [2019_COMMITMENT.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: AC_MAX.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [AC_MAX.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: ADAM_CEK.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [ADAM_CEK.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: BSI_FINAL_UPD_DPD.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [BSI_FINAL_UPD_DPD.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: BSI_SUPER_CIF_FINAL.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [BSI_SUPER_CIF_FINAL.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CEK_DPD_MEI23_JUN23_REV_RESULT.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CEK_DPD_MEI23_JUN23_REV_RESULT.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CF.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CF.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CKPN_LBUS.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CKPN_LBUS.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CKPN_PMA_2.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CKPN_PMA_2.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CKPN_PMA_BSI.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CKPN_PMA_BSI.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CKPN_PMA_IBSM.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CKPN_PMA_IBSM.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CKPN_PMA_JFAST.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CKPN_PMA_JFAST.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CKPN_TRX_BSI.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CKPN_TRX_BSI.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CURRENT_PD.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CURRENT_PD.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CURRENT_RATING.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CURRENT_RATING.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CURRENT_RATING_SB.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CURRENT_RATING_SB.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: CUST_GRADE.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [CUST_GRADE.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: DIVISI_NULL.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [DIVISI_NULL.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: DM_LIMIT.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [DM_LIMIT.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: EIR.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [EIR.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_APRIL_2020_HC.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_APRIL_2020_HC.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_APRIL_HC.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_APRIL_HC.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_FEBRUARI_2020_HC.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_FEBRUARI_2020_HC.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_FEBRUARI_HC.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_FEBRUARI_HC.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_JANUARI_HC.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_JANUARI_HC.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2006.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_LSMK_BNIS_2006.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2007.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_LSMK_BNIS_2007.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2008.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_LSMK_BNIS_2008.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2008_NEW.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_LSMK_BNIS_2008_NEW.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:45] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2009.sql
+[2026-04-05 09:13:45] ❌ EXCEPTION [FORM12_LSMK_BNIS_2009.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:45] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2009_NEW.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_LSMK_BNIS_2009_NEW.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2010.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_LSMK_BNIS_2010.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2010_NEW.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_LSMK_BNIS_2010_NEW.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2011.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_LSMK_BNIS_2011.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2011_NEW.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_LSMK_BNIS_2011_NEW.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2012.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_LSMK_BNIS_2012.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_LSMK_BNIS_2021_JAN.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_LSMK_BNIS_2021_JAN.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_MARET.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_MARET.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_MARET_HC_2020.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_MARET_HC_2020.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_MEI_HC.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_MEI_HC.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_SANDIRINCIANPIUTANGQARDH_RPT.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_SANDIRINCIANPIUTANGQARDH_RPT.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FORM12_SANDIRINCIANPIUTANGQARDH_RPT_DVC.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FORM12_SANDIRINCIANPIUTANGQARDH_RPT_DVC.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: FRS_ARIMA_MODEL_PARAM.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [FRS_ARIMA_MODEL_PARAM.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GRIYA_OTO_NEW.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GRIYA_OTO_NEW.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_CONDITIONS_STAGE.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_CONDITIONS_STAGE.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_LOOP.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_LOOP.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_PD_FLOW_SUM_CONFIG_S_00000_0000.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_PD_FLOW_SUM_CONFIG_S_00000_0000.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_PD_ODR_CONFIG.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_PD_ODR_CONFIG.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_PD_ODR_CONFIG_S_00000_0000.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_PD_ODR_CONFIG_S_00000_0000.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_PD_RUNNING_ENR_SUM_S_00000_0000.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_PD_RUNNING_ENR_SUM_S_00000_0000.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_PD_SMOOTH_CONFIG.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_PD_SMOOTH_CONFIG.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_PD_SMOOTH_CONFIG_S_00000_0000.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_PD_SMOOTH_CONFIG_S_00000_0000.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_PD_ZSCORE_CONFIG.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_PD_ZSCORE_CONFIG.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: GTMP_TERM_STRUCTURE.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [GTMP_TERM_STRUCTURE.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: HASANAHCARDLBUT.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [HASANAHCARDLBUT.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: HASIL.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [HASIL.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: HASSANAH_CARD.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [HASSANAH_CARD.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: HC0221.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [HC0221.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: HC0321.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [HC0321.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: HC0421.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [HC0421.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: HC0423.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [HC0423.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: HC0521.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [HC0521.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:46] 
+🚀 Deploying TABLE: HC0523.sql
+[2026-04-05 09:13:46] ❌ EXCEPTION [HC0523.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:46] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: HC0621.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [HC0621.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: HC0623.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [HC0623.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: HC0721.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [HC0721.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: HC0723.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [HC0723.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: HC0821.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [HC0821.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: HC0823.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [HC0823.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: HC0921.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [HC0921.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_1MEVLM_RESULT_DTL.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_1MEVLM_RESULT_DTL.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_CLASS.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_CLASS.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_CLASS_HIST.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_CLASS_HIST.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_DETAIL.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_DETAIL.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_DETAIL_HIST.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_DETAIL_HIST.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_DETAIL_PENDING.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_DETAIL_PENDING.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_HEADER.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_HEADER.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_HEADER_HIST.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_HEADER_HIST.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_HEADER_PENDING.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_HEADER_PENDING.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_MASTER_QUEST_D.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_MASTER_QUEST_D.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_BM_QUEST.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_BM_QUEST.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_MAIN_MAPPING.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_MAIN_MAPPING.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_MAPPING.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_MAPPING.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_OVERRIDE.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_OVERRIDE.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_OVERRIDE_D_HIST.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_OVERRIDE_D_HIST.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_OVERRIDE_D_PEND.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_OVERRIDE_D_PEND.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_OVERRIDE_DETAIL.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_OVERRIDE_DETAIL.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_OVERRIDE_HIST.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_OVERRIDE_HIST.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_OVERRIDE_PEND.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_OVERRIDE_PEND.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_PRODUCT_CLASS.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_PRODUCT_CLASS.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_RESULT.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_RESULT.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_RESULT_HIST.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_RESULT_HIST.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_RESULT_PEND.sql
+[2026-04-05 09:13:47] ❌ EXCEPTION [IFRS_AC_RESULT_PEND.sql] -> 'module' object is not subscriptable
+[2026-04-05 09:13:47] Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 209, in deploy_table_file
+    target_schema = get_target_schema(config)
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\deploy_oracle.py", line 76, in get_target_schema
+    return config["user"].strip().upper()
+           ~~~~~~^^^^^^^^
+TypeError: 'module' object is not subscriptable
+
+[2026-04-05 09:13:47] 
+🚀 Deploying TABLE: IFRS_AC_SPPI_DETAIL.sql
+[2026-04-05 09:13:47] Oracle connection closed.

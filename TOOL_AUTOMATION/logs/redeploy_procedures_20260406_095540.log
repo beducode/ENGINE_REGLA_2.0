@@ -1,0 +1,1369 @@
+[FAILED] C_SP_IFRS_STAGE_BENCANA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] NITIP_ADAM
+[SUCCESS] SP_ADAM_CHECK
+[SUCCESS] SP_CEK_PROCESS_RIKO
+[SUCCESS] SP_EIL_SEQ
+[SUCCESS] SP_EIL_SEQ_2
+[SUCCESS] SP_IFRS_BUCKET_DETAIL
+[SUCCESS] SP_IFRS_BUCKET_HEADER
+[FAILED] SP_IFRS_CCF_RULES_CONFIG -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_DEFAULT_CRITERIA
+[FAILED] SP_IFRS_DEFAULT_RULE -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EAD_RESULT -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EAD_RESULT_2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_EAD_RULES_CONFIG
+[FAILED] SP_IFRS_EIL_GENERATE_IMA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EIL_MODEL -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_EIL_MODEL_DETAIL_EAD
+[SUCCESS] SP_IFRS_EIL_MODEL_DETAIL_LGD
+[SUCCESS] SP_IFRS_EIL_MODEL_DETAIL_PD
+[SUCCESS] SP_IFRS_EIL_MODEL_DETAIL_PF
+[SUCCESS] SP_IFRS_EIL_MODEL_HEADER
+[FAILED] SP_IFRS_EIL_MODEL_SCENARIO -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EIL_RESULT_DETAIL -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EIL_RESULT_DETAIL3 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EIL_RESULT_DETAILX -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EIL_RESULT_DETAIL_2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EIL_RESULT_HEADER -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EIL_RESULT_HEADERX -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_EIL_UPDATE_PORTFOLIO -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_EXEC_AND_LOG
+[FAILED] SP_IFRS_IMPI_JOURNAL_DATA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_IMP_FILL_IMA_PREV_CURR -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_IMP_INITIAL_CONFIG -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_INITIAL_PAYM_SCHD -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_INITIAL_UPDATE_IMP
+[SUCCESS] SP_IFRS_INSERT_STG_PMA
+[SUCCESS] SP_IFRS_INSERT_STG_PMA_DVC_HC
+[SUCCESS] SP_IFRS_INSERT_STG_PMA_HC
+[SUCCESS] SP_IFRS_INSERT_STG_PMA_JFAST
+[FAILED] SP_IFRS_LGD_DATA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_DATA2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_DATAX -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_REC_DATA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_REC_DATA2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_RESULT -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_LGD_RULES_CONFIG
+[FAILED] SP_IFRS_LGD_RULE_DATA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_RULE_DATA2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_UR_DETAIL -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_UR_HEADER -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_UR_REC_DETAIL -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_UR_REC_DETAIL2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_WORKOUT_DETAIL -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_WORKOUT_DETAIL2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_WORKOUT_HEADER -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LGD_WORKOUT_HEADER2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_LGD_WORKOUT_RULES_CONFIG
+[FAILED] SP_IFRS_LIFETIME_DATA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LIFETIME_DETAIL -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LIFETIME_HEADER -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_LIFETIME_RULES_CONFIG
+[FAILED] SP_IFRS_LIFETIME_RULES_CONFIG_GTMP -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_LIFETIME_RULE_DATA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_LOOPING_ADAM
+[SUCCESS] SP_IFRS_MASTERID
+[SUCCESS] SP_IFRS_MASTERID_ONETIME
+[FAILED] SP_IFRS_MASTER_ACCOUNT_PREV -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_PATCH_DPD_CIF
+[SUCCESS] SP_IFRS_PATCH_DPD_CIF_NEW
+[SUCCESS] SP_IFRS_PATCH_DPD_CIF_NEW2
+[SUCCESS] SP_IFRS_PATCH_DPD_CIF_NEW3
+[SUCCESS] SP_IFRS_PATCH_DPD_CIF_NEW4
+[SUCCESS] SP_IFRS_PATCH_DPD_CIF_NEW5
+[SUCCESS] SP_IFRS_PATCH_DPD_CIF_NEW6
+[FAILED] SP_IFRS_PD_LINEST_SMOOTHING -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_ENR -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_ENR_SUM -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_FLOWRATE -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_FLOWRATE_SMOOTH -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_FLOWRATE_SMOOTH2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_FLOWRATE_SUM -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_MMULT -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_MMULT2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_MMULT_MONTHLY -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MAA_ODR -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_MIGRATION_DETAIL -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_PD_RULES_CONFIG
+[FAILED] SP_IFRS_PD_RULE_DATA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_SYNC_TERM_STRUCTURE_FL -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_TERM_STRUCTURE -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_TERM_STRUCTURE_VAS -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_TM_SCENARIO_DATA -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_VAS_MPD -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_VAS_TTC -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PD_VAS_ZSCORE -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_PREPAYMENT_RULES_CONFIG -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_IFRS_RESULT_PREV
+[SUCCESS] SP_IFRS_RUNNING_LOG
+[SUCCESS] SP_IFRS_SEGMENTATION_MAPPING
+[SUCCESS] SP_IFRS_STAGE_CONFIG
+[SUCCESS] SP_IFRS_SYNC_PARAM
+[FAILED] SP_IFRS_UPDATE_IMA_RESULT -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] SP_IFRS_UPDATE_STAGE -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] SP_LGD_SEQ
+[SUCCESS] SP_LIFETIME_SEQ
+[SUCCESS] SP_MULTIJASA
+[SUCCESS] SP_PATCH_SEQ_DPD
+[SUCCESS] SP_PD_SEQ
+[SUCCESS] SP_SHU_CHECK
+[FAILED] SP_TESTING_ORACLE -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[FAILED] XSP_IFRS_EAD_RESULT2 -> ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+Traceback (most recent call last):
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 307, in main
+    execute_ddl(target_cur, ddl, proc_name)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ENGINE_REGLA_2.0\TOOL_AUTOMATION\oracle_extract_redeploy_procedures.py", line 259, in execute_ddl
+    cursor.execute(ddl)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\indihome\AppData\Roaming\Python\Python314\site-packages\oracledb\cursor.py", line 844, in execute
+    impl.execute(self)
+    ~~~~~~~~~~~~^^^^^^
+  File "src/oracledb/impl/thin/cursor.pyx", line 277, in oracledb.thin_impl.ThinCursorImpl.execute
+  File "src/oracledb/impl/thin/protocol.pyx", line 501, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 502, in oracledb.thin_impl.Protocol._process_single_message
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-00972: identifier is too long
+Help: https://docs.oracle.com/error-help/db/ora-00972/
+
+[SUCCESS] X_IFRS_POPULATE_IMAM_FROM_PMAM
+[SUCCESS] X_SP_IFRS_PATCH_SEGMENT
+[SUCCESS] X_SP_IFRS_PATCH_SEGMENT_ADAM
+[SUCCESS] xSP_Patch_segment2

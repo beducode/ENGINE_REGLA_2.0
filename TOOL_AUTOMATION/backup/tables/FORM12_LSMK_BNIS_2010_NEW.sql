@@ -1,0 +1,57 @@
+CREATE TABLE "PSAK413_BSI"."FORM12_LSMK_BNIS_2010_NEW" 
+   (	"FicMisDate" VARCHAR2(50), 
+	"KodeCabang" VARCHAR2(1000), 
+	"NomorNasabah" VARCHAR2(1000), 
+	"GolonganNasabahDebitur" VARCHAR2(1000), 
+	"KlasifikasiNasabahHubungandenganBank" VARCHAR2(1000), 
+	"KlasifikasiNasabahStatus" VARCHAR2(1000), 
+	"KlasifikasiNasabahKategoriUsaha" VARCHAR2(1000), 
+	"NomorRekening" VARCHAR2(1000), 
+	"JenisValuta" VARCHAR2(50), 
+	"JangkaWaktuMulai" VARCHAR2(50), 
+	"JangkaWaktuJatuhTempo" VARCHAR2(50), 
+	"SumberDana" VARCHAR2(1000), 
+	"LokasiProyek" VARCHAR2(1000), 
+	"JenisPiutang" VARCHAR2(1000), 
+	"SifatPiutang" VARCHAR2(1000), 
+	"JenisPenggunaan" VARCHAR2(1000), 
+	"OrientasiPenggunaan" VARCHAR2(1000), 
+	"SektorEkonomi" VARCHAR2(1000), 
+	"KategoriPortofolio" VARCHAR2(1000), 
+	"PeringkatLembagaPemeringkat" VARCHAR2(1000), 
+	"PeringkatNilaiPeringkat" VARCHAR2(1000), 
+	"PeringkatTanggalPemeringkatan" VARCHAR2(1000), 
+	"NilaiKontrak" VARCHAR2(1000), 
+	"PersentaseImbalanAwalKontrak" VARCHAR2(1000), 
+	"PersentaseImbalanBulanLaporan" VARCHAR2(1000), 
+	"JumlahBulanlalu" VARCHAR2(1000), 
+	"JumlahBulanLaporan" VARCHAR2(1000), 
+	"TunggakanHari" VARCHAR2(1000), 
+	"TunggakanPokok" VARCHAR2(1000), 
+	"TunggakanMargin" VARCHAR2(1000), 
+	"Imbalanyangakanditerima" VARCHAR2(1000), 
+	"Kualitas" VARCHAR2(1000), 
+	"AgunanJaminanJenis" VARCHAR2(1000), 
+	"AgunanJaminanNomorAgunan" VARCHAR2(1000), 
+	"AgunanJaminanSifatAgunanjaminan" VARCHAR2(1000), 
+	"AgunanJaminanGolonganPenerbitAgunanjaminan" VARCHAR2(1000), 
+	"TanggalPenilaianTerakhir" VARCHAR2(1000), 
+	"AgunanJaminanJumlah" VARCHAR2(1000), 
+	"AgunanJaminanAgunanJaminanyangdapatdiperhitungkan" VARCHAR2(1000), 
+	"AgunanJaminanBagiandijamin" VARCHAR2(1000), 
+	"CKPNIndividual" VARCHAR2(1000), 
+	"CKPNKolektif" VARCHAR2(1000), 
+	"KodeCabangiBSM" VARCHAR2(1000), 
+	"LoanTypeCode" VARCHAR2(1000), 
+	"PihakBerelasi" VARCHAR2(1000), 
+	"Validasi" VARCHAR2(1000), 
+	"FlagInduk" VARCHAR2(1000), 
+	"NamaNasabahHC" VARCHAR2(1000)
+   ) SEGMENT CREATION IMMEDIATE 
+  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
+ NOCOMPRESS LOGGING
+  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "USERS"
+/
