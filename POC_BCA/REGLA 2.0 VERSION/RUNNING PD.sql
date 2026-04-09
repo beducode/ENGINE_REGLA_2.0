@@ -1,8 +1,8 @@
 DECLARE
-    V_RUNID         VARCHAR2(50) := 'S_0101_1111';
+    V_RUNID         VARCHAR2(50) := 'P_0101_1111';
     V_DOWNLOAD_DATE DATE         := NULL;
     V_SYSCODE       VARCHAR2(10) := '0';
-    V_PRC           VARCHAR2(10) := 'S';
+    V_PRC           VARCHAR2(10) := 'P';
 BEGIN
     DBMS_OUTPUT.PUT_LINE('START PROCESS : ' || V_RUNID);
 
@@ -119,13 +119,13 @@ BEGIN
     -- ----------------------------------------------------------------
     -- -- 10
     -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_RULE_DATA_SEGMENT_DEV');
-    -- IFRS9_BCA.SP_IFRS_RULE_DATA_SEGMENT_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_RULE_DATA_SEGMENT_DEV');
+     IFRS9_BCA.SP_IFRS_RULE_DATA_SEGMENT_DEV(
+         P_RUNID         => V_RUNID,
+         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+         P_SYSCODE       => V_SYSCODE,
+         P_PRC           => V_PRC
+     );
 
     -- ----------------------------------------------------------------
     -- -- 11
