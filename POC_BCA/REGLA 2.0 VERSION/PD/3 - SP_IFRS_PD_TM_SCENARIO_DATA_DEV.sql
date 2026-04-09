@@ -113,22 +113,6 @@ BEGIN
                        ' AS SELECT * FROM ' || V_OWNER || '.TMP_SCENARIO_DATA';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
-        -- DROP TABLE IF EXISTS
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLESELECT1);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLESELECT1;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLESELECT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_SCENARIO_DATA';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-
-
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER

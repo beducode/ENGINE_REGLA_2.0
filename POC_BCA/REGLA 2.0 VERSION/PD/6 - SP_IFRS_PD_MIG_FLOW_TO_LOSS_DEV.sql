@@ -112,21 +112,6 @@ BEGIN
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEINSERT1);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT1;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.TMP_IFRS_PD_RUNNING_DATE';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-
-        -- DROP TABLE IF EXISTS
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_OWNER
           AND TABLE_NAME = UPPER(V_TABLEINSERT2);
 
         IF V_COUNT > 0 THEN
@@ -135,7 +120,7 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT2 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_PD_MIG_FLOWRATE';
+                       ' AS SELECT * FROM ' || V_OWNER || '.TMP_IFRS_PD_MIG_FLOW_TO_LOSS';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
         -- DROP TABLE IF EXISTS
@@ -328,24 +313,33 @@ BEGIN
 
         V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT4 || '
         (
+            PKID,
             EFF_DATE,
             BASE_DATE,
             PD_RULE_ID,
             BUCKET_GROUP,
             BUCKET_ID,
-            FLOW_TO_LOSS
+            FLOW_TO_LOSS,
+            CREATEDBY,
+            CREATEDDATE,
+            CREATEDHOST
         )
         SELECT
+            SEQ_IFRS_PD_MIG_FLOW_TO_LOSS.NEXTVAL AS PKID,
             A.EFF_DATE,
             A.BASE_DATE,
             A.PD_RULE_ID,
             A.BUCKET_GROUP,
             A.BUCKET_ID,
-            A.FLOW_TO_LOSS
+            A.FLOW_TO_LOSS,
+            ''SYSTEM'' AS CREATEDBY,
+            SYSDATE AS CREATEDDATE,
+            ''SYSTEM'' AS CREATEDHOST
         FROM ' || V_OWNER || '.' || V_TABLEINSERT2 || ' A
         JOIN ' || V_OWNER || '.' || V_TABLEINSERT1 || ' B
-        ON A.PD_RULE_ID = B.PD_RULE_ID
-        ORDER BY A.BUCKET_ID';
+            ON A.PD_RULE_ID = B.PD_RULE_ID
+        AND A.EFF_DATE   = B.EFF_DATE
+        AND A.BASE_DATE  = B.BASE_DATE';
 
         EXECUTE IMMEDIATE V_STR_QUERY; 
         COMMIT;

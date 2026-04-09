@@ -173,22 +173,41 @@ BEGIN
             BUCKET_GROUP,
             BUCKET_FROM,
             BUCKET_TO,
-            FLOWRATE
+            FLOWRATE,
+            CREATEDBY,
+            CREATEDDATE,
+            CREATEDHOST
         )
-        SELECT DISTINCT
-            IFRS9_BCA.SEQ_IFRS_PD_MIG_FLOWRATE.NEXTVAL,
-            A.EFF_DATE,
-            A.BASE_DATE,
-            A.PD_RULE_ID,
-            A.BUCKET_GROUP,
-            A.BUCKET_FROM,
-            A.BUCKET_TO,
-            CASE
-                WHEN B.TOTAL = 0 THEN 0
-                ELSE CAST(A.CALC_AMOUNT AS FLOAT) / CAST(B.TOTAL AS FLOAT)
-            END AS FLOWRATE
-        FROM ' || V_OWNER || '.IFRS_PD_MIG_ENR A
-        JOIN
+        SELECT
+            SEQ_IFRS_PD_MIG_FLOWRATE.NEXTVAL AS PKID,
+            X.EFF_DATE,
+            X.BASE_DATE,
+            X.PD_RULE_ID,
+            X.BUCKET_GROUP,
+            X.BUCKET_FROM,
+            X.BUCKET_TO,
+            X.FLOWRATE,
+            X.CREATEDBY,
+            X.CREATEDDATE,
+            X.CREATEDHOST
+        FROM
+        (
+            SELECT DISTINCT
+                A.EFF_DATE,
+                A.BASE_DATE,
+                A.PD_RULE_ID,
+                A.BUCKET_GROUP,
+                A.BUCKET_FROM,
+                A.BUCKET_TO,
+                CASE
+                    WHEN B.TOTAL = 0 THEN 0
+                    ELSE CAST(A.CALC_AMOUNT AS FLOAT) / CAST(B.TOTAL AS FLOAT)
+                END AS FLOWRATE,
+                ''SYSTEM'' AS CREATEDBY,
+                SYSDATE AS CREATEDDATE,
+                ''SYSTEM'' AS CREATEDHOST
+            FROM ' || V_OWNER || '.IFRS_PD_MIG_ENR A
+            JOIN
             (
                 SELECT
                     PD_RULE_ID,
@@ -196,16 +215,17 @@ BEGIN
                     SUM(CALC_AMOUNT) AS TOTAL
                 FROM ' || V_OWNER || '.IFRS_PD_MIG_ENR
                 WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-                GROUP BY PD_RULE_ID, BUCKET_FROM
+                GROUP BY
+                    PD_RULE_ID,
+                    BUCKET_FROM
             ) B
-            ON A.PD_RULE_ID = B.PD_RULE_ID
-           AND A.BUCKET_FROM = B.BUCKET_FROM
-        JOIN ' || V_OWNER || '.' || V_TABLESELECT1 || ' C
-            ON A.PD_RULE_ID = C.PD_RULE_ID
-           AND A.EFF_DATE = C.EFF_DATE
-        WHERE A.BUCKET_TO > 0
-        LOG ERRORS INTO IFRS9_BCA.ERR$_IFRS_PD_MIG_FLOWRATE (''SP_IFRS_PD_MIG_FLOWRATE_DEV'')
-        REJECT LIMIT UNLIMITED';
+                ON A.PD_RULE_ID = B.PD_RULE_ID
+            AND A.BUCKET_FROM = B.BUCKET_FROM
+            JOIN ' || V_OWNER || '.' || V_TABLESELECT1 || ' C
+                ON A.PD_RULE_ID = C.PD_RULE_ID
+            AND A.EFF_DATE = C.EFF_DATE
+            WHERE A.BUCKET_TO > 0
+        ) X';
 
         EXECUTE IMMEDIATE V_STR_QUERY;
         V_RETURNROWS2 := SQL%ROWCOUNT;

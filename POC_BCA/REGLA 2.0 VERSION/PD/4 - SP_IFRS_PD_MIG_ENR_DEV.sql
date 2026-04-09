@@ -121,20 +121,6 @@ BEGIN
                        ' AS SELECT * FROM ' || V_OWNER || '.TMP_IFRS_PD_MIG_AVG_MONTH';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
-        -- DROP TABLE IF EXISTS
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEINSERT2);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT2;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT2 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.TMP_IFRS_PD_RUNNING_DATE';
-        EXECUTE IMMEDIATE V_STR_QUERY;
 
         -- DROP TABLE IF EXISTS
         SELECT COUNT(*) INTO V_COUNT
@@ -156,22 +142,6 @@ BEGIN
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLESELECT1);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLESELECT1;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLESELECT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_PD_SCENARIO_DATA';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-
-
-        -- DROP TABLE IF EXISTS
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_OWNER
           AND TABLE_NAME = UPPER(V_TABLESELECT2);
 
         IF V_COUNT > 0 THEN
@@ -183,36 +153,6 @@ BEGIN
                        ' AS SELECT * FROM ' || V_OWNER || '.IFRS_PD_MIGRATION_DETAIL';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
-
-        -- DROP TABLE IF EXISTS
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLESELECT3);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLESELECT3;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLESELECT3 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_MASTER_ACCOUNT_MONTHLY';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-
-        -- DROP TABLE IF EXISTS
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEPDCONFIG);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEPDCONFIG;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEPDCONFIG ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_PD_RULES_CONFIG';
-        EXECUTE IMMEDIATE V_STR_QUERY;
     END IF;
     COMMIT;
 

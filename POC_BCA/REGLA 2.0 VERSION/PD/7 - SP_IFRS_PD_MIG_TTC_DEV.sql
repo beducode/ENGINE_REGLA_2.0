@@ -114,6 +114,21 @@ BEGIN
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
                        ' AS SELECT * FROM ' || V_OWNER || '.IFRS_PD_MIG_TTC';
         EXECUTE IMMEDIATE V_STR_QUERY;
+
+        -- DROP TABLE IF EXISTS
+        SELECT COUNT(*) INTO V_COUNT
+        FROM ALL_TABLES
+        WHERE OWNER = V_OWNER
+          AND TABLE_NAME = UPPER(V_TABLEINSERT2);
+
+        IF V_COUNT > 0 THEN
+            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT2;
+            EXECUTE IMMEDIATE V_STR_QUERY;
+        END IF;
+
+        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT2 ||
+                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_PD_TERM_STRUCTURE';
+        EXECUTE IMMEDIATE V_STR_QUERY;
     END IF;
     COMMIT;
 
@@ -169,43 +184,57 @@ BEGIN
 
     V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || '
     (
+        PKID,
         EFF_DATE,
         BASE_DATE,
         PD_RULE_ID,
         MODEL_ID,
         BUCKET_GROUP,
         BUCKET_ID,
-        TTC
+        TTC,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST
     )
     SELECT
+        SEQ_IFRS_PD_MIG_TTC.NEXTVAL AS PKID,
         A.EFF_DATE,
         A.BASE_DATE,
         A.PD_RULE_ID,
-        0 MODEL_ID,
+        0 AS MODEL_ID,
         A.BUCKET_GROUP,
         A.BUCKET_ID,
-        B.FLOW_TO_LOSS_AVG
+        B.FLOW_TO_LOSS_AVG,
+        ''SYSTEM'' AS CREATEDBY,
+        SYSDATE AS CREATEDDATE,
+        ''SYSTEM'' AS CREATEDHOST
     FROM ' || V_OWNER || '.' || V_TABLESELECT2 || ' A
     JOIN
-        (
-            SELECT TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS EFF_DATE,
-                C.PD_RULE_ID,
-                C.BUCKET_GROUP,
-                C.BUCKET_ID,
-                AVG(C.FLOW_TO_LOSS) AS FLOW_TO_LOSS_AVG
-            FROM ' || V_OWNER || '.' || V_TABLESELECT2 || ' C
-            JOIN ' || V_OWNER || '.' || V_TABLESELECT1 || ' D
+    (
+        SELECT
+            TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS EFF_DATE,
+            C.PD_RULE_ID,
+            C.BUCKET_GROUP,
+            C.BUCKET_ID,
+            AVG(C.FLOW_TO_LOSS) AS FLOW_TO_LOSS_AVG
+        FROM ' || V_OWNER || '.' || V_TABLESELECT2 || ' C
+        JOIN ' || V_OWNER || '.' || V_TABLESELECT1 || ' D
             ON C.PD_RULE_ID = D.PD_RULE_ID
-                AND C.EFF_DATE BETWEEN ADD_MONTHS(TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''), -1 * D.HISTORICAL_DATA) AND TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-                AND C.EFF_DATE >= D.CUT_OFF_DATE
-            GROUP BY C.PD_RULE_ID,
-                C.BUCKET_GROUP,
-                C.BUCKET_ID
-        ) B
-    ON A.PD_RULE_ID = B.PD_RULE_ID
-        AND A.BUCKET_ID = B.BUCKET_ID
-        AND A.EFF_DATE = B.EFF_DATE
-    ORDER BY A.PD_RULE_ID, A.BUCKET_ID';
+        AND C.EFF_DATE BETWEEN ADD_MONTHS(
+                                    TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''),
+                                    -1 * D.HISTORICAL_DATA
+                                )
+                            AND TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+        AND C.EFF_DATE >= D.CUT_OFF_DATE
+        GROUP BY
+            C.PD_RULE_ID,
+            C.BUCKET_GROUP,
+            C.BUCKET_ID
+    ) B
+        ON A.PD_RULE_ID   = B.PD_RULE_ID
+    AND A.BUCKET_ID    = B.BUCKET_ID
+    AND A.BUCKET_GROUP = B.BUCKET_GROUP
+    AND A.EFF_DATE     = B.EFF_DATE';
 
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
@@ -222,6 +251,7 @@ BEGIN
 
     V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT2 || '
     (
+        PKID,
         EFF_DATE,
         BASE_DATE,
         PD_RULE_ID,
@@ -237,9 +267,13 @@ BEGIN
         PRODUCTION_PD,
         OVERRIDE_PD,
         PRC_FLAG,
-        TM_TYPE
+        TM_TYPE,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST
     )
-    SELECT A.EFF_DATE,
+    SELECT SEQ_IFRS_PD_TERM_STRUCTURE.NEXTVAL AS PKID,
+        A.EFF_DATE,
         A.BASE_DATE,
         A.PD_RULE_ID,
         B.PD_RULE_NAME,
@@ -254,7 +288,10 @@ BEGIN
         TTC PRODUCTION_PD,
         TTC OVERRIDE_PD,
         ''M'' PRC_FLAG,
-        ''YEAR'' TM_TYPE
+        ''YEAR'' TM_TYPE,
+        ''SYSTEM'' AS CREATEDBY,
+        SYSDATE AS CREATEDDATE,
+        ''SYSTEM'' AS CREATEDHOST
     FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || ' A
     JOIN ' || V_OWNER || '.' || V_TABLEPDCONFIG || ' B
     ON A.PD_RULE_ID = B.PKID

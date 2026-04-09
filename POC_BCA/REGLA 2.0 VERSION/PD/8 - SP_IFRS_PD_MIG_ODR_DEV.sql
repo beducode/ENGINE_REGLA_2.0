@@ -160,54 +160,68 @@ BEGIN
 
     V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || '
     (
+        PKID,
         EFF_DATE,
         BASE_DATE,
         PD_RULE_ID,
-        ODR
+        ODR,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST
     )
     SELECT
+        SEQ_IFRS_PD_MIG_ODR.NEXTVAL AS PKID,
         A.EFF_DATE,
         A.BASE_DATE,
         A.PD_RULE_ID,
-        CASE WHEN B.SUM_CALC_AMOUNT = 0 THEN
-            0
-        ELSE
-            A.SUM_CALC_AMOUNT / B.SUM_CALC_AMOUNT
-        END
+        CASE 
+            WHEN B.SUM_CALC_AMOUNT = 0 THEN 0
+            ELSE A.SUM_CALC_AMOUNT / B.SUM_CALC_AMOUNT
+        END AS ODR,
+        A.CREATEDBY,
+        A.CREATEDDATE,
+        A.CREATEDHOST
     FROM
     (
-        SELECT A2.EFF_DATE,
+        SELECT
+            A2.EFF_DATE,
             A2.BASE_DATE,
             A2.PD_RULE_ID,
-            SUM(A2.CALC_AMOUNT) AS SUM_CALC_AMOUNT
+            SUM(A2.CALC_AMOUNT) AS SUM_CALC_AMOUNT,
+            ''SYSTEM'' AS CREATEDBY,
+            SYSDATE AS CREATEDDATE,
+            ''SYSTEM'' AS CREATEDHOST
         FROM ' || V_OWNER || '.IFRS_PD_MIG_ENR A2
         JOIN ' || V_OWNER || '.' || V_TABLESELECT1 || ' B2
-        ON A2.PD_RULE_ID = B2.PD_RULE_ID
-            AND A2.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+            ON A2.PD_RULE_ID = B2.PD_RULE_ID
+        AND A2.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
         JOIN ' || V_OWNER || '.VW_IFRS_MAX_BUCKET C2
-        ON A2.BUCKET_GROUP = C2.BUCKET_GROUP
+            ON A2.BUCKET_GROUP = C2.BUCKET_GROUP
         AND A2.BUCKET_TO = C2.MAX_BUCKET_ID
-        GROUP BY A2.EFF_DATE,
+        GROUP BY
+            A2.EFF_DATE,
             A2.BASE_DATE,
             A2.PD_RULE_ID
     ) A
     JOIN
     (
-        SELECT A2.EFF_DATE,
+        SELECT
+            A2.EFF_DATE,
             A2.BASE_DATE,
             A2.PD_RULE_ID,
             SUM(A2.CALC_AMOUNT) AS SUM_CALC_AMOUNT
         FROM ' || V_OWNER || '.IFRS_PD_MIG_ENR A2
         JOIN ' || V_OWNER || '.' || V_TABLESELECT1 || ' B2
-        ON A2.PD_RULE_ID = B2.PD_RULE_ID
-            AND A2.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-        GROUP BY A2.EFF_DATE,
+            ON A2.PD_RULE_ID = B2.PD_RULE_ID
+        AND A2.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+        GROUP BY
+            A2.EFF_DATE,
             A2.BASE_DATE,
             A2.PD_RULE_ID
     ) B
-    ON A.EFF_DATE = B.EFF_DATE
-        AND A.PD_RULE_ID = B.PD_RULE_ID
-    ORDER BY A.PD_RULE_ID';
+        ON A.EFF_DATE   = B.EFF_DATE
+    AND A.BASE_DATE  = B.BASE_DATE
+    AND A.PD_RULE_ID = B.PD_RULE_ID';
 
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
@@ -215,24 +229,33 @@ BEGIN
 
     V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || '
     (
+        PKID,
         EFF_DATE,
         BASE_DATE,
         PD_RULE_ID,
         ODR
     )
-    SELECT DISTINCT
-        A.EFF_DATE,
-        A.BASE_DATE,
-        PD_RULE_ID,
-        0 AS ODR
-    FROM ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
-    WHERE PD_RULE_ID NOT IN
+    SELECT
+        SEQ_IFRS_PD_MIG_ODR.NEXTVAL AS PKID,
+        X.EFF_DATE,
+        X.BASE_DATE,
+        X.PD_RULE_ID,
+        X.ODR
+    FROM
     (
-        SELECT PD_RULE_ID
-        FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '
-        WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-    )';
-
+        SELECT DISTINCT
+            A.EFF_DATE,
+            A.BASE_DATE,
+            A.PD_RULE_ID,
+            0 AS ODR
+        FROM ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
+        WHERE A.PD_RULE_ID NOT IN
+        (
+            SELECT B.PD_RULE_ID
+            FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || ' B
+            WHERE B.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+        )
+    ) X';
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
 

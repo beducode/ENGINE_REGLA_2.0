@@ -121,11 +121,13 @@ BEGIN
     -- PRE-PROCESSING SIMULATION TABLES
     ----------------------------------------------------------------
     IF V_PRC = 'S' THEN
-        -- DROP TABLE IF EXISTS
+        ------------------------------------------------------------
+        -- 1. GTMP_IFRS_MASTER_ACCOUNT_PREV
+        ------------------------------------------------------------
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEINSERT1);
+        AND TABLE_NAME = UPPER(V_TABLEINSERT1);
 
         IF V_COUNT > 0 THEN
             V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT1;
@@ -133,14 +135,17 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_MASTER_ACCOUNT_PREV';
+                    ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_MASTER_ACCOUNT_PREV';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
-        -- DROP TABLE IF EXISTS
+
+        ------------------------------------------------------------
+        -- 2. GTMP_IFRS_MSTR_CUSTOMER_RATING
+        ------------------------------------------------------------
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEINSERT2);
+        AND TABLE_NAME = UPPER(V_TABLEINSERT2);
 
         IF V_COUNT > 0 THEN
             V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT2;
@@ -148,14 +153,17 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT2 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_MSTR_CUSTOMER_RATING';
+                    ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_MSTR_CUSTOMER_RATING';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
-        -- DROP TABLE IF EXISTS
+
+        ------------------------------------------------------------
+        -- 3. GTMP_IFRS_MASTER_ACCOUNT
+        ------------------------------------------------------------
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEINSERT3);
+        AND TABLE_NAME = UPPER(V_TABLEINSERT3);
 
         IF V_COUNT > 0 THEN
             V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEINSERT3;
@@ -163,14 +171,17 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEINSERT3 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_MASTER_ACCOUNT';
+                    ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_MASTER_ACCOUNT';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
-        -- DROP TABLE IF EXISTS
+
+        ------------------------------------------------------------
+        -- 4. GTMP_IFRS_SCENARIO_DATA
+        ------------------------------------------------------------
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLESELECT1);
+        AND TABLE_NAME = UPPER(V_TABLESELECT1);
 
         IF V_COUNT > 0 THEN
             V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLESELECT1;
@@ -178,15 +189,17 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLESELECT1 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_SCENARIO_DATA';
+                    ' AS SELECT * FROM ' || V_OWNER || '.GTMP_IFRS_SCENARIO_DATA';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
 
-        -- DROP TABLE IF EXISTS
+        ------------------------------------------------------------
+        -- 5. TMP_IFRS_PD_RUNNING_DATE
+        ------------------------------------------------------------
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLESELECT2);
+        AND TABLE_NAME = UPPER(V_TABLESELECT2);
 
         IF V_COUNT > 0 THEN
             V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLESELECT2;
@@ -194,31 +207,17 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLESELECT2 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.TMP_IFRS_PD_RUNNING_DATE';
+                    ' AS SELECT * FROM ' || V_OWNER || '.TMP_IFRS_PD_RUNNING_DATE';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
 
-        -- DROP TABLE IF EXISTS
+        ------------------------------------------------------------
+        -- 6. IFRS_MASTER_CUSTOMER_RATING
+        ------------------------------------------------------------
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLESELECT3);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLESELECT3;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLESELECT3 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.GTMP_SCENARIO_SEGMENT_GENQUERY';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-
-
-        -- DROP TABLE IF EXISTS
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLESELECT4);
+        AND TABLE_NAME = UPPER(V_TABLESELECT4);
 
         IF V_COUNT > 0 THEN
             V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLESELECT4;
@@ -226,14 +225,17 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLESELECT4 ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_MASTER_CUSTOMER_RATING';
+                    ' AS SELECT * FROM ' || V_OWNER || '.IFRS_MASTER_CUSTOMER_RATING';
         EXECUTE IMMEDIATE V_STR_QUERY;
 
 
+        ------------------------------------------------------------
+        -- 7. IFRS_PD_RULES_CONFIG
+        ------------------------------------------------------------
         SELECT COUNT(*) INTO V_COUNT
         FROM ALL_TABLES
         WHERE OWNER = V_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEPDCONFIG);
+        AND TABLE_NAME = UPPER(V_TABLEPDCONFIG);
 
         IF V_COUNT > 0 THEN
             V_STR_QUERY := 'DROP TABLE ' || V_OWNER || '.' || V_TABLEPDCONFIG;
@@ -241,7 +243,7 @@ BEGIN
         END IF;
 
         V_STR_QUERY := 'CREATE TABLE ' || V_OWNER || '.' || V_TABLEPDCONFIG ||
-                       ' AS SELECT * FROM ' || V_OWNER || '.IFRS_PD_RULES_CONFIG';
+                    ' AS SELECT * FROM ' || V_OWNER || '.IFRS_PD_RULES_CONFIG';
         EXECUTE IMMEDIATE V_STR_QUERY;
     END IF;
     COMMIT;
@@ -434,234 +436,234 @@ BEGIN
         USING V_RUNID, V_EOM, V_SYSCODE, V_PRC;
         COMMIT;
 
-        -- OPEN C_RULE FOR V_STR_QUERY_CSR;
+        OPEN C_RULE FOR V_STR_QUERY_CSR;
 
-        -- LOOP
-        --     FETCH C_RULE INTO
-        --         V_RULE_ID,
-        --          V_TABLE_NAME,
-        --          V_STR_SQL_RULE,
-        --          V_GROUP_SEGMENT,
-        --          V_SEGMENT,
-        --          V_SUB_SEGMENT;
+        LOOP
+            FETCH C_RULE INTO
+                V_RULE_ID,
+                 V_TABLE_NAME,
+                 V_STR_SQL_RULE,
+                 V_GROUP_SEGMENT,
+                 V_SEGMENT,
+                 V_SUB_SEGMENT;
 
-        --     EXIT WHEN C_RULE%NOTFOUND;
+            EXIT WHEN C_RULE%NOTFOUND;
 
-        --     IF (V_EOM != V_CURRDATE)
-        --     THEN
+            IF (V_EOM != V_CURRDATE)
+            THEN
 
-        --         V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' (
-        --             DOWNLOAD_DATE,
-        --             RULE_ID,
-        --             MASTERID,
-        --             GROUP_SEGMENT,
-        --             SEGMENT,
-        --             SUB_SEGMENT,
-        --             RATING_CODE,
-        --             DAY_PAST_DUE,
-        --             BI_COLLECTABILITY,
-        --             WRITEOFF_FLAG,
-        --             ACCOUNT_NUMBER,
-        --             ACCOUNT_STATUS,
-        --             CUSTOMER_NUMBER,
-        --             CUSTOMER_NAME,
-        --             EXCHANGE_RATE,
-        --             IMPAIRED_FLAG,
-        --             OUTSTANDING,
-        --             KEY_TMP_IMA
-        --             )
-        --           SELECT  DOWNLOAD_DATE,
-        --                   '''
-        --             || V_RULE_ID
-        --             || ''',
-        --                   MASTERID,
-        --                   '''
-        --             || V_GROUP_SEGMENT
-        --             || ''' GROUP_SEGMENT,
-        --                   '''
-        --             || V_SEGMENT
-        --             || ''' SEGMENT,
-        --                   '''
-        --             || V_SUB_SEGMENT
-        --             || ''' SUB_SEGMENT,
-        --                   RATING_CODE,
-        --                   ORIGINAL_DAY_PAST_DUE,
-        --                   BI_COLLECTABILITY,
-        --                   WRITEOFF_FLAG,
-        --                   ACCOUNT_NUMBER,
-        --                   ACCOUNT_STATUS,
-        --                   CUSTOMER_NUMBER,
-        --                   CUSTOMER_NAME,
-        --                   EXCHANGE_RATE,
-        --                   IMPAIRED_FLAG,
-        --                   OUTSTANDING,
-        --                   '' '' KEY_TMP_IMA
-        --             FROM ' || V_OWNER || '.' || V_TABLEINSERT3 || ' A
-        --             WHERE  A.DOWNLOAD_DATE =  '''
-        --             || V_EOM
-        --             || ''' AND A.OUTSTANDING > 0 '
-        --             || ' AND (A.ACCOUNT_STATUS = ''A'' OR (A.ACCOUNT_STATUS = ''C'' AND A.DATA_SOURCE = ''CRD'')) '
-        --             || ' AND ('
-        --             || RTRIM (NVL (V_STR_SQL_RULE, ''))
-        --             || ')';
+                V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' (
+                    DOWNLOAD_DATE,
+                    RULE_ID,
+                    MASTERID,
+                    GROUP_SEGMENT,
+                    SEGMENT,
+                    SUB_SEGMENT,
+                    RATING_CODE,
+                    DAY_PAST_DUE,
+                    BI_COLLECTABILITY,
+                    WRITEOFF_FLAG,
+                    ACCOUNT_NUMBER,
+                    ACCOUNT_STATUS,
+                    CUSTOMER_NUMBER,
+                    CUSTOMER_NAME,
+                    EXCHANGE_RATE,
+                    IMPAIRED_FLAG,
+                    OUTSTANDING,
+                    KEY_TMP_IMA
+                    )
+                  SELECT  DOWNLOAD_DATE,
+                          '''
+                    || V_RULE_ID
+                    || ''',
+                          MASTERID,
+                          '''
+                    || V_GROUP_SEGMENT
+                    || ''' GROUP_SEGMENT,
+                          '''
+                    || V_SEGMENT
+                    || ''' SEGMENT,
+                          '''
+                    || V_SUB_SEGMENT
+                    || ''' SUB_SEGMENT,
+                          RATING_CODE,
+                          ORIGINAL_DAY_PAST_DUE,
+                          BI_COLLECTABILITY,
+                          WRITEOFF_FLAG,
+                          ACCOUNT_NUMBER,
+                          ACCOUNT_STATUS,
+                          CUSTOMER_NUMBER,
+                          CUSTOMER_NAME,
+                          EXCHANGE_RATE,
+                          IMPAIRED_FLAG,
+                          OUTSTANDING,
+                          '' '' KEY_TMP_IMA
+                    FROM ' || V_OWNER || '.' || V_TABLEINSERT3 || ' A
+                    WHERE  A.DOWNLOAD_DATE =  '''
+                    || V_EOM
+                    || ''' AND A.OUTSTANDING > 0 '
+                    || ' AND (A.ACCOUNT_STATUS = ''A'' OR (A.ACCOUNT_STATUS = ''C'' AND A.DATA_SOURCE = ''CRD'')) '
+                    || ' AND ('
+                    || RTRIM (NVL (V_STR_SQL_RULE, ''))
+                    || ')';
 
-        --         EXECUTE IMMEDIATE V_STR_QUERY;
-        --         COMMIT;
+                EXECUTE IMMEDIATE V_STR_QUERY;
+                COMMIT;
 
-        --     ELSIF (V_GROUP_SEGMENT NOT IN ('CORPORATE', 'COMMERCIAL', 'SME') AND V_EOM = V_CURRDATE)
-        --     THEN
+            ELSIF (V_GROUP_SEGMENT NOT IN ('CORPORATE', 'COMMERCIAL', 'SME') AND V_EOM = V_CURRDATE)
+            THEN
 
-        --         V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' (DOWNLOAD_DATE,
-        --             RULE_ID,
-        --             MASTERID,
-        --             GROUP_SEGMENT,
-        --             SEGMENT,
-        --             SUB_SEGMENT,
-        --             RATING_CODE,
-        --             DAY_PAST_DUE,
-        --             BI_COLLECTABILITY,
-        --             WRITEOFF_FLAG,
-        --             ACCOUNT_NUMBER,
-        --             ACCOUNT_STATUS,
-        --             CUSTOMER_NUMBER,
-        --             CUSTOMER_NAME,
-        --             EXCHANGE_RATE,
-        --             IMPAIRED_FLAG,
-        --             OUTSTANDING,
-        --             KEY_TMP_IMA)
-        --             SELECT TO_DATE(''' || TO_CHAR(V_EOM,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS DOWNLOAD_DATE,
-        --                    A.RULE_ID,
-        --                    A.MASTERID,
-        --                    A.GROUP_SEGMENT,
-        --                    A.SEGMENT,
-        --                    A.SUB_SEGMENT,
-        --                    B.RATING_CODE,
-        --                    B.ORIGINAL_DAY_PAST_DUE,
-        --                    B.BI_COLLECTABILITY,
-        --                    B.WRITEOFF_FLAG,
-        --                    A.ACCOUNT_NUMBER,
-        --                    B.ACCOUNT_STATUS,
-        --                    A.CUSTOMER_NUMBER,
-        --                    A.CUSTOMER_NAME,
-        --                    A.EXCHANGE_RATE,
-        --                    A.IMPAIRED_FLAG,
-        --                    0 AS OUTSTANDING,
-        --                    KEY_TMP_IMA
-        --               FROM ' || V_OWNER || '.' || V_TABLESELECT1 || '  A
-        --                    JOIN ' || V_OWNER || '.' || V_TABLEINSERT3 || ' B
-        --                        ON A.MASTERID = B.MASTERID
-        --                        AND A.RULE_ID = :1
-        --                        AND B.OUTSTANDING > 0';
+                V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' (DOWNLOAD_DATE,
+                    RULE_ID,
+                    MASTERID,
+                    GROUP_SEGMENT,
+                    SEGMENT,
+                    SUB_SEGMENT,
+                    RATING_CODE,
+                    DAY_PAST_DUE,
+                    BI_COLLECTABILITY,
+                    WRITEOFF_FLAG,
+                    ACCOUNT_NUMBER,
+                    ACCOUNT_STATUS,
+                    CUSTOMER_NUMBER,
+                    CUSTOMER_NAME,
+                    EXCHANGE_RATE,
+                    IMPAIRED_FLAG,
+                    OUTSTANDING,
+                    KEY_TMP_IMA)
+                    SELECT TO_DATE(''' || TO_CHAR(V_EOM,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS DOWNLOAD_DATE,
+                           A.RULE_ID,
+                           A.MASTERID,
+                           A.GROUP_SEGMENT,
+                           A.SEGMENT,
+                           A.SUB_SEGMENT,
+                           B.RATING_CODE,
+                           B.ORIGINAL_DAY_PAST_DUE,
+                           B.BI_COLLECTABILITY,
+                           B.WRITEOFF_FLAG,
+                           A.ACCOUNT_NUMBER,
+                           B.ACCOUNT_STATUS,
+                           A.CUSTOMER_NUMBER,
+                           A.CUSTOMER_NAME,
+                           A.EXCHANGE_RATE,
+                           A.IMPAIRED_FLAG,
+                           0 AS OUTSTANDING,
+                           KEY_TMP_IMA
+                      FROM ' || V_OWNER || '.' || V_TABLESELECT1 || '  A
+                           JOIN ' || V_OWNER || '.' || V_TABLEINSERT3 || ' B
+                               ON A.MASTERID = B.MASTERID
+                               AND A.RULE_ID = :1
+                               AND B.OUTSTANDING > 0';
                 
-        --         EXECUTE IMMEDIATE V_STR_QUERY USING V_RULE_ID;
-        --         COMMIT;
-        --     ELSE
+                EXECUTE IMMEDIATE V_STR_QUERY USING V_RULE_ID;
+                COMMIT;
+            ELSE
 
-        --         V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' (DOWNLOAD_DATE,
-        --             RULE_ID,
-        --             MASTERID,
-        --             GROUP_SEGMENT,
-        --             SEGMENT,
-        --             SUB_SEGMENT,
-        --             RATING_CODE,
-        --             DAY_PAST_DUE,
-        --             BI_COLLECTABILITY,
-        --             WRITEOFF_FLAG,
-        --             ACCOUNT_NUMBER,
-        --             ACCOUNT_STATUS,
-        --             CUSTOMER_NUMBER,
-        --             CUSTOMER_NAME,
-        --             EXCHANGE_RATE,
-        --             IMPAIRED_FLAG,
-        --             OUTSTANDING,
-        --             KEY_TMP_IMA)
-        --             SELECT TO_DATE(''' || TO_CHAR(V_EOM,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS DOWNLOAD_DATE,
-        --                    RULE_ID,
-        --                    MASTERID,
-        --                    GROUP_SEGMENT,
-        --                    SEGMENT,
-        --                    SUB_SEGMENT,
-        --                    RATING_CODE,
-        --                    DAY_PAST_DUE,
-        --                    BI_COLLECTABILITY,
-        --                    WRITEOFF_FLAG,
-        --                    ACCOUNT_NUMBER,
-        --                    ACCOUNT_STATUS,
-        --                    CUSTOMER_NUMBER,
-        --                    CUSTOMER_NAME,
-        --                    EXCHANGE_RATE,
-        --                    IMPAIRED_FLAG,
-        --                    0 AS OUTSTANDING,
-        --                    KEY_TMP_IMA
-        --               FROM ' || V_OWNER || '.' || V_TABLESELECT1 || '
-        --              WHERE RULE_ID = :1';
+                V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' (DOWNLOAD_DATE,
+                    RULE_ID,
+                    MASTERID,
+                    GROUP_SEGMENT,
+                    SEGMENT,
+                    SUB_SEGMENT,
+                    RATING_CODE,
+                    DAY_PAST_DUE,
+                    BI_COLLECTABILITY,
+                    WRITEOFF_FLAG,
+                    ACCOUNT_NUMBER,
+                    ACCOUNT_STATUS,
+                    CUSTOMER_NUMBER,
+                    CUSTOMER_NAME,
+                    EXCHANGE_RATE,
+                    IMPAIRED_FLAG,
+                    OUTSTANDING,
+                    KEY_TMP_IMA)
+                    SELECT TO_DATE(''' || TO_CHAR(V_EOM,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS DOWNLOAD_DATE,
+                           RULE_ID,
+                           MASTERID,
+                           GROUP_SEGMENT,
+                           SEGMENT,
+                           SUB_SEGMENT,
+                           RATING_CODE,
+                           DAY_PAST_DUE,
+                           BI_COLLECTABILITY,
+                           WRITEOFF_FLAG,
+                           ACCOUNT_NUMBER,
+                           ACCOUNT_STATUS,
+                           CUSTOMER_NUMBER,
+                           CUSTOMER_NAME,
+                           EXCHANGE_RATE,
+                           IMPAIRED_FLAG,
+                           0 AS OUTSTANDING,
+                           KEY_TMP_IMA
+                      FROM ' || V_OWNER || '.' || V_TABLESELECT1 || '
+                     WHERE RULE_ID = :1';
 
-        --         EXECUTE IMMEDIATE V_STR_QUERY USING V_RULE_ID;
-        --         COMMIT;
+                EXECUTE IMMEDIATE V_STR_QUERY USING V_RULE_ID;
+                COMMIT;
 
-        --         V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
-        --              USING (SELECT DISTINCT A2.CUSTOMER_NUMBER, A2.ACCOUNT_NUMBER
-        --                       FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '  A2
-        --                            JOIN
-        --                            (  SELECT ACCOUNT_NUMBER,
-        --                                      MAX (DOWNLOAD_DATE)    MAX_DOWNLOAD_DATE
-        --                                 FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '
-        --                             GROUP BY ACCOUNT_NUMBER) B2
-        --                                 ON A2.DOWNLOAD_DATE = B2.MAX_DOWNLOAD_DATE
-        --                                    AND A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER) B
-        --                 ON (A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-        --                     AND A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
-        --         WHEN MATCHED
-        --         THEN
-        --             UPDATE SET A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER';
+                V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
+                     USING (SELECT DISTINCT A2.CUSTOMER_NUMBER, A2.ACCOUNT_NUMBER
+                              FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '  A2
+                                   JOIN
+                                   (  SELECT ACCOUNT_NUMBER,
+                                             MAX (DOWNLOAD_DATE)    MAX_DOWNLOAD_DATE
+                                        FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+                                    GROUP BY ACCOUNT_NUMBER) B2
+                                        ON A2.DOWNLOAD_DATE = B2.MAX_DOWNLOAD_DATE
+                                           AND A2.ACCOUNT_NUMBER = B2.ACCOUNT_NUMBER) B
+                        ON (A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+                            AND A.ACCOUNT_NUMBER = B.ACCOUNT_NUMBER)
+                WHEN MATCHED
+                THEN
+                    UPDATE SET A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER';
 
-        --         EXECUTE IMMEDIATE V_STR_QUERY;
-        --         COMMIT;
+                EXECUTE IMMEDIATE V_STR_QUERY;
+                COMMIT;
 
-        --         V_STR_QUERY := 'DELETE ' || V_OWNER || '.' || V_TABLEINSERT1 || '
-        --          WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-        --                AND RULE_ID = :1
-        --                AND CUSTOMER_NUMBER IN
-        --                        (SELECT A2.CUSTOMER_NUMBER
-        --                           FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '  A2
-        --                                JOIN
-        --                                (  SELECT CUSTOMER_NUMBER,
-        --                                          MAX (DOWNLOAD_DATE) AS MAX_DOWNLOAD_DATE
-        --                                     FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '
-        --                                 GROUP BY CUSTOMER_NUMBER) B2
-        --                                    ON A2.DOWNLOAD_DATE = B2.MAX_DOWNLOAD_DATE
-        --                                       AND A2.CUSTOMER_NUMBER = B2.CUSTOMER_NUMBER
-        --                                       AND NVL (A2.RESERVED_VARCHAR_2,
-        --                                                ''-'') NOT IN
-        --                                               (''L'',
-        --                                                ''M'',
-        --                                                ''S'',
-        --                                                ''-''))';
+                V_STR_QUERY := 'DELETE ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+                 WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+                       AND RULE_ID = :1
+                       AND CUSTOMER_NUMBER IN
+                               (SELECT A2.CUSTOMER_NUMBER
+                                  FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '  A2
+                                       JOIN
+                                       (  SELECT CUSTOMER_NUMBER,
+                                                 MAX (DOWNLOAD_DATE) AS MAX_DOWNLOAD_DATE
+                                            FROM ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+                                        GROUP BY CUSTOMER_NUMBER) B2
+                                           ON A2.DOWNLOAD_DATE = B2.MAX_DOWNLOAD_DATE
+                                              AND A2.CUSTOMER_NUMBER = B2.CUSTOMER_NUMBER
+                                              AND NVL (A2.RESERVED_VARCHAR_2,
+                                                       ''-'') NOT IN
+                                                      (''L'',
+                                                       ''M'',
+                                                       ''S'',
+                                                       ''-''))';
 
-        --         EXECUTE IMMEDIATE V_STR_QUERY USING V_RULE_ID;
-        --         COMMIT;
+                EXECUTE IMMEDIATE V_STR_QUERY USING V_RULE_ID;
+                COMMIT;
 
-        --         /*==============================================================================================================================
-        --             BCA'S RULE
-        --             USE LATEST RATING_CODE FROM IFRS_MASTER_CUSTOMER_RATING FOR CORPORATE OR COMMERCIAL OR SME SEGMENT (PD_RULE_ID 1 - 3)
-        --         ==============================================================================================================================*/
+                /*==============================================================================================================================
+                    BCA'S RULE
+                    USE LATEST RATING_CODE FROM IFRS_MASTER_CUSTOMER_RATING FOR CORPORATE OR COMMERCIAL OR SME SEGMENT (PD_RULE_ID 1 - 3)
+                ==============================================================================================================================*/
 
-        --         V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
-        --              USING ' || V_OWNER || '.' || V_TABLEINSERT2 || ' B
-        --                 ON (    A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_EOM,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-        --                     AND A.GROUP_SEGMENT = :1
-        --                     AND A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER)
-        --         WHEN MATCHED
-        --         THEN
-        --             UPDATE SET A.RATING_CODE = B.RATING_CODE_1';
+                V_STR_QUERY := 'MERGE INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' A
+                     USING ' || V_OWNER || '.' || V_TABLEINSERT2 || ' B
+                        ON (    A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_EOM,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+                            AND A.GROUP_SEGMENT = :1
+                            AND A.CUSTOMER_NUMBER = B.CUSTOMER_NUMBER)
+                WHEN MATCHED
+                THEN
+                    UPDATE SET A.RATING_CODE = B.RATING_CODE_1';
 
-        --         EXECUTE IMMEDIATE V_STR_QUERY USING V_GROUP_SEGMENT;
-        --         COMMIT;
-        --     END IF;
+                EXECUTE IMMEDIATE V_STR_QUERY USING V_GROUP_SEGMENT;
+                COMMIT;
+            END IF;
 
-        -- END LOOP;
+        END LOOP;
 
-        -- CLOSE C_RULE;
+        CLOSE C_RULE;
 
         V_COUNT := V_COUNT + 1;
     END LOOP;

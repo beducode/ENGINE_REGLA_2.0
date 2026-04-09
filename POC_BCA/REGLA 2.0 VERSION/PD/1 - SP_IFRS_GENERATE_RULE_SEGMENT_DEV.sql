@@ -139,7 +139,7 @@ BEGIN
     JOIN IFRS_MSTR_SEGMENT_RULES_DETAIL B
       ON A.PKID = B.RULE_ID
       WHERE A.IS_DELETED = 0
-      AND (:1 IS NULL OR A.SEGMENT_TYPE = :2)';
+      AND (NVL(:1,'' '') = '' '' OR A.SEGMENT_TYPE = :2)';
 
     ----------------------------------------------------------------
     -- OPEN DYNAMIC CURSOR
