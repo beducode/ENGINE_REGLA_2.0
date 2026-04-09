@@ -620,7 +620,7 @@ BEGIN
                 EXECUTE IMMEDIATE V_STR_QUERY;
                 COMMIT;
 
-                V_STR_QUERY := 'DELETE ' || V_OWNER || '.' || V_TABLEINSERT1 || '
+                V_STR_QUERY := 'DELETE ' || V_OWNER || '.' || V_TABLESELECT1 || '
                  WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
                        AND RULE_ID = :1
                        AND CUSTOMER_NUMBER IN

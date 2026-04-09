@@ -160,17 +160,25 @@ BEGIN
 
     V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLEINSERT1 || '
     (
+        PKID,
         EFF_DATE,
         BASE_DATE,
         PD_RULE_ID,
         LOGIT_ODR,
-        LOGIT_DIFF_ODR
+        LOGIT_DIFF_ODR,
+        CREATEDBY,
+        CREATEDDATE,
+        CREATEDHOST
     )
-    SELECT A.EFF_DATE,
+    SELECT SEQ_IFRS_PD_MIG_LOGIT_ODR.NEXTVAL AS PKID,
+        A.EFF_DATE,
         A.BASE_DATE,
         A.PD_RULE_ID,
         CASE WHEN A.ODR > 0 THEN LN(A.ODR / (CASE WHEN (1-A.ODR) = 0 THEN 1 ELSE (1-A.ODR) END)) ELSE 0 END,
-        0
+        0,
+        ''SYSTEM'' AS CREATEDBY,
+        SYSDATE AS CREATEDDATE,
+        ''SYSTEM'' AS CREATEDHOST
     FROM IFRS_PD_MIG_ODR A
     JOIN ' || V_OWNER || '.' || V_TABLESELECT1 || ' B
     ON A.PD_RULE_ID = B.PD_RULE_ID

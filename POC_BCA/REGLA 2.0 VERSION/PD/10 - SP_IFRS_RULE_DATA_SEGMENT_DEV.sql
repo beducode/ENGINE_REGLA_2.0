@@ -134,7 +134,7 @@ LOOP
     ----------------------------------------------------------------
     -- INSERT PER ROW (DYNAMIC)
     ----------------------------------------------------------------
-    V_STR_QUERY := 'INSERT INTO  ' || V_OWNER || '.' || V_TABLESELECT1 || ' (
+    V_STR_QUERY := 'INSERT INTO ' || V_OWNER || '.' || V_TABLESELECT1 || ' (
         DOWNLOAD_DATE,
         RULE_ID,
         MASTERID,
@@ -154,34 +154,35 @@ LOOP
         OUTSTANDING,
         DATA_SOURCE,
         KEY_TMP_IMA
-        )
-      SELECT  DOWNLOAD_DATE,
-              :1,
-              MASTERID,
-              :3 GROUP_SEGMENT,
-              :4 SEGMENT,
-              :5 SUB_SEGMENT,
-              RATING_CODE,
-              DAY_PAST_DUE,
-              BI_COLLECTABILITY,
-              WRITEOFF_FLAG,
-              ACCOUNT_NUMBER,
-              ACCOUNT_STATUS,
-              CUSTOMER_NUMBER,
-              CUSTOMER_NAME,
-              EXCHANGE_RATE,
-              IMPAIRED_FLAG,
-              OUTSTANDING,
-              DATA_SOURCE,
-              '' '' KEY_TMP_IMA
+    )
+        SELECT
+        DOWNLOAD_DATE,
+        :1,
+        MASTERID,
+        :2 AS GROUP_SEGMENT,
+        :3 AS SEGMENT,
+        :4 AS SUB_SEGMENT,
+        RATING_CODE,
+        DAY_PAST_DUE,
+        BI_COLLECTABILITY,
+        WRITEOFF_FLAG,
+        ACCOUNT_NUMBER,
+        ACCOUNT_STATUS,
+        CUSTOMER_NUMBER,
+        CUSTOMER_NAME,
+        EXCHANGE_RATE,
+        IMPAIRED_FLAG,
+        OUTSTANDING,
+        DATA_SOURCE,
+        '' '' AS KEY_TMP_IMA
         FROM ' || V_OWNER || '.' || V_TABLE_NAME || ' A
-       WHERE  A.DOWNLOAD_DATE =  TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AND (:2)';
+        WHERE A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+        AND (' || NVL(V_STR_SQL_RULE, '1=1') || ')';
 
     DBMS_OUTPUT.PUT_LINE('Executing INSERT for RULE_ID = ' || V_RULE_ID);
 
     EXECUTE IMMEDIATE V_STR_QUERY
     USING V_RULE_ID,
-        V_STR_SQL_RULE,
         V_GROUP_SEGMENT,
         V_SEGMENT,
         V_SUB_SEGMENT;

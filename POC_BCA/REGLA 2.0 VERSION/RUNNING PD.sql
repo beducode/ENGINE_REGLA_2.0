@@ -1,5 +1,3 @@
-SET SERVEROUTPUT ON;
-
 DECLARE
     V_RUNID         VARCHAR2(50) := 'S_0101_1111';
     V_DOWNLOAD_DATE DATE         := NULL;
@@ -22,101 +20,101 @@ BEGIN
     -- ----------------------------------------------------------------
     -- -- 2
     -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_RULE_DATA_PD_DEV');
-    -- IFRS9_BCA.SP_IFRS_RULE_DATA_PD_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_RULE_DATA_PD_DEV');
+     IFRS9_BCA.SP_IFRS_RULE_DATA_PD_DEV(
+         P_RUNID         => V_RUNID,
+         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+         P_SYSCODE       => V_SYSCODE,
+         P_PRC           => V_PRC
+     );
 
-    -- ----------------------------------------------------------------
-    -- -- 2.1
-    -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_INSERT_GTMP_FROM_IMA_M_DEV');
-    -- IFRS9_BCA.SP_IFRS_INSERT_GTMP_FROM_IMA_M_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+	    -- ----------------------------------------------------------------
+	    -- -- 2.1
+	    -- ----------------------------------------------------------------
+	     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_INSERT_GTMP_FROM_IMA_M_DEV');
+	     IFRS9_BCA.SP_IFRS_INSERT_GTMP_FROM_IMA_M_DEV(
+	         P_RUNID         => V_RUNID,
+	         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+	         P_SYSCODE       => V_SYSCODE,
+	         P_PRC           => V_PRC
+	     );
 
     -- ----------------------------------------------------------------
     -- -- 3
     -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_TM_SCENARIO_DATA_DEV');
-    -- IFRS9_BCA.SP_IFRS_PD_TM_SCENARIO_DATA_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_TM_SCENARIO_DATA_DEV');
+     IFRS9_BCA.SP_IFRS_PD_TM_SCENARIO_DATA_DEV(
+         P_RUNID         => V_RUNID,
+         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+         P_SYSCODE       => V_SYSCODE,
+         P_PRC           => V_PRC
+     );
 
     -- ----------------------------------------------------------------
     -- -- 4
     -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_ENR_DEV');
-    -- IFRS9_BCA.SP_IFRS_PD_MIG_ENR_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_ENR_DEV');
+     IFRS9_BCA.SP_IFRS_PD_MIG_ENR_DEV(
+         P_RUNID         => V_RUNID,
+         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+         P_SYSCODE       => V_SYSCODE,
+         P_PRC           => V_PRC
+     );
 
     -- ----------------------------------------------------------------
     -- -- 5
     -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_FLOWRATE_DEV');
-    -- IFRS9_BCA.SP_IFRS_PD_MIG_FLOWRATE_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_FLOWRATE_DEV');
+     IFRS9_BCA.SP_IFRS_PD_MIG_FLOWRATE_DEV(
+         P_RUNID         => V_RUNID,
+         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+         P_SYSCODE       => V_SYSCODE,
+         P_PRC           => V_PRC
+     );
 
     -- ----------------------------------------------------------------
     -- -- 6
     -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_FLOW_TO_LOSS_DEV');
-    -- IFRS9_BCA.SP_IFRS_PD_MIG_FLOW_TO_LOSS_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_FLOW_TO_LOSS_DEV');
+     IFRS9_BCA.SP_IFRS_PD_MIG_FLOW_TO_LOSS_DEV(
+         P_RUNID         => V_RUNID,
+         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+         P_SYSCODE       => V_SYSCODE,
+         P_PRC           => V_PRC
+     );
 
     -- ----------------------------------------------------------------
     -- -- 7
     -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_TTC_DEV');
-    -- IFRS9_BCA.SP_IFRS_PD_MIG_TTC_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_TTC_DEV');
+     IFRS9_BCA.SP_IFRS_PD_MIG_TTC_DEV(
+         P_RUNID         => V_RUNID,
+         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+         P_SYSCODE       => V_SYSCODE,
+         P_PRC           => V_PRC
+     );
 
     -- ----------------------------------------------------------------
     -- -- 8
     -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_ODR_DEV');
-    -- IFRS9_BCA.SP_IFRS_PD_MIG_ODR_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_ODR_DEV');
+     IFRS9_BCA.SP_IFRS_PD_MIG_ODR_DEV(
+         P_RUNID         => V_RUNID,
+         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+         P_SYSCODE       => V_SYSCODE,
+         P_PRC           => V_PRC
+     );
 
     -- ----------------------------------------------------------------
     -- -- 9
     -- ----------------------------------------------------------------
-    -- DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_LOGIT_ODR_DEV');
-    -- IFRS9_BCA.SP_IFRS_PD_MIG_LOGIT_ODR_DEV(
-    --     P_RUNID         => V_RUNID,
-    --     P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
-    --     P_SYSCODE       => V_SYSCODE,
-    --     P_PRC           => V_PRC
-    -- );
+     DBMS_OUTPUT.PUT_LINE('RUNNING: SP_IFRS_PD_MIG_LOGIT_ODR_DEV');
+     IFRS9_BCA.SP_IFRS_PD_MIG_LOGIT_ODR_DEV(
+         P_RUNID         => V_RUNID,
+         P_DOWNLOAD_DATE => V_DOWNLOAD_DATE,
+         P_SYSCODE       => V_SYSCODE,
+         P_PRC           => V_PRC
+     );
 
     -- ----------------------------------------------------------------
     -- -- 10
