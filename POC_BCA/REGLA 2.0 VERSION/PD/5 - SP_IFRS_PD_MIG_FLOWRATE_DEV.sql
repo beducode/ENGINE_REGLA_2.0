@@ -251,7 +251,7 @@ BEGIN
     ----------------------------------------------------------------
     -- RESULT PREVIEW
     ----------------------------------------------------------------
-    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1;
+    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLESELECT2;
 
     IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;
