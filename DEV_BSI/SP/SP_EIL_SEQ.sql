@@ -16,31 +16,31 @@ BEGIN
 --	WHILE  dtcurr <= '31-DEC-2025' -- '31-DEC-2025'
 --	LOOP 
 		
---		SP_IFRS_EAD_RULES_CONFIG();
---
---	 	SP_IFRS_EIL_MODEL_HEADER();
---	 
---		SP_IFRS_EIL_MODEL_DETAIL_EAD();
---	
---		SP_IFRS_EIL_MODEL_DETAIL_PF();
---	
---		SP_IFRS_EIL_MODEL_DETAIL_PD();
---	
---		SP_IFRS_EIL_MODEL_DETAIL_LGD();
---	
---		SP_IFRS_EIL_MODEL('S_00000_0000',dtcurr,'0','M');
+		------ SP_IFRS_EAD_RULES_CONFIG();
 
---		SP_IFRS_UPDATE_STAGE(dtcurr);
-		
---		SP_IFRS_EIL_GENERATE_IMA('S_00000_0000',dtcurr,'0','M');
-		
---		SP_IFRS_EAD_RESULT('S_00000_0000',dtcurr,'0','M');
-		
-		SP_IFRS_EIL_RESULT_DETAIL_14('S_00000_0000',dtcurr,'0','M');
+	 	------ SP_IFRS_EIL_MODEL_HEADER();
+	 
+		------ SP_IFRS_EIL_MODEL_DETAIL_EAD();
 	
-	 	SP_IFRS_EIL_RESULT_HEADER('S_00000_0000',dtcurr,'0','M');	
+		------ SP_IFRS_EIL_MODEL_DETAIL_PF();
+
+		------ SP_IFRS_EIL_MODEL_DETAIL_PD();
+
+		------ SP_IFRS_EIL_MODEL_DETAIL_LGD();
+	
+		-- SP_IFRS_EIL_MODEL('S_00000_0000',dtcurr,'0','M');
+
+		-- SP_IFRS_UPDATE_STAGE(dtcurr);
+		
+		-- SP_IFRS_EIL_GENERATE_IMA('S_00000_0000',dtcurr,'0','M');
+		
+		-- SP_IFRS_EAD_RESULT('S_00000_0000',dtcurr,'0','M');
+		
+		-- SP_IFRS_EIL_RESULT_DETAIL('S_00000_0000',dtcurr,'0','M');
+	
+	 	-- SP_IFRS_EIL_RESULT_HEADER('S_00000_0000',dtcurr,'0','M');	
 	 	
-	 	SP_IFRS_UPDATE_IMA_RESULT('S_00000_0000', dtcurr, 'M');
+	 	-- SP_IFRS_UPDATE_IMA_RESULT('S_00000_0000', dtcurr, 'M');
 
 
 --	dbms_output.put_line(dtcurr);
@@ -49,4 +49,3 @@ BEGIN
 --	END LOOP;
 
 END;
-/

@@ -63,17 +63,39 @@ BEGIN
     
 	MERGE INTO IFRS_EIL_MODEL_DETAIL_PD a
 			USING (
-				selecT A."pkid",
-						B.PKID AS EIL_MODEL_ID ,C.PKID AS SEGMENTATION_ID,
-						D.PKID AS PD_RULE_ID,NVL(A."workflow_header_draft_pkid",0) AS PD_MODEL_ID, A."effective_date",A."pd_date",A."is_override_pd", A."is_deleted"
-						from "EilPdModel"@DBCONFIGLINK A
-						INNER JOIN "Segmentation"@DBCONFIGLINK seg ON A."code_segmentation" = seg."syscode_segmentation"
-						INNER JOIN IFRS_SEGMENTATION_MAPPING C on CASE WHEN seg."level" = 1 THEN C.SYSCODE_SEGMENTATION_LV1 
-																		WHEN seg."level" = 2 THEN C.SYSCODE_SEGMENTATION_LV2 
-																		WHEN seg."level" = 3 THEN C.SYSCODE_SEGMENTATION_LV3 END = A."code_segmentation"
-						INNER JOIN IFRS_EIL_MODEL_HEADER B on A."syscode_eil_configuration" = B.SYSCODE_EIL
-						INNER JOIN IFRS_PD_RULES_CONFIG D on A."code_pd_configuration" = D.SYSCODE_PD
-			) b
+                SELECT *
+                FROM (
+                    SELECT
+                        A."pkid",
+                        B.PKID AS EIL_MODEL_ID,
+                        C.PKID AS SEGMENTATION_ID,
+                        D.PKID AS PD_RULE_ID,
+                        NVL(A."workflow_header_draft_pkid",0) AS PD_MODEL_ID,
+                        A."effective_date",
+                        A."pd_date",
+                        A."is_override_pd",
+                        A."is_deleted",
+
+                        ROW_NUMBER() OVER (
+                            PARTITION BY B.PKID, C.PKID
+                            ORDER BY A."pkid"
+                        ) rn
+                    FROM "EilPdModel"@DBCONFIGLINK A
+                    INNER JOIN "Segmentation"@DBCONFIGLINK seg 
+                        ON A."code_segmentation" = seg."syscode_segmentation"
+                    INNER JOIN IFRS_SEGMENTATION_MAPPING C 
+                        ON CASE 
+                            WHEN seg."level" = 1 THEN C.SYSCODE_SEGMENTATION_LV1 
+                            WHEN seg."level" = 2 THEN C.SYSCODE_SEGMENTATION_LV2 
+                            WHEN seg."level" = 3 THEN C.SYSCODE_SEGMENTATION_LV3 
+                        END = A."code_segmentation"
+                    INNER JOIN IFRS_EIL_MODEL_HEADER B 
+                        ON A."syscode_eil_configuration" = B.SYSCODE_EIL
+                    INNER JOIN IFRS_PD_RULES_CONFIG D 
+                        ON A."code_pd_configuration" = D.SYSCODE_PD
+                )
+                WHERE rn = 1
+            ) b
 			ON ( a.EIL_MODEL_ID = b.EIL_MODEL_ID AND A.SEGMENTATION_ID = B.SEGMENTATION_ID)  
 			
 			WHEN MATCHED THEN
