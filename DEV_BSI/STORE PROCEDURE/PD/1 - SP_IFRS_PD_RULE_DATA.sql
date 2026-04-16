@@ -1,0 +1,249 @@
+CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PD_RULE_DATA (
+    P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
+    P_DOWNLOAD_DATE IN DATE,
+    P_SYSCODE       IN VARCHAR2 DEFAULT '0',
+    P_PRC           IN VARCHAR2 DEFAULT 'S'
+)
+AUTHID CURRENT_USER
+AS 
+    V_CURRDATE       DATE;
+    V_DATADATE       DATE;
+    V_TABLE_NAME     VARCHAR2(50);
+	V_PREVDATE       DATE;
+    V_COUNT          NUMBER;
+	V_MODEL_ID       NUMBER;
+
+-- DYNAMIC NAMES / QUERY
+    V_STR_QUERY      VARCHAR2(8000);
+
+    -- TABLE NAMES
+    V_TAB_OWNER     CONSTANT 		VARCHAR2(30) := 'PSAK413';
+    V_IFRS_SCENARIO_DATA  			VARCHAR2(100);
+    V_TMP_PD  						VARCHAR2(100);
+    V_TMP_IFRS_SCN_GENERATE_QUERY 	VARCHAR2(100);
+    V_TMP_IFRS_MASTER_ACCOUNT_PD 	VARCHAR2(100);
+    V_TMP_PD_DATE_RUN 				VARCHAR2(100);
+    V_IFRS_SEGMENTATION_MAPPING 	VARCHAR2(100);
+    V_TABLEPDCONFIG					VARCHAR2(100);
+
+    -- LOG / RESULT
+    V_TABLEDEST     VARCHAR2(100);
+    V_COLUMNDEST    VARCHAR2(100);
+    V_SP_NAME       VARCHAR2(100) := 'SP_IFRS_PD_RULE_DATA';
+    V_OPERATION     VARCHAR2(100);
+    V_QUERYS        VARCHAR2(8000);
+    V_RETURNROWS2   NUMBER;
+    
+    V_STR_SQL        CLOB;
+    V_STR_SQL_RULE   CLOB;
+    V_RULE_ID        NUMBER;
+    V_ID             NUMBER := 0;
+    V_MAX_ID         NUMBER := 0;
+    V_SEQUENCE       VARCHAR2(50);
+    
+BEGIN
+	-- HANDLE DEFAULT DOWNLOAD DATE
+    IF P_DOWNLOAD_DATE IS NULL THEN
+        SELECT CURRDATE INTO V_CURRDATE FROM IFRS_PRC_DATE;
+    ELSE
+        V_CURRDATE := P_DOWNLOAD_DATE;
+    END IF;
+
+    V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
+    V_MODEL_ID := 0;
+
+    -- CHOOSE TABLE NAMES BASED ON MODE
+    IF P_PRC = 'S' THEN
+        V_IFRS_SCENARIO_DATA  := 'IFRS_PD_RULE_DATA_' || P_RUNID;
+        V_TMP_PD  := 'TMP_PD_' || P_RUNID;
+    	V_TMP_IFRS_SCN_GENERATE_QUERY := 'TMP_IFRS_SCN_GENERATE_QUERY_' || P_RUNID;
+        V_TMP_IFRS_MASTER_ACCOUNT_PD := 'TMP_IFRS_MASTER_ACCOUNT_PD_' || P_RUNID;
+    	V_TMP_PD_DATE_RUN := 'TMP_PD_DATE_RUN_' || P_RUNID;
+    	V_IFRS_SEGMENTATION_MAPPING :='IFRS_SEGMENTATION_MAPPING_' || P_RUNID;
+    	V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG_' || P_RUNID; ----> HANYA UNTUK TESTING SINGLE SP, HAPUS JIKA SUDAH DI GABUNG DENGAN SYNC CONFIG
+    ELSE
+        V_IFRS_SCENARIO_DATA  := 'IFRS_PD_RULE_DATA';
+        V_TMP_PD  := 'TMP_PD';
+    	V_TMP_IFRS_SCN_GENERATE_QUERY := 'TMP_IFRS_SCN_GENERATE_QUERY';
+        V_TMP_IFRS_MASTER_ACCOUNT_PD := 'TMP_IFRS_MASTER_ACCOUNT_PD';
+    	V_TMP_PD_DATE_RUN := 'TMP_PD_DATE_RUN';
+    	V_IFRS_SEGMENTATION_MAPPING :='IFRS_SEGMENTATION_MAPPING';
+    	V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG';
+    END IF;
+
+    BEGIN
+        SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, 0, SYSTIMESTAMP);
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('WARNING: SP_IFRS_RUNNING_LOG FAILED: ' || SQLERRM);
+    END;
+    COMMIT;
+
+    IF P_PRC = 'S' THEN
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_RULE_DATA', V_IFRS_SCENARIO_DATA);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('TMP_PD', V_TMP_PD);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('TMP_IFRS_SCN_GENERATE_QUERY', V_TMP_IFRS_SCN_GENERATE_QUERY);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('TMP_IFRS_MASTER_ACCOUNT_PD', V_TMP_IFRS_MASTER_ACCOUNT_PD);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('TMP_PD_DATE_RUN', V_TMP_PD_DATE_RUN);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_SEGMENTATION_MAPPING', V_IFRS_SEGMENTATION_MAPPING);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_RULES_CONFIG', V_TABLEPDCONFIG); ----> HANYA UNTUK TESTING SINGLE SP, HAPUS JIKA SUDAH DI GABUNG DENGAN SYNC CONFIG
+    END IF;
+
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_IFRS_SCENARIO_DATA || '';
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TMP_IFRS_SCN_GENERATE_QUERY || '';
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TMP_IFRS_MASTER_ACCOUNT_PD || '';
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TMP_PD_DATE_RUN || '';
+    COMMIT;
+    
+    ---------------------------------------------------------------------
+    -- INSERT INTO TMP_IFRS_SCN_GENERATE_QUERY
+    ---------------------------------------------------------------------
+    V_STR_QUERY := '
+        INSERT INTO ' || V_TAB_OWNER || '.' || V_TMP_IFRS_SCN_GENERATE_QUERY || '
+            (ID ,RULE_ID ,TABLE_NAME, CONDITION, DATA_DATE)
+       SELECT ROW_NUMBER() OVER (ORDER BY X.RULE_ID) AS ID,X.*
+        FROM (
+            SELECT
+            	
+                A2.PKID AS RULE_ID,
+                ''TMP_IFRS_MASTER_ACCOUNT_PD'' AS TABLE_NAME,
+                TO_CHAR(MERGE_SQL_CONDITIONS || CASE WHEN B.INCLUDE_INDIVIDUAL_ACCOUNT = 0 THEN '' AND ifrs_master_account.IMPAIRED_FLAG = ''''C'''''' ELSE '''' END)
+                AS CONDITION,
+                LAST_DAY(ADD_MONTHS(TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''), INCREMENT_PERIOD * -1)) AS DATA_DATE
+            FROM ' || V_TAB_OWNER || '.' || V_IFRS_SEGMENTATION_MAPPING || ' A2
+            JOIN (
+                SELECT DISTINCT SEGMENTATION_ID, INCREMENT_PERIOD, INCLUDE_INDIVIDUAL_ACCOUNT, SYSCODE_PD, PD_METHOD
+                FROM ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG || '
+            ) B ON A2.PKID = B.SEGMENTATION_ID
+            WHERE A2.SEGMENT_TYPE = ''PD'' AND B.PD_METHOD = ''MAA'' AND (  
+                 UPPER(TRIM(B.SYSCODE_PD)) IN ( 
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:1, ''[^;]+'', 1, LEVEL)))
+                   FROM DUAL
+                   CONNECT BY REGEXP_SUBSTR(:2, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                 )
+                 OR :3 = ''0'' 
+               )
+
+            UNION
+
+            SELECT
+                
+                A2.PKID AS RULE_ID,
+                CASE 
+                    WHEN ''' || P_PRC || ''' = ''S'' THEN ''IFRS_MASTER_ACCOUNT_MONTHLY''
+                    ELSE ''IFRS_MASTER_ACCOUNT_MONTHLY''
+                END AS TABLE_NAME,
+                TO_CHAR(MERGE_SQL_CONDITIONS),
+                TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+            FROM ' || V_IFRS_SEGMENTATION_MAPPING || ' A2
+            JOIN (
+                SELECT DISTINCT SEGMENTATION_ID, INCREMENT_PERIOD, SYSCODE_PD, PD_METHOD
+                FROM ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG || '
+            ) B ON A2.PKID = B.SEGMENTATION_ID
+            WHERE A2.SEGMENT_TYPE = ''PD'' AND B.PD_METHOD = ''MAA'' AND (  
+                 UPPER(TRIM(B.SYSCODE_PD)) IN ( 
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:4, ''[^;]+'', 1, LEVEL)))
+                   FROM DUAL
+                   CONNECT BY REGEXP_SUBSTR(:5, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                 )
+                 OR :6 = ''0'' 
+               )
+        )X';
+       
+
+    EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE, P_SYSCODE, P_SYSCODE, P_SYSCODE;
+
+    ---------------------------------------------------------------------
+    -- INSERT TMP_PD_DATE_RUN
+    ---------------------------------------------------------------------
+    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TMP_PD_DATE_RUN || ' (PERIOD)
+    SELECT DISTINCT DATA_DATE
+    FROM ' || V_TAB_OWNER || '.' || V_TMP_IFRS_SCN_GENERATE_QUERY || '
+    WHERE TABLE_NAME = ''TMP_IFRS_MASTER_ACCOUNT_PD''';
+    
+	EXECUTE IMMEDIATE V_STR_QUERY;
+	COMMIT;
+   
+    V_STR_QUERY :=
+        'INSERT INTO ' || V_TAB_OWNER || '.' || V_TMP_IFRS_MASTER_ACCOUNT_PD || ' (DOWNLOAD_DATE,GROUP_SEGMENT, SEGMENT, SUB_SEGMENT, PD_RULE_ID, MASTERID, CUSTOMER_NUMBER, FACILITY_NUMBER, ACCOUNT_STATUS,OUTSTANDING, CALC_METHOD,BI_COLLECTABILITY, RATING_CODE, 
+		EXT_RATING_CODE, DAY_PAST_DUE,DPD_CIF, EXCHANGE_RATE, IMPAIRED_FLAG )
+        SELECT DOWNLOAD_DATE,GROUP_SEGMENT, SEGMENT, SUB_SEGMENT,PD_RULE_ID, MASTERID, CUSTOMER_NUMBER, FACILITY_NUMBER, ACCOUNT_STATUS,OUTSTANDING,MARGIN_CALCULATION_CODE   ,BI_COLLECTABILITY, RATING_CODE, 
+		EXT_RATING_CODE, DAY_PAST_DUE,DPD_CIF , EXCHANGE_RATE, IMPAIRED_FLAG
+        FROM ' || V_TAB_OWNER || '.IFRS_MASTER_ACCOUNT_MONTHLY A ' ||
+        'WHERE A.ACCOUNT_STATUS = ''A'' ' ||
+        '  AND EXISTS (SELECT 1 FROM ' || V_TMP_PD_DATE_RUN || ' X ' ||
+        '              WHERE A.DOWNLOAD_DATE = X.PERIOD)';
+
+    EXECUTE IMMEDIATE V_STR_QUERY;
+
+    ---------------------------------------------------------------------
+    -- RUN LOOP BASED ON MAX(ID)
+    ---------------------------------------------------------------------
+    V_STR_QUERY := 'SELECT MAX(ID) FROM ' || V_TAB_OWNER || '.' || V_TMP_IFRS_SCN_GENERATE_QUERY || '';
+
+    EXECUTE IMMEDIATE V_STR_QUERY INTO V_MAX_ID;
+
+    WHILE V_ID < V_MAX_ID LOOP
+	    
+	    V_ID := V_ID + 1;
+		
+    	V_STR_QUERY :=
+        'SELECT RULE_ID, TABLE_NAME, CONDITION, DATA_DATE
+         FROM ' || V_TAB_OWNER || '.' || V_TMP_IFRS_SCN_GENERATE_QUERY || '
+         WHERE ID = :x
+         AND ROWNUM = 1';
+
+    	EXECUTE IMMEDIATE V_STR_QUERY
+        INTO V_RULE_ID, V_TABLE_NAME, V_STR_SQL_RULE, V_DATADATE
+        USING V_ID;
+    	
+    	COMMIT;
+        -----------------------------------------------------------------
+        -- BUILD FINAL DYNAMIC SQL
+        -----------------------------------------------------------------
+        v_STR_SQL :=
+            'INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_SCENARIO_DATA ||' (' ||
+            'PKID, DOWNLOAD_DATE, RULE_ID, MASTERID, ACCOUNT_STATUS, ' ||
+            'SEGMENT, SUB_SEGMENT, GROUP_SEGMENT, PLAFOND, OUTSTANDING, ' ||
+            'EXCHANGE_RATE, LIFETIME, FAIR_VALUE_AMOUNT, BI_COLLECTABILITY, ' ||
+            'DAY_PAST_DUE, DAY_PAST_DUE_CIF, WRITEOFF_FLAG, ' ||
+            'FACILITY_NUMBER, ACCOUNT_NUMBER, CUSTOMER_NUMBER, CUSTOMER_NAME, ' ||
+            'IMPAIRED_FLAG) ' ||
+
+            'SELECT ' || V_TAB_OWNER || '.SEQ_' || V_IFRS_SCENARIO_DATA || '.NEXTVAL, ' ||
+            'ifrs_master_account.DOWNLOAD_DATE, ' || V_RULE_ID || ', ' ||
+            'ifrs_master_account.MASTERID, ifrs_master_account.ACCOUNT_STATUS, ifrs_master_account.SEGMENT, ifrs_master_account.SUB_SEGMENT, ' ||
+            'ifrs_master_account.GROUP_SEGMENT, ifrs_master_account.PLAFOND, ifrs_master_account.OUTSTANDING, ifrs_master_account.EXCHANGE_RATE, ' ||
+            'ifrs_master_account.LIFETIME, ifrs_master_account.FAIR_VALUE_AMOUNT, NVL(ifrs_master_account.BI_COLLECTABILITY,0), ' ||
+            'NVL(ifrs_master_account.DAY_PAST_DUE,0), ' ||
+            'NVL(ifrs_master_account.DPD_CIF,0), ifrs_master_account.WRITEOFF_FLAG, ' ||
+            'ifrs_master_account.FACILITY_NUMBER, ifrs_master_account.ACCOUNT_NUMBER, ifrs_master_account.CUSTOMER_NUMBER, ' ||
+            'ifrs_master_account.CUSTOMER_NAME, ifrs_master_account.IMPAIRED_FLAG ' ||
+            'FROM ' || V_TAB_OWNER || '.IFRS_MASTER_ACCOUNT_MONTHLY ifrs_master_account ' ||
+            'WHERE ifrs_master_account.ACCOUNT_STATUS = ''A'' ' ||
+            '  AND ifrs_master_account.DOWNLOAD_DATE = :1 AND (' || PSAK413.FN_FIX_RULE(V_STR_SQL_RULE) || ')';
+        EXECUTE IMMEDIATE v_STR_SQL USING V_DATADATE;
+    END LOOP;
+    
+    -----------------------------
+    -- Log & insert final data
+    -----------------------------
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_IFRS_SCENARIO_DATA;
+    V_COLUMNDEST := '-';
+    V_OPERATION := 'INSERT';
+ 
+    PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
+    COMMIT;  
+   
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_IFRS_SCENARIO_DATA;
+
+    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
+    COMMIT;
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+
+        RAISE_APPLICATION_ERROR(-20001,'ERROR IN ' || V_SP_NAME || ' : ' || SQLERRM);
+END;

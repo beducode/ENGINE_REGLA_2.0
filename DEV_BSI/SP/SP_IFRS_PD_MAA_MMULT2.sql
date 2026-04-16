@@ -1,0 +1,354 @@
+CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PD_MAA_MMULT2 (
+    P_RUNID         VARCHAR2 DEFAULT 'S_00000_0000',
+    P_DOWNLOAD_DATE DATE,
+    P_SYSCODE       VARCHAR2 DEFAULT '0',
+    P_PRC           VARCHAR2 DEFAULT 'S'
+) 
+AS
+-- parameter (kalau mau dijadikan PROCEDURE, pindahkan ke parameter)
+    V_CURRDATE        DATE;
+    V_PREVDATE        DATE;
+    V_FL_SEQ          NUMBER := 0;
+
+    V_TBL_MMULT       VARCHAR2(30);
+    V_TBL_FLOWRATE    VARCHAR2(30);
+    V_TBL_FLOWRATE2   VARCHAR2(30);
+
+    V_QRY             CLOB;
+   
+    V_STR_QUERY     VARCHAR2(32767);
+	
+    V_MODEL_ID      VARCHAR2(22);
+    V_COUNT         NUMBER;
+   	V_MAX_ID		NUMBER;
+   
+    -- Table names
+    V_TAB_OWNER     CONSTANT VARCHAR2(30) := 'PSAK413';
+    V_TABLEINSERT1  VARCHAR2(100);
+    V_TABLEINSERT2  VARCHAR2(100);
+    V_TABLEPDCONFIG VARCHAR2(100);
+   	V_TMP_IFRS_MMULT_SEQ VARCHAR2(100);
+
+    -- misc
+    V_RETURNROWS    NUMBER;
+    V_RETURNROWS2   NUMBER;
+    V_TABLEDEST     VARCHAR2(100);
+    V_COLUMNDEST    VARCHAR2(100);
+    V_SP_NAME       VARCHAR2(100);
+    V_OPERATION     VARCHAR2(100);
+
+    -- result query
+    V_QUERYS        CLOB;
+BEGIN
+	
+	V_SP_NAME := 'SP_IFRS_PD_MAA_MMULT';
+
+	-- handle default download date
+    IF P_DOWNLOAD_DATE IS NULL THEN
+        SELECT CURRDATE
+          INTO V_CURRDATE
+          FROM PSAK413.IFRS_PRC_DATE; 
+    ELSE
+        V_CURRDATE := P_DOWNLOAD_DATE;
+    END IF;
+
+	V_CURRDATE := LAST_DAY(P_DOWNLOAD_DATE);
+    V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
+    
+   IF P_SYSCODE <> '0' THEN
+   		V_MODEL_ID := '1';
+    ELSE
+    	V_MODEL_ID := '0';
+    END IF;
+   
+   
+    IF P_PRC = 'S' THEN
+        V_TBL_MMULT     := 'IFRS_PD_MAA_MMULT_' || P_RUNID;
+	    V_TBL_FLOWRATE  := 'IFRS_PD_MAA_MMULT_MONTHLY_' || P_RUNID;
+	    V_TBL_FLOWRATE2 := 'IFRS_PD_MAA_FLOWRATE_SUM_' || P_RUNID;
+        V_TABLEPDCONFIG := 'GTMP_IFRS_PD_RULES_CONFIG_' || P_RUNID;
+        V_TABLEINSERT1  := 'GTMP_RUNNING_PD_MAA_MMULT_' || P_RUNID;
+        V_TMP_IFRS_MMULT_SEQ := 'TMP_IFRS_MMULT_SEQ_' || P_RUNID;
+    ELSE
+        V_TBL_MMULT     := 'IFRS_PD_MAA_MMULT';
+	    V_TBL_FLOWRATE  := 'IFRS_PD_MAA_MMULT_MONTHLY';
+	    V_TBL_FLOWRATE2 := 'IFRS_PD_MAA_FLOWRATE_SUM';
+        V_TABLEPDCONFIG := 'GTMP_IFRS_PD_RULES_CONFIG';
+        V_TABLEINSERT1  := 'GTMP_RUNNING_PD_MAA_MMULT';
+        V_TMP_IFRS_MMULT_SEQ := 'TMP_IFRS_MMULT_SEQ';
+    END IF;
+   
+   IF P_PRC = 'S' THEN
+        -- drop table if exists
+        SELECT COUNT(*) INTO V_COUNT
+        FROM ALL_TABLES
+        WHERE OWNER = V_TAB_OWNER
+          AND TABLE_NAME = UPPER(V_TABLEINSERT1);
+
+        IF V_COUNT > 0 THEN
+            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1;
+            EXECUTE IMMEDIATE V_STR_QUERY;
+        END IF;
+
+        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 ||
+                       ' AS SELECT *  FROM ' || V_TAB_OWNER || '.GTMP_PD_RUNNING_CONFIG WHERE 1=0';
+        EXECUTE IMMEDIATE V_STR_QUERY;
+
+        -- second table
+        SELECT COUNT(*) INTO V_COUNT
+        FROM ALL_TABLES
+        WHERE OWNER = V_TAB_OWNER
+          AND TABLE_NAME = UPPER(V_TBL_MMULT);
+
+        IF V_COUNT > 0 THEN
+            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TBL_MMULT;
+            EXECUTE IMMEDIATE V_STR_QUERY;
+        END IF;
+
+        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TBL_MMULT ||
+                       ' AS SELECT * FROM ' || V_TAB_OWNER || '.IFRS_PD_MAA_MMULT WHERE 1=0';
+        EXECUTE IMMEDIATE V_STR_QUERY;
+        
+        -- config
+        SELECT COUNT(*) INTO V_COUNT
+        FROM ALL_TABLES
+        WHERE OWNER = V_TAB_OWNER
+          AND TABLE_NAME = UPPER(V_TABLEPDCONFIG);
+
+        IF V_COUNT > 0 THEN
+            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG;
+            EXECUTE IMMEDIATE V_STR_QUERY;
+        END IF;
+
+        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG ||
+                       ' AS SELECT * FROM ' || V_TAB_OWNER || '.GTMP_IFRS_PD_RULES_CONFIG WHERE 1=0';
+        EXECUTE IMMEDIATE V_STR_QUERY;
+    ELSE
+    	
+	    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TMP_IFRS_MMULT_SEQ || '';
+    END IF;
+    COMMIT;
+   
+    PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, 0, SYSDATE);
+    COMMIT;
+  
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TABLEPDCONFIG || '' ; 
+	 
+    V_STR_QUERY := 'INSERT INTO ' || V_TABLEPDCONFIG || ' (PKID, SYSCODE_PD, PD_RULE_NAME, SEGMENTATION_ID, PD_METHOD, START_HISTORICAL_DATE,' || 
+						'CALC_METHOD, HISTORICAL_DATA, EXPECTED_LIFE, INCLUDE_INDIVIDUAL_ACCOUNT, INCLUDE_WO, INCLUDE_CLOSE, DEFAULT_RATIO_BY, ' ||
+						'DEFAULT_RULE_ID, BUCKET_GROUP, ME_CODE, PERIOD_START_DATE, PERIOD_END_DATE, ' ||
+					 	'IS_DELETED, INCREMENT_PERIOD, IS_ACTIVE, CREATED_BY, CREATED_DATE, UPDATED_BY, UPDATED_DATE)' ||
+               'SELECT PKID, SYSCODE_PD, PD_RULE_NAME, SEGMENTATION_ID, PD_METHOD, START_HISTORICAL_DATE,' || 
+						'CALC_METHOD, HISTORICAL_DATA, EXPECTED_LIFE, INCLUDE_INDIVIDUAL_ACCOUNT, INCLUDE_WO, INCLUDE_CLOSE, DEFAULT_RATIO_BY, ' ||
+						'DEFAULT_RULE_ID, BUCKET_GROUP, ME_CODE, PERIOD_START_DATE, PERIOD_END_DATE, ' ||
+					 	'IS_DELETED, INCREMENT_PERIOD, IS_ACTIVE, CREATED_BY, CREATED_DATE, UPDATED_BY, UPDATED_DATE' || 
+					 	' FROM IFRS_PD_RULES_CONFIG ' ||
+               'WHERE PD_METHOD = ''MAA'' AND IS_DELETED = 0 AND (  
+                 UPPER(TRIM(SYSCODE_PD)) IN ( 
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+                   FROM DUAL
+                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                 )
+                 OR :p2 = ''0'' 
+               )';
+    DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
+    EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
+   
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1;
+    COMMIT;
+
+    EXECUTE IMMEDIATE 'INSERT INTO ' || V_TABLEINSERT1 || '
+    SELECT
+        A.PKID AS PD_RULE_ID,
+        A.BUCKET_GROUP,
+        A.HISTORICAL_DATA,
+        A.INCREMENT_PERIOD,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS CURR_DATE,
+        LAST_DAY(ADD_MONTHS(TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''), A.INCREMENT_PERIOD * -1)) AS BASE_DATE,
+        A.EXPECTED_LIFE,
+        A.START_HISTORICAL_DATE AS CUT_OFF_DATE
+    FROM ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG || ' A
+    WHERE NVL(A.IS_DELETED,0) = 0 ';
+   
+    IF V_MODEL_ID = '0' THEN
+        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_TBL_MMULT ||
+                       ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
+    ELSE
+        -- delete rows in target that match PKs in config (using EXISTS)
+        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_TBL_MMULT || ' A ' ||
+                       ' WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
+                       ' AND EXISTS (SELECT 1 FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' B WHERE B.PD_RULE_ID = A.PD_RULE_ID)';
+    END IF;
+   
+   COMMIT;
+    V_QRY := '
+    INSERT INTO ' || V_TBL_MMULT || '
+    (
+        EFF_DATE,
+        BASE_DATE,
+        SCENARIO_NO,
+        MODEL_ID,
+        PD_RULE_ID,
+        FL_SEQ,
+        BUCKET_GROUP,
+        BUCKET_FROM,
+        BUCKET_TO,
+        MMULT,
+        CREATEDBY,
+        CREATEDDATE
+    )
+    SELECT
+        A.EFF_DATE,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''),
+        0,
+        0,
+        A.PD_RULE_ID,
+        0,
+        A.BUCKET_GROUP,
+        A.BUCKET_FROM,
+        A.BUCKET_TO,
+        A.FLOWRATE,
+        ''SP_IFRS_PD_MAA_MMULT1'',
+        SYSDATE
+    FROM ' || V_TBL_FLOWRATE2 || ' A
+    JOIN ' || V_TABLEINSERT1 || ' B
+        ON A.PD_RULE_ID = B.PD_RULE_ID
+    WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+ 	AND A.BUCKET_TO <> 0 
+and b.increment_period = 12 
+union all 
+ SELECT
+        A.EFF_DATE,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''),
+        0,
+        0,
+        A.PD_RULE_ID,
+        0,
+        A.BUCKET_GROUP,
+        A.BUCKET_FROM,
+        A.BUCKET_TO,
+        A.MMULT,
+        ''SP_IFRS_PD_MAA_MMULT1'',
+        SYSDATE
+    FROM ' || V_TBL_FLOWRATE || ' A
+    JOIN ' || V_TABLEINSERT1 || ' B
+        ON A.PD_RULE_ID = B.PD_RULE_ID
+    WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+ 	AND A.BUCKET_TO <> 0 
+AND FL_MONTH = 12 
+and b.increment_period <  12 
+ 
+    ';
+   
+   
+ 
+    EXECUTE IMMEDIATE V_QRY;
+
+    COMMIT;
+
+    /* ===== IF MODEL_ID = 0 ===== */
+	IF v_model_id = '0' THEN
+	   v_qry :=	'INSERT INTO ' || V_TMP_IFRS_MMULT_SEQ || ' (MODEL_ID, PD_RULE_ID, MAXSEQ)
+	   SELECT 0,
+	          B.PD_RULE_ID AS PD_RULE_ID,
+	          CASE
+	             WHEN MAX(NVL(A.LIFETIME, 0)) > B.EXPECTED_LIFE
+	             THEN TRUNC(MAX(NVL(A.LIFETIME, 0)) / 12) + 1
+	             ELSE TRUNC(B.EXPECTED_LIFE / 12)
+	          END AS MAXSEQ
+	   FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' B
+	        LEFT JOIN IFRS_PD_RULE_DATA A
+	           ON A.RULE_ID = B.PD_RULE_ID
+	          AND A.DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+	   GROUP BY B.PD_RULE_ID, B.EXPECTED_LIFE';
+	  
+	  EXECUTE IMMEDIATE v_qry;
+	END IF;
+	
+	 
+
+	/* ===== LOOP FL_SEQ ===== */
+	V_STR_QUERY := 'SELECT MAX(MAXSEQ) FROM ' || V_TMP_IFRS_MMULT_SEQ || '';
+    EXECUTE IMMEDIATE V_STR_QUERY INTO V_MAX_ID;
+	COMMIT;
+
+	v_fl_seq := 1;
+	
+	WHILE v_fl_seq < V_MAX_ID LOOP
+	    	
+	   v_qry :=
+	   'INSERT INTO ' || v_tbl_mmult || '
+	   (
+	     EFF_DATE,
+	     BASE_DATE,
+	     SCENARIO_NO,
+	     MODEL_ID,
+	     PD_RULE_ID,
+	     FL_SEQ,
+	     BUCKET_GROUP,
+	     BUCKET_FROM,
+	     BUCKET_TO,
+	     MMULT,
+	     CREATEDBY,
+	     CREATEDDATE
+	   )
+	   SELECT A.EFF_DATE,
+	          LAST_DAY(ADD_MONTHS(B.BASE_DATE, C.INCREMENT_PERIOD)),
+	          0,
+	          0,
+	          A.PD_RULE_ID,
+	          ' || v_fl_seq || ',
+	          A.BUCKET_GROUP,
+	          B.BUCKET_FROM,
+	          A.BUCKET_TO,
+	          SUM(A.FLOWRATE_SMOOTH_PD * B.MMULT),
+	          ''SP_IFRS_PD_MAA_MMULT2'',
+	          SYSDATE
+	   FROM ' || v_tbl_mmult || ' A
+	   JOIN ' || v_tbl_mmult || ' B
+	     ON A.PD_RULE_ID = B.PD_RULE_ID
+	    AND A.EFF_DATE   = B.EFF_DATE
+	    AND A.BUCKET_FROM = B.BUCKET_TO
+	   JOIN ' || V_TABLEINSERT1 || ' C
+	     ON A.PD_RULE_ID = C.PD_RULE_ID
+	   WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+	     AND B.FL_SEQ   = ' || (v_fl_seq - 1) || '
+and a.fl_Seq = 0
+	     AND EXISTS (
+	           SELECT 1
+	           FROM ' || V_TMP_IFRS_MMULT_SEQ || ' X
+	           WHERE X.PD_RULE_ID = A.PD_RULE_ID
+	             AND X.MAXSEQ >= ' || v_fl_seq || '
+	         )
+	   GROUP BY A.EFF_DATE,
+	            C.INCREMENT_PERIOD,
+	            B.BASE_DATE,
+	            A.PD_RULE_ID,
+	            A.BUCKET_GROUP,
+	            A.BUCKET_TO,
+	            B.BUCKET_FROM
+	
+	   ';
+	
+	   EXECUTE IMMEDIATE v_qry;
+	   COMMIT;
+	  
+	   v_fl_seq := v_fl_seq + 1;
+	END LOOP;
+
+	V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLEINSERT2;
+    V_COLUMNDEST := '-';
+    V_OPERATION := 'INSERT';
+ 
+    PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
+    COMMIT;  
+   
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
+                ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
+                ' AND (PD_RULE_ID IN (SELECT PKID FROM ' || V_TABLEPDCONFIG || ') )';
+
+    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
+    COMMIT;
+
+END;
+/

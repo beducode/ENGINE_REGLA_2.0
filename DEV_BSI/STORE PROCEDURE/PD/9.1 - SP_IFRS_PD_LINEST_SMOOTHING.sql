@@ -1,0 +1,84 @@
+CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PD_LINEST_SMOOTHING (
+    P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
+    P_PRC           IN VARCHAR2 DEFAULT 'S'
+)
+AUTHID CURRENT_USER
+AS
+    -- TABLE NAMES
+    V_TAB_OWNER     CONSTANT VARCHAR2(30) := 'PSAK413';
+    V_TMP_LOGIT_ODR  VARCHAR2(100);
+    V_IFRS_PD_LINEST_SMOOTHING  VARCHAR2(100);
+	V_COUNT NUMBER;
+
+    -- RESULT QUERY
+    V_STR_QUERY      VARCHAR2(8000);
+BEGIN
+	
+	 IF P_PRC = 'S' THEN
+    	V_TMP_LOGIT_ODR := 'GTMP_LOGIT_ODR_' || P_RUNID;
+	 	V_IFRS_PD_LINEST_SMOOTHING := 'IFRS_PD_LINEST_SMOOTHING_' || P_RUNID;
+    ELSE
+    	V_TMP_LOGIT_ODR := 'GTMP_LOGIT_ODR';
+    	V_IFRS_PD_LINEST_SMOOTHING := 'IFRS_PD_LINEST_SMOOTHING';
+    END IF;
+
+	EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_IFRS_PD_LINEST_SMOOTHING || '';
+    COMMIT;
+        
+		V_STR_QUERY := '
+		INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_LINEST_SMOOTHING || ' (PD_RULE_ID, SLOPE , INTERCEPT , RSQUARE)
+		WITH CT1 AS (
+			    SELECT 
+			        PD_RULE_ID,
+			        BUCKET_ID,
+			        LOGIT_ODR,
+			        AVG(BUCKET_ID) OVER (PARTITION BY PD_RULE_ID) AS Xaverage,
+			        AVG(LOGIT_ODR) OVER (PARTITION BY PD_RULE_ID) AS Yaverage
+			    FROM ' || V_TMP_LOGIT_ODR || '
+			),
+			CT2 AS (
+			    SELECT 
+			        PD_RULE_ID,
+			        Xaverage,
+			        Yaverage,
+			        CASE WHEN SUM( (BUCKET_ID - Xaverage) * (LOGIT_ODR - Yaverage) ) <> 0 THEN
+			            SUM( (BUCKET_ID - Xaverage) * (LOGIT_ODR - Yaverage) )
+			            / SUM( POWER(BUCKET_ID - Xaverage, 2) ) 
+			            ELSE 0 END AS SLOPE
+			    FROM CT1
+			    GROUP BY PD_RULE_ID, Xaverage, Yaverage
+			),
+			CT3 AS (
+			    SELECT 
+			        PD_RULE_ID,
+			        SLOPE,
+			        (Yaverage - (SLOPE * Xaverage)) AS INTERCEPT
+			    FROM CT2
+			),
+			CT4 AS (
+			    SELECT
+			        C1.PD_RULE_ID,
+			        C3.SLOPE,
+			        C3.INTERCEPT,
+			        SUM( POWER(C1.BUCKET_ID - (C3.INTERCEPT + C3.SLOPE * C1.BUCKET_ID), 2) ) RSQUARE1,            
+			        SUM( POWER(C1.LOGIT_ODR - (C3.INTERCEPT + C3.SLOPE * C1.BUCKET_ID), 2) ) RSQUARE2,
+			        SUM( POWER(( (C3.INTERCEPT + C3.SLOPE * C1.BUCKET_ID) - C1.Yaverage ), 2) ) RSQUARE3
+			    FROM CT1 C1
+			    JOIN CT3 C3 ON C1.PD_RULE_ID = C3.PD_RULE_ID
+			    GROUP BY C1.PD_RULE_ID, C3.SLOPE, C3.INTERCEPT
+			)
+			SELECT
+			    PD_RULE_ID,
+			    SLOPE,
+			    INTERCEPT,
+			    CASE WHEN ABS(RSQUARE2 + RSQUARE3) <= 0.000000000001 THEN 0
+					ELSE 
+					1-(RSQUARE1/(RSQUARE2 + RSQUARE3)) END as RSQUARE
+			FROM CT4';
+	
+	DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));
+
+	EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
+
+END;
