@@ -1,0 +1,12 @@
+BEGIN
+  FOR r IN (
+    SELECT sid, serial#
+    FROM v$session
+    WHERE username = 'IFRS9_OLD'
+  ) LOOP
+    EXECUTE IMMEDIATE 
+      'ALTER SYSTEM KILL SESSION ''' || r.sid || ',' || r.serial# || ''' IMMEDIATE';
+  END LOOP;
+END;
+
+--DROP USER IFRS9_OLD CASCADE;
