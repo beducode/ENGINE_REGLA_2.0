@@ -93,4 +93,3 @@ BEGIN
 
     DBMS_OUTPUT.PUT_LINE('=== Semua grant & synonym selesai dengan role ROLE_REGLA_ACCESS ===');
 END;
-/
