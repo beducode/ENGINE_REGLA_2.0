@@ -518,3 +518,43 @@ CROSS JOIN (
     FROM dual
     CONNECT BY LEVEL <= 31
 ) d;
+
+
+----- COMPRE TABLE -----
+SELECT 
+    COALESCE(a.column_name, b.column_name) AS column_name,
+    a.data_type AS tipe_a,
+    b.data_type AS tipe_b,
+    CASE 
+        WHEN a.column_name IS NULL THEN 'HANYA DI B'
+        WHEN b.column_name IS NULL THEN 'HANYA DI A'
+        WHEN a.data_type != b.data_type THEN 'BEDA TIPE'
+        ELSE 'SAMA'
+    END AS status
+FROM all_tab_columns a
+FULL OUTER JOIN all_tab_columns b
+ON a.column_name = b.column_name
+AND b.table_name = 'IFRS_PD_MIGRATION_DETAIL_DATA'
+AND b.owner = 'PSAK413'
+WHERE a.table_name = 'IFRS_PD_MIGRATION_DETAIL'
+AND a.owner = 'PSAK413'
+ORDER BY column_name;
+
+
+SELECT 
+    COALESCE(a.column_name, b.column_name) AS column_name,
+    CASE 
+        WHEN a.column_name IS NOT NULL AND b.column_name IS NOT NULL THEN 'ADA DI KEDUA'
+        WHEN a.column_name IS NOT NULL THEN 'HANYA DI TABEL_A'
+        WHEN b.column_name IS NOT NULL THEN 'HANYA DI TABEL_B'
+    END AS status
+FROM 
+    (SELECT column_name 
+     FROM all_tab_columns 
+     WHERE table_name = 'IFRS_PD_MIGRATION_DETAIL_DATA' AND owner = 'PSAK413') a
+FULL OUTER JOIN 
+    (SELECT column_name 
+     FROM all_tab_columns 
+     WHERE table_name = 'IFRS_PD_MIGRATION_DETAIL' AND owner = 'PSAK413') b
+ON a.column_name = b.column_name
+ORDER BY column_name;

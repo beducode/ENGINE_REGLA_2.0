@@ -61,25 +61,51 @@ BEGIN
     ----------------------------------------------------------------
     -- INSERT TERM STRUCTURE MODEL
     ----------------------------------------------------------------
-    V_STR_QUERY :=
-    'INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_TERM_STRUCTURE || ' (EFF_DATE, SCENARIO_NO, PD_RULE_ID, MODEL_ID,
-    BUCKET_GROUP, BUCKET_ID, FL_SEQ, FL_YEAR, FL_MONTH, PD, PD_OVERRIDE, PD_METHOD, CREATEDBY, CREATEDDATE)
-        SELECT "effective_date" AS EFF_DATE,0 AS SCENARIO_NO,"pd_rule_id" as PD_RULE_ID, "workflow_header_draft_pkid" as MODEL_ID,
-			 B.BUCKET_GROUP , "bucket" BUCKET_ID, "fl_seq" as FL_SEQ,"year" as FL_YEAR,"month" as FL_MONTH,
-			 "weighted" AS PD,A."weighted" AS PD_OVERRIDE,B.PD_METHOD , ''SP_IFRS_SYNC_TERM_STRUCTURE_FL'' as CREATEDBY, SYSDATE AS CREATEDDATE
-			FROM "NTT_RISK_MODELLING"."PyWeightingScenarioInterpolasi"@DBCONFIGLINK A
-			INNER JOIN ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG || ' B ON A."pd_rule_id" = B.PKID 
-			WHERE A."effective_date" = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') 
-			AND A."is_selected" = 0 AND A."flag" = ''MPD'' AND NVL(A."workflow_header_draft_pkid",0) <> 0 
-            AND B.PD_METHOD = ''MAA'' AND (  
-                UPPER(TRIM(B.SYSCODE_PD)) IN ( 
-                SELECT UPPER(TRIM(REGEXP_SUBSTR(:1, ''[^;]+'', 1, LEVEL)))
-                FROM DUAL
-                CONNECT BY REGEXP_SUBSTR(:2, ''[^;]+'', 1, LEVEL) IS NOT NULL
-                )
-                OR :3 = ''0'' 
-            )';
+    V_STR_QUERY := 'INSERT /*+ APPEND PARALLEL(4) */ INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_TERM_STRUCTURE || ' 
+        (EFF_DATE, SCENARIO_NO, PD_RULE_ID, MODEL_ID,
+        BUCKET_GROUP, BUCKET_ID, FL_SEQ, FL_YEAR, FL_MONTH, 
+        PD, PD_OVERRIDE, PD_METHOD, CREATEDBY, CREATEDDATE)
 
+        SELECT /*+ 
+                    DRIVING_SITE(A)
+                    USE_HASH(A B)
+                    PARALLEL(A 4)
+                    PARALLEL(B 4)
+                */
+            A."effective_date" AS EFF_DATE,
+            0 AS SCENARIO_NO,
+            A."pd_rule_id" AS PD_RULE_ID,
+            A."workflow_header_draft_pkid" AS MODEL_ID,
+            B.BUCKET_GROUP,
+            A."bucket" AS BUCKET_ID,
+            A."fl_seq" AS FL_SEQ,
+            A."year" AS FL_YEAR,
+            A."month" AS FL_MONTH,
+            A."weighted" AS PD,
+            A."weighted" AS PD_OVERRIDE,
+            B.PD_METHOD,
+            ''SP_IFRS_SYNC_TERM_STRUCTURE_FL'' AS CREATEDBY,
+            SYSDATE AS CREATEDDATE
+
+        FROM "NTT_RISK_MODELLING"."PyWeightingScenarioInterpolasi"@DBCONFIGLINK A
+
+        INNER JOIN ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG || ' B 
+            ON A."pd_rule_id" = B.PKID 
+
+        LEFT JOIN (
+            SELECT /*+ MATERIALIZE */ 
+                UPPER(TRIM(REGEXP_SUBSTR(:1, ''[^;]+'', 1, LEVEL))) AS SYSCODE
+            FROM DUAL
+            CONNECT BY REGEXP_SUBSTR(:2, ''[^;]+'', 1, LEVEL) IS NOT NULL
+        ) SC 
+        ON UPPER(TRIM(B.SYSCODE_PD)) = SC.SYSCODE
+
+        WHERE A."effective_date" = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') 
+        AND A."is_selected" = 0 
+        AND A."flag" = ''MPD'' 
+        AND NVL(A."workflow_header_draft_pkid",0) <> 0 
+        AND B.PD_METHOD = ''MAA''
+        AND (SC.SYSCODE IS NOT NULL OR :3 = ''0'')';
     EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
     COMMIT;
 

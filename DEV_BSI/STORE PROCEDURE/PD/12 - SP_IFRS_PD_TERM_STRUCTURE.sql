@@ -9,7 +9,7 @@ AS
     -- DATES / COUNTERS
     V_CURRDATE      DATE;
     V_PREVDATE      DATE;
-    V_MODEL_ID      VARCHAR2(22);
+    V_MODEL_ID      NUMBER;
     V_COUNT         NUMBER;
 
     -- DYNAMIC SQL
@@ -66,9 +66,9 @@ BEGIN
     END IF;
 
     IF P_SYSCODE <> '0' THEN
-   		V_MODEL_ID := '1';
+   		V_MODEL_ID := 1;
     ELSE
-    	V_MODEL_ID := '0';
+    	V_MODEL_ID := 0;
     END IF;
 
     IF P_PRC = 'S' THEN
@@ -110,21 +110,21 @@ BEGIN
     --------------------------------------------------------------------
     -- CONDITIONAL DELETE
     --------------------------------------------------------------------
-    IF V_MODEL_ID = '0' 
+    IF V_MODEL_ID = 0 
     THEN
             V_STR_QUERY := ' DELETE FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_TERM_STRUCTURE || ' A
-            WHERE A.EFF_DATE  = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') 
+            WHERE A.EFF_DATE  = :1
             AND A.PD_METHOD = ''MAA''
             AND A.MODEL_ID  = 0';
-            EXECUTE IMMEDIATE V_STR_QUERY;
+            EXECUTE IMMEDIATE V_STR_QUERY USING V_CURRDATE;
     END IF;
    
     COMMIT;
 
     V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_GTMP_PD_TERM_STRUCTURE1 || '
-        (EFF_DATE, BASE_DATE,SCENARIO_NO, MODEL_ID, PD_RULE_ID, FL_SEQ, INCREMENT_PERIOD, BUCKET_GROUP, BUCKET_FROM, MMULT, PD_METHOD,
+        (EFF_DATE, BASE_DATE, SCENARIO_NO, MODEL_ID, PD_RULE_ID, FL_SEQ, INCREMENT_PERIOD, BUCKET_GROUP, BUCKET_FROM, MMULT, PD_METHOD,
          PD_RULE_NAME, MAX_BUCKET_ID)
-        SELECT A.EFF_DATE, A.BASE_DATE, A.SCENARIO_NO, A.MODEL_ID,
+        SELECT A.EFF_DATE, TO_DATE(A.BASE_DATE,''YYYY-MM-DD'') AS BASE_DATE, A.SCENARIO_NO, A.MODEL_ID,
             A.PD_RULE_ID, A.FL_SEQ, B.INCREMENT_PERIOD, A.BUCKET_GROUP, A.BUCKET_FROM, A.MMULT - NVL(D.MMULT,0),
             B.PD_METHOD, B.PD_RULE_NAME, C.MAX_BUCKET_ID
         FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_MMULT || ' A
@@ -141,20 +141,20 @@ BEGIN
             AND A.BUCKET_FROM = D.BUCKET_FROM
             AND A.BUCKET_TO   = D.BUCKET_TO
             AND A.FL_SEQ      = D.FL_SEQ + 1
-        WHERE A.EFF_DATE = :1
+        WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
           AND (A.PD_RULE_ID = B.PKID
-               OR (:2 = 0 AND B.PD_METHOD = ''MAA'' AND (  
+               OR (' || V_MODEL_ID || ' = 0 AND B.PD_METHOD = ''MAA'' AND (  
                     UPPER(TRIM(SYSCODE_PD)) IN ( 
-                    SELECT UPPER(TRIM(REGEXP_SUBSTR(:3, ''[^;]+'', 1, LEVEL)))
+                    SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || P_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
                     FROM DUAL
-                    CONNECT BY REGEXP_SUBSTR(:4, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                    CONNECT BY REGEXP_SUBSTR(''' || P_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
                     )
-                    OR :5 = ''0'' 
+                    OR ''' || P_SYSCODE || ''' = ''0'' 
                 )))
         ORDER BY A.BUCKET_FROM, A.FL_SEQ';
 	
     DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_CURRDATE, V_MODEL_ID, P_SYSCODE, P_SYSCODE, P_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
 
     V_STR_QUERY := 'SELECT A.EFF_DATE, A.BASE_DATE, A.SCENARIO_NO, A.MODEL_ID, A.PD_RULE_ID, 
