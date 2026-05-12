@@ -54,7 +54,7 @@ BEGIN
         V_CURRDATE := P_DOWNLOAD_DATE;
     END IF;
 
-	V_CURRDATE := LAST_DAY(P_DOWNLOAD_DATE);
+	V_CURRDATE := LAST_DAY(V_CURRDATE);
     V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
     
    IF P_SYSCODE <> '0' THEN
@@ -118,6 +118,7 @@ BEGIN
             OR :3 = ''0'' 
         )';
 
+    -- DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));
     EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
     COMMIT;
    
@@ -138,11 +139,14 @@ BEGIN
     V_STR_QUERY := '
     INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_MMULT || '
     (
+        DOWNLOAD_DATE,
+        TO_DATE,
+        PD_RULE_ID,
+        PD_RULE_NAME,
         EFF_DATE,
         BASE_DATE,
         SCENARIO_NO,
         MODEL_ID,
-        PD_RULE_ID,
         FL_SEQ,
         BUCKET_GROUP,
         BUCKET_FROM,
@@ -152,49 +156,59 @@ BEGIN
         CREATEDDATE
     )
     SELECT
-        A.EFF_DATE,
-        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''),
-        0,
-        0,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS DOWNLOAD_DATE,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS TO_DATE,
         A.PD_RULE_ID,
-        0,
+        C.PD_RULE_NAME,
+        A.EFF_DATE,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS BASE_DATE,
+        0 AS SCENARIO_NO,
+        0 AS MODEL_ID,
+        0 AS FL_SEQ,
         A.BUCKET_GROUP,
         A.BUCKET_FROM,
         A.BUCKET_TO,
         A.MMULT,
-        ''SP_IFRS_PD_MAA_MMULT1'',
-        SYSDATE
+        ''SP_IFRS_PD_MAA_MMULT1'' AS CREATEDBY,
+        SYSDATE AS CREATEDDATE
     FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_MMULT_MONTHLY || ' A
     JOIN ' || V_TAB_OWNER || '.' || V_GTMP_RUNNING_PD_MAA_MMULT || ' B
         ON A.PD_RULE_ID = B.PD_RULE_ID
+    LEFT JOIN ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG || ' C
+        ON A.PD_RULE_ID = C.PKID
     WHERE A.FL_MONTH = 12
 	AND A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
 
     UNION ALL
 
     SELECT
-        A.EFF_DATE,
-        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''),
-        0,
-        0,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS DOWNLOAD_DATE,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS TO_DATE,
         A.PD_RULE_ID,
-        0,
+        C.PD_RULE_NAME,
+        A.EFF_DATE,
+        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') AS BASE_DATE,
+        0 AS SCENARIO_NO,
+        0 AS MODEL_ID,
+        0 AS FL_SEQ,
         A.BUCKET_GROUP,
         A.BUCKET_FROM,
         A.BUCKET_TO,
         A.FLOWRATE,
-        ''SP_IFRS_PD_MAA_MMULT1'',
-        SYSDATE
+        ''SP_IFRS_PD_MAA_MMULT1'' AS CREATEDBY,
+        SYSDATE AS CREATEDDATE
     FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_FLOWRATE_SUM || ' A
     JOIN ' || V_TAB_OWNER || '.' || V_GTMP_RUNNING_PD_MAA_MMULT || ' B
         ON A.PD_RULE_ID = B.PD_RULE_ID
     JOIN ' || V_TAB_OWNER || '.IFRS_BUCKET_DETAIL C
         ON B.BUCKET_GROUP = C.BUCKET_GROUP
        AND A.BUCKET_TO = C.BUCKET_ID
+    LEFT JOIN ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG || ' C
+        ON A.PD_RULE_ID = C.PKID
     WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
 		AND B.INCREMENT_PERIOD = 12 ';
 
- 	--DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));
+ 	-- DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));
     EXECUTE IMMEDIATE V_STR_QUERY;
 
     COMMIT;
@@ -224,15 +238,18 @@ BEGIN
 	V_FL_SEQ := 1;
 	
 	WHILE V_FL_SEQ < V_MAX_ID LOOP
-	    	
+	
     V_STR_QUERY :=
 	   'INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_MMULT || '
 	   (
+         DOWNLOAD_DATE,
+         TO_DATE,
+         PD_RULE_ID,
+         PD_RULE_NAME,
 	     EFF_DATE,
 	     BASE_DATE,
 	     SCENARIO_NO,
 	     MODEL_ID,
-	     PD_RULE_ID,
 	     FL_SEQ,
 	     BUCKET_GROUP,
 	     BUCKET_FROM,
@@ -241,11 +258,15 @@ BEGIN
 	     CREATEDBY,
 	     CREATEDDATE
 	   )
-	   SELECT A.EFF_DATE,
+	   SELECT 
+              A.DOWNLOAD_DATE,
+              A.TO_DATE,
+              A.PD_RULE_ID,
+              A.PD_RULE_NAME,
+              A.EFF_DATE,
 	          LAST_DAY(ADD_MONTHS(B.BASE_DATE, C.INCREMENT_PERIOD)),
 	          0,
 	          0,
-	          A.PD_RULE_ID,
 	          ' || v_fl_seq || ',
 	          A.BUCKET_GROUP,
 	          B.BUCKET_FROM,
@@ -269,10 +290,14 @@ BEGIN
 	           WHERE X.PD_RULE_ID = A.PD_RULE_ID
 	             AND X.MAXSEQ >= ' || V_FL_SEQ || '
 	         )
-	   GROUP BY A.EFF_DATE,
+	   GROUP BY 
+                A.DOWNLOAD_DATE,
+                A.TO_DATE,
+                A.PD_RULE_ID,
+                A.PD_RULE_NAME,
+                A.EFF_DATE,
 	            C.INCREMENT_PERIOD,
 	            B.BASE_DATE,
-	            A.PD_RULE_ID,
 	            A.BUCKET_GROUP,
 	            A.BUCKET_TO,
 	            B.BUCKET_FROM ';

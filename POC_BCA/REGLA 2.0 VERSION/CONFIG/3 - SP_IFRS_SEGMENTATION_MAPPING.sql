@@ -1,8 +1,11 @@
-CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_SEGMENTATION_MAPPING (
+CREATE OR REPLACE PROCEDURE IFRS9_BCA.SP_IFRS_SEGMENTATION_MAPPING (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
     P_PRC           IN VARCHAR2 DEFAULT 'S'
 )
+
+
+
 AUTHID CURRENT_USER
 AS
     ----------------------------------------------------------------
@@ -38,7 +41,7 @@ BEGIN
     ----------------------------------------------------------------
     IF P_DOWNLOAD_DATE IS NULL THEN
         BEGIN
-            SELECT CURRDATE INTO V_CURRDATE FROM PSAK413.IFRS_PRC_DATE;
+            SELECT CURRDATE INTO V_CURRDATE FROM IFRS9_BCA.IFRS_PRC_DATE;
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
                 RAISE_APPLICATION_ERROR(-20010, 'IFRS_PRC_DATE has no CURRDATE row');
@@ -55,7 +58,7 @@ BEGIN
     V_TABLEINSERT1 := 'IFRS_SEGMENTATION_MAPPING';
 
 
-    PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, V_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
+    IFRS9_BCA.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, V_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
     COMMIT;
      
     
@@ -67,7 +70,7 @@ BEGIN
         FROM "MstConfigParams"@DBCONFIGLINK
         WHERE "api_project_name" = 'PSAK413_Impairment' AND "name" = 'MaxSegmentLevelPsak413' ;
         
-        MERGE INTO IFRS_SEGMENTATION_MAPPING a
+        MERGE INTO IFRS9_BCA.IFRS_SEGMENTATION_MAPPING a
         USING (
                 
         SELECT "pkid",
@@ -97,11 +100,11 @@ BEGIN
             ELSE 
             "segment_type"
             END AS "segment_type"
-        from "SegmentationMapping"@DBCONFIGLINK a 
-        where "pkid" in (
-            select max("pkid")
-            from "SegmentationMapping"@DBCONFIGLINK 
-            group by "syscode_segmentation_lv1",
+        FROM "NTT_IMPAIRMENT2"."SegmentationMapping"@DBCONFIGLINK a 
+        WHERE "pkid" in (
+            SELECT max("pkid")
+            FROM "NTT_IMPAIRMENT2"."SegmentationMapping"@DBCONFIGLINK 
+            GROUP BY "syscode_segmentation_lv1",
                 nvl("syscode_segmentation_lv2",' '),
                 nvl("syscode_segmentation_lv3",' '),
                 nvl("syscode_segmentation_lv4",' '),
@@ -179,7 +182,7 @@ BEGIN
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
 
-    PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), V_RUNID);
+    IFRS9_BCA.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;
 
     ----------------------------------------------------------------
@@ -187,7 +190,7 @@ BEGIN
     ----------------------------------------------------------------
     V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1;
 
-    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
+    IFRS9_BCA.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
     COMMIT;
 
 EXCEPTION

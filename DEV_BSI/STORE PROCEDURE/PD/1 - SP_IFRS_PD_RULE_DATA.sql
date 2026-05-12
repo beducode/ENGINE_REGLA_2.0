@@ -150,7 +150,8 @@ BEGIN
                )
         )X';
        
-
+    DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY,1,30000));
+    DBMS_OUTPUT.PUT_LINE('PARAMETER USED : ' || P_SYSCODE);
     EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE, P_SYSCODE, P_SYSCODE, P_SYSCODE;
 
     ---------------------------------------------------------------------
@@ -161,6 +162,7 @@ BEGIN
     FROM ' || V_TAB_OWNER || '.' || V_TMP_IFRS_SCN_GENERATE_QUERY || '
     WHERE TABLE_NAME = ''TMP_IFRS_MASTER_ACCOUNT_PD''';
     
+    DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY,1,30000));
 	EXECUTE IMMEDIATE V_STR_QUERY;
 	COMMIT;
    
@@ -174,6 +176,7 @@ BEGIN
         '  AND EXISTS (SELECT 1 FROM ' || V_TMP_PD_DATE_RUN || ' X ' ||
         '              WHERE A.DOWNLOAD_DATE = X.PERIOD)';
 
+    DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY,1,30000));
     EXECUTE IMMEDIATE V_STR_QUERY;
 
     ---------------------------------------------------------------------
@@ -181,6 +184,7 @@ BEGIN
     ---------------------------------------------------------------------
     V_STR_QUERY := 'SELECT MAX(ID) FROM ' || V_TAB_OWNER || '.' || V_TMP_IFRS_SCN_GENERATE_QUERY || '';
 
+    -- DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY,1,30000));
     EXECUTE IMMEDIATE V_STR_QUERY INTO V_MAX_ID;
 
     WHILE V_ID < V_MAX_ID LOOP
@@ -201,28 +205,124 @@ BEGIN
         -----------------------------------------------------------------
         -- BUILD FINAL DYNAMIC SQL
         -----------------------------------------------------------------
-        v_STR_SQL :=
-            'INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_RULE_DATA ||' (' ||
-            'PKID, DOWNLOAD_DATE, RULE_ID, MASTERID, ACCOUNT_STATUS, ' ||
-            'SEGMENT, SUB_SEGMENT, GROUP_SEGMENT, PLAFOND, OUTSTANDING, ' ||
-            'EXCHANGE_RATE, LIFETIME, FAIR_VALUE_AMOUNT, BI_COLLECTABILITY, ' ||
-            'DAY_PAST_DUE, DAY_PAST_DUE_CIF, WRITEOFF_FLAG, ' ||
-            'FACILITY_NUMBER, ACCOUNT_NUMBER, CUSTOMER_NUMBER, CUSTOMER_NAME, ' ||
-            'IMPAIRED_FLAG) ' ||
+        -- V_STR_QUERY :=
+        --     'INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_RULE_DATA ||' (' ||
+        --     'PKID, DOWNLOAD_DATE, RULE_ID, MASTERID, ACCOUNT_STATUS, ' ||
+        --     'SEGMENT, SUB_SEGMENT, GROUP_SEGMENT, PLAFOND, OUTSTANDING, ' ||
+        --     'EXCHANGE_RATE, LIFETIME, FAIR_VALUE_AMOUNT, BI_COLLECTABILITY, ' ||
+        --     'DAY_PAST_DUE, DAY_PAST_DUE_CIF, WRITEOFF_FLAG, ' ||
+        --     'FACILITY_NUMBER, ACCOUNT_NUMBER, CUSTOMER_NUMBER, CUSTOMER_NAME, ' ||
+        --     'IMPAIRED_FLAG) ' ||
 
-            'SELECT ' || V_TAB_OWNER || '.SEQ_' || V_IFRS_PD_RULE_DATA || '.NEXTVAL, ' ||
-            'ifrs_master_account.DOWNLOAD_DATE, ' || V_RULE_ID || ', ' ||
-            'ifrs_master_account.MASTERID, ifrs_master_account.ACCOUNT_STATUS, ifrs_master_account.SEGMENT, ifrs_master_account.SUB_SEGMENT, ' ||
-            'ifrs_master_account.GROUP_SEGMENT, ifrs_master_account.PLAFOND, ifrs_master_account.OUTSTANDING, ifrs_master_account.EXCHANGE_RATE, ' ||
-            'ifrs_master_account.LIFETIME, ifrs_master_account.FAIR_VALUE_AMOUNT, NVL(ifrs_master_account.BI_COLLECTABILITY,0), ' ||
-            'NVL(ifrs_master_account.DAY_PAST_DUE,0), ' ||
-            'NVL(ifrs_master_account.DPD_CIF,0), ifrs_master_account.WRITEOFF_FLAG, ' ||
-            'ifrs_master_account.FACILITY_NUMBER, ifrs_master_account.ACCOUNT_NUMBER, ifrs_master_account.CUSTOMER_NUMBER, ' ||
-            'ifrs_master_account.CUSTOMER_NAME, ifrs_master_account.IMPAIRED_FLAG ' ||
-            'FROM ' || V_TAB_OWNER || '.IFRS_MASTER_ACCOUNT_MONTHLY ifrs_master_account ' ||
-            'WHERE ifrs_master_account.ACCOUNT_STATUS = ''A'' ' ||
-            '  AND ifrs_master_account.DOWNLOAD_DATE = :1 AND (' || PSAK413.FN_FIX_RULE(V_STR_SQL_RULE) || ')';
-        EXECUTE IMMEDIATE v_STR_SQL USING V_DATADATE;
+        --     'SELECT ' || V_TAB_OWNER || '.SEQ_' || V_IFRS_PD_RULE_DATA || '.NEXTVAL, ' ||
+        --     'ifrs_master_account.DOWNLOAD_DATE, ' || V_RULE_ID || ', ' ||
+        --     'ifrs_master_account.MASTERID, ifrs_master_account.ACCOUNT_STATUS, ifrs_master_account.SEGMENT, ifrs_master_account.SUB_SEGMENT, ' ||
+        --     'ifrs_master_account.GROUP_SEGMENT, ifrs_master_account.PLAFOND, ifrs_master_account.OUTSTANDING, ifrs_master_account.EXCHANGE_RATE, ' ||
+        --     'ifrs_master_account.LIFETIME, ifrs_master_account.FAIR_VALUE_AMOUNT, NVL(ifrs_master_account.BI_COLLECTABILITY,0), ' ||
+        --     'NVL(ifrs_master_account.DAY_PAST_DUE,0), ' ||
+        --     'NVL(ifrs_master_account.DPD_CIF,0), ifrs_master_account.WRITEOFF_FLAG, ' ||
+        --     'ifrs_master_account.FACILITY_NUMBER, ifrs_master_account.ACCOUNT_NUMBER, ifrs_master_account.CUSTOMER_NUMBER, ' ||
+        --     'ifrs_master_account.CUSTOMER_NAME, ifrs_master_account.IMPAIRED_FLAG ' ||
+        --     'FROM ' || V_TAB_OWNER || '.IFRS_MASTER_ACCOUNT_MONTHLY ifrs_master_account ' ||
+        --     'WHERE ifrs_master_account.ACCOUNT_STATUS = ''A'' ' ||
+        --     '  AND ifrs_master_account.DOWNLOAD_DATE = :1 AND (' || PSAK413.FN_FIX_RULE(V_STR_SQL_RULE) || ')';
+
+        V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_RULE_DATA || ' (
+                DOWNLOAD_DATE,
+                RULE_ID,
+                MASTERID,
+                ACCOUNT_STATUS,
+                SEGMENT,
+                SUB_SEGMENT,
+                GROUP_SEGMENT,
+                PLAFOND,
+                OUTSTANDING,
+                EXCHANGE_RATE,
+                LIFETIME,
+                FAIR_VALUE_AMOUNT,
+                BI_COLLECTABILITY,
+                DAY_PAST_DUE,
+                DAY_PAST_DUE_CIF,
+                WRITEOFF_FLAG,
+                FACILITY_NUMBER,
+                ACCOUNT_NUMBER,
+                CUSTOMER_NUMBER,
+                CUSTOMER_NAME,
+                IMPAIRED_FLAG
+            )
+            SELECT
+                X.DOWNLOAD_DATE,
+                X.RULE_ID,
+                X.MASTERID,
+                X.ACCOUNT_STATUS,
+                X.SEGMENT,
+                X.SUB_SEGMENT,
+                X.GROUP_SEGMENT,
+                X.PLAFOND,
+                X.OUTSTANDING,
+                X.EXCHANGE_RATE,
+                X.LIFETIME,
+                X.FAIR_VALUE_AMOUNT,
+                X.BI_COLLECTABILITY,
+                X.DAY_PAST_DUE,
+                X.DAY_PAST_DUE_CIF,
+                X.WRITEOFF_FLAG,
+                X.FACILITY_NUMBER,
+                X.ACCOUNT_NUMBER,
+                X.CUSTOMER_NUMBER,
+                X.CUSTOMER_NAME,
+                X.IMPAIRED_FLAG
+            FROM (
+                SELECT
+                    A.DOWNLOAD_DATE,
+                    ' || V_RULE_ID || ' AS RULE_ID,
+                    A.MASTERID,
+                    A.ACCOUNT_STATUS,
+                    A.SEGMENT,
+                    A.SUB_SEGMENT,
+                    A.GROUP_SEGMENT,
+                    A.PLAFOND,
+                    A.OUTSTANDING,
+                    A.EXCHANGE_RATE,
+                    A.LIFETIME,
+                    A.FAIR_VALUE_AMOUNT,
+                    NVL(A.BI_COLLECTABILITY, 0) AS BI_COLLECTABILITY,
+                    NVL(A.DAY_PAST_DUE, 0) AS DAY_PAST_DUE,
+                    NVL(A.DPD_CIF, 0) AS DAY_PAST_DUE_CIF,
+                    A.WRITEOFF_FLAG,
+                    A.FACILITY_NUMBER,
+                    A.ACCOUNT_NUMBER,
+                    A.CUSTOMER_NUMBER,
+                    A.CUSTOMER_NAME,
+                    A.IMPAIRED_FLAG,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY A.DOWNLOAD_DATE, ' || V_RULE_ID || ', A.MASTERID
+                        ORDER BY A.MASTERID
+                    ) AS RN
+                FROM ' || V_TAB_OWNER || '.IFRS_MASTER_ACCOUNT_MONTHLY A
+                WHERE A.ACCOUNT_STATUS = ''A''
+                AND A.DOWNLOAD_DATE = :1
+                AND (
+                        ' || REPLACE(
+                                PSAK413.FN_FIX_RULE(V_STR_SQL_RULE),
+                                'ifrs_master_account.',
+                                'A.'
+                            ) || '
+                    )
+            ) X
+            WHERE X.RN = 1
+            AND NOT EXISTS (
+                    SELECT 1
+                    FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_RULE_DATA || ' B
+                    WHERE B.DOWNLOAD_DATE = X.DOWNLOAD_DATE
+                    AND B.RULE_ID = X.RULE_ID
+                    AND B.MASTERID = X.MASTERID
+                )';
+        
+
+        DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY,1,30000));
+        DBMS_OUTPUT.PUT_LINE('PARAMETER USED : ' || V_DATADATE);
+        EXECUTE IMMEDIATE V_STR_QUERY USING V_DATADATE;
     END LOOP;
     
     -----------------------------
