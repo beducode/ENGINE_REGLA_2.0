@@ -51,16 +51,16 @@ BEGIN
     	V_MODEL_ID := '0';
     END IF;
 
+    V_TABLEPDCONFIG := 'GTMP_IFRS_PD_RULES_CONFIG';
+
     IF P_PRC = 'S' THEN
         V_TABLEINSERT1 := 'GTMP_PD_FLOW_SUM_CONFIG_' || P_RUNID;
         V_TABLEINSERT2 := 'IFRS_PD_MAA_FLOWRATE_SUM_' || P_RUNID;
         V_TABLESELECT1 := 'IFRS_PD_MAA_ENR_SUM_' || P_RUNID;
-        V_TABLEPDCONFIG := 'GTMP_IFRS_PD_RULES_CONFIG_' || P_RUNID;
     ELSE
         V_TABLEINSERT1 := 'GTMP_PD_FLOW_SUM_CONFIG';
         V_TABLEINSERT2 := 'IFRS_PD_MAA_FLOWRATE_SUM';
         V_TABLESELECT1 := 'IFRS_PD_MAA_ENR_SUM';
-        V_TABLEPDCONFIG := 'GTMP_IFRS_PD_RULES_CONFIG';
     END IF;
 
     PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
@@ -88,72 +88,11 @@ BEGIN
               
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
     EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
-    ----------------------------------------------------------------
-    -- PRE-SIMULATION TABLES (only in simulation mode P_PRC='S')
-    -- drop/create structure-only copies (caller must have privileges)
-    ----------------------------------------------------------------
+    
     IF P_PRC = 'S' THEN
-        -- drop/create V_TABLEINSERT1
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_TAB_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEINSERT1);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 ||
-                       ' AS SELECT * FROM ' || V_TAB_OWNER || '.GTMP_PD_FLOW_SUM_CONFIG WHERE 1=0';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-
-        -- drop/create V_TABLEINSERT2
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_TAB_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEINSERT2);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT2;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
-                       ' AS SELECT * FROM ' || V_TAB_OWNER || '.IFRS_PD_MAA_FLOWRATE_SUM WHERE 1=0';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-
-        -- drop/create V_TABLESELECT1
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_TAB_OWNER
-          AND TABLE_NAME = UPPER(V_TABLESELECT1);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLESELECT1;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLESELECT1 ||
-                       ' AS SELECT * FROM ' || V_TAB_OWNER || '.IFRS_PD_MAA_ENR_SUM WHERE 1=0';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-        
-        -- drop/create V_TABLEPDCONFIG
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_TAB_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEPDCONFIG);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG ||
-                       ' AS SELECT * FROM ' || V_TAB_OWNER || '.GTMP_IFRS_PD_RULES_CONFIG WHERE 1=0';
-        EXECUTE IMMEDIATE V_STR_QUERY;
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('GTMP_PD_FLOW_SUM_CONFIG', V_TABLEINSERT1);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_MAA_FLOWRATE_SUM', V_TABLEINSERT2);
     END IF;
-    COMMIT;
 
     ----------------------------------------------------------------
     -- Ensure V_TABLEINSERT1 exists and clear it
@@ -257,15 +196,14 @@ BEGIN
     PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
     COMMIT;
 
-    ----------------------------------------------------------------
-    -- RESULT preview
-    ----------------------------------------------------------------
+    ------ ====== RESULT ======
     V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
-                ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
+                ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''' ' ||
                 ' AND (' || CASE WHEN V_MODEL_ID = '0' THEN '1=1' ELSE 'PD_RULE_ID = ' || V_MODEL_ID END || ')';
 
     PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
     COMMIT;
+    ------ ====== RESULT ======
 
 EXCEPTION
     WHEN OTHERS THEN

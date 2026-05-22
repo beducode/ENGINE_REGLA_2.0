@@ -45,6 +45,8 @@ BEGIN
     V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
     V_MODEL_ID := NVL(P_SYSCODE, '0');
 
+    V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG';
+
     ------------------------------------------------------------------------
     -- SET TABLE NAMES
     ------------------------------------------------------------------------
@@ -52,12 +54,10 @@ BEGIN
         V_TABLEINSERT1  := 'GTMP_PD_ODR_CONFIG_' || P_RUNID;
         V_TABLEINSERT2  := 'IFRS_PD_MAA_ODR_' || P_RUNID;
         V_TABLESELECT1  := 'IFRS_PD_MAA_ENR_' || P_RUNID;
-        V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG_' || P_RUNID;
     ELSE
         V_TABLEINSERT1  := 'GTMP_PD_ODR_CONFIG';
         V_TABLEINSERT2  := 'IFRS_PD_MAA_ODR';
         V_TABLESELECT1  := 'IFRS_PD_MAA_ENR';
-        V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG';
     END IF;
     ------------------------------------------------------------------------
     -- LOG RUN_ID → Oracle tidak bisa CALL, cukup prosedur langsung
@@ -70,64 +70,12 @@ BEGIN
         SYSDATE
     );
     COMMIT;
-    ------------------------------------------------------------------------
-    -- DROP + CREATE TEMP TABLE 1
-    ------------------------------------------------------------------------
+    
     IF P_PRC = 'S' THEN
-        SELECT COUNT(*)
-        INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = 'PSAK413'
-          AND TABLE_NAME = UPPER(V_TABLEINSERT1);
-
-        IF V_COUNT > 0 THEN
-            EXECUTE IMMEDIATE 'DROP TABLE ' || V_TABLEINSERT1;
-        END IF;
-
-        EXECUTE IMMEDIATE
-            'CREATE TABLE ' || V_TABLEINSERT1 ||
-            ' AS SELECT * FROM GTMP_PD_ODR_CONFIG WHERE 1=0';
-
-        COMMIT;
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('GTMP_PD_ODR_CONFIG', V_TABLEINSERT1);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_MAA_ODR', V_TABLEINSERT2);
     END IF;
-    ------------------------------------------------------------------------
-    -- DROP + CREATE TEMP TABLE 2
-    ------------------------------------------------------------------------
-    IF P_PRC = 'S' THEN
-        SELECT COUNT(*)
-        INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = 'PSAK413'
-          AND TABLE_NAME = UPPER(V_TABLEINSERT2);
 
-        IF V_COUNT > 0 THEN
-            EXECUTE IMMEDIATE 'DROP TABLE ' || V_TABLEINSERT2;
-        END IF;
-
-        EXECUTE IMMEDIATE
-            'CREATE TABLE ' || V_TABLEINSERT2 ||
-            ' AS SELECT * FROM IFRS_PD_MAA_ODR WHERE 1=0';
-        
-        -- DROP/Create V_TABLEPDCONFIG
-        SELECT COUNT(*) INTO V_COUNT
-        FROM ALL_TABLES
-        WHERE OWNER = V_TAB_OWNER
-          AND TABLE_NAME = UPPER(V_TABLEPDCONFIG);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG ||
-                       ' AS SELECT * FROM ' || V_TAB_OWNER || '.IFRS_PD_RULES_CONFIG WHERE 1=0';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-
-        COMMIT;
-    END IF;
-    ------------------------------------------------------------------------
-    -- TRUNCATE CONFIG TABLE IF NOT EMPTY
-    ------------------------------------------------------------------------
     
     EXECUTE IMMEDIATE
         'SELECT COUNT(*) FROM '|| V_TAB_OWNER || '.' || V_TABLEINSERT1
@@ -239,17 +187,14 @@ BEGIN
         V_SPNAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID
     );
     COMMIT;
-    ------------------------------------------------------------------------
-    -- RESULT QUERY
-    ------------------------------------------------------------------------
-    V_QUERYS :=
-        'SELECT * FROM '|| V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
-        ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-          AND (PD_RULE_ID = ''' || V_MODEL_ID || ''' OR ''' || V_MODEL_ID || ''' = ''0'')';
+    
+    ------ ====== RESULT ======
+    V_QUERYS := 'SELECT * FROM '|| V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
+        ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''' ' ||
+        ' AND (PD_RULE_ID = ''' || V_MODEL_ID || ''' OR ''' || V_MODEL_ID || ''' = ''0'')';
 
-    SP_IFRS_RESULT_PREV(
-        V_CURRDATE, V_QUERYS, V_SPNAME, NVL(V_RETURNROWS2,0), P_RUNID
-    );
+    SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, NVL(V_RETURNROWS2,0), P_RUNID);
     COMMIT;
+    ------ ====== RESULT ======
 
 END;
