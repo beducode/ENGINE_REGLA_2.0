@@ -85,31 +85,8 @@ BEGIN
                  )
                  OR :p2 = ''0''
                )';
-  DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
+    DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
     EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
-        
-
-    -------- ====== PRE SIMULATION TABLE ======
-	----TABLE CONFIG
-    -- IF P_PRC = 'S' THEN
-	-- 	SELECT COUNT(*) INTO V_COUNT
-	-- 	FROM ALL_TABLES
-	-- 	WHERE OWNER = V_TAB_OWNER 
-	-- 	 AND TABLE_NAME = UPPER(V_TABLEINSERT1); 
-        
-	-- 	IF V_COUNT > 0 THEN 
-	-- 	 V_STR_QUERY := '';
-    --      V_STR_QUERY := V_STR_QUERY || 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' ';
-    --     EXECUTE IMMEDIATE (V_STR_QUERY);
-	-- 	END IF;
-
-    --     V_STR_QUERY := '';
-    --     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' AS SELECT * FROM ' || V_TAB_OWNER || '.IFRS_LGD_RULE_DATA WHERE 0=1';
-    --     EXECUTE IMMEDIATE (V_STR_QUERY);
-        
-    --     EXECUTE IMMEDIATE 'CREATE INDEX IDX_' || V_TABLEINSERT1 || ' ON ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || '(DOWNLOAD_DATE, RULE_ID , MASTERID)';
-    -- END IF;
-	-- COMMIT;
 
     IF P_PRC = 'S' THEN
         PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_LGD_RULE_DATA', V_TABLEINSERT1);
@@ -175,9 +152,6 @@ BEGIN
 
     END LOOP;
     
-    
-     
-
     -------- ====== LOG ======
     V_TABLEDEST := V_TABLEINSERT1;
     V_COLUMNDEST := '-';

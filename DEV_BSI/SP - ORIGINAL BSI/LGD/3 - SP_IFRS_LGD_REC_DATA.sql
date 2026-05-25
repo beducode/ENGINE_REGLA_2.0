@@ -66,24 +66,6 @@ BEGIN
 	COMMIT;
     -------- RECORD RUN_ID --------
 
-    -------- ====== PRE SIMULATION TABLE ======
-	----TABLE PROCESS
-    -- IF P_PRC = 'S' THEN
-	-- 	SELECT COUNT(*) INTO V_COUNT
-	-- 	FROM ALL_TABLES
-	-- 	WHERE OWNER = V_TAB_OWNER 
-	-- 	 AND TABLE_NAME = UPPER(V_TABLEINSERT1);
-        
-	-- 	IF V_COUNT = 0 THEN
-	-- 	V_STR_QUERY := '';
-    --     V_STR_QUERY := V_STR_QUERY || 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' AS SELECT * FROM ' || V_TAB_OWNER || '.IFRS_LGD_REC_DATA WHERE 0=1';
-    --     EXECUTE IMMEDIATE (V_STR_QUERY);
-	-- 	END IF;
-
-        
-    -- END IF;
-	-- COMMIT;
-
     IF P_PRC = 'S' THEN
         PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_LGD_REC_DATA', V_TABLEINSERT1);
     END IF;
@@ -100,9 +82,6 @@ BEGIN
                  OR :p2 = ''0''
                )'; 
     EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
- 
-	   
-	    
    
     -------- ====== BODY ======
 	-- Clear Session
