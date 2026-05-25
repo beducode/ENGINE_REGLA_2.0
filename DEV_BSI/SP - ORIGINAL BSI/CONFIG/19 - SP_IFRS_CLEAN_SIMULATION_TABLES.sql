@@ -5,8 +5,6 @@ CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_CLEAN_SIMULATION_TABLES (
     P_PRC           IN VARCHAR2 DEFAULT 'S'
 )
 AS
-
-    ALTER SESSION SET recyclebin = OFF;
     ----------------------------------------------------------------
     -- VARIABLES
     ----------------------------------------------------------------
