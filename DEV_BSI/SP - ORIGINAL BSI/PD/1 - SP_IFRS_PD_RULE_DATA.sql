@@ -4,6 +4,7 @@ CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PD_RULE_DATA (
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
     P_PRC           IN VARCHAR2 DEFAULT 'S'
 )
+AUTHID CURRENT_USER
 AS 
     V_CURRDATE       DATE;
     V_DATADATE       VARCHAR2(20);
@@ -40,6 +41,7 @@ AS
     V_MAX_ID         NUMBER := 0;
     V_SEQUENCE       VARCHAR2(50);
     
+    V_SYSCODE VARCHAR(500);
 BEGIN
 	-- HANDLE DEFAULT DOWNLOAD DATE
     IF P_DOWNLOAD_DATE IS NULL THEN
@@ -50,7 +52,7 @@ BEGIN
 
     ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
-        P_SYSCODE := '0';
+        V_SYSCODE := '0';
     END IF;
 
     V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
@@ -119,7 +121,7 @@ BEGIN
                  )
                  OR :p2 = ''0'' 
                )';
-    EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
     ---------------------------------------------------------------------
     -- INSERT INTO TMP_IFRS_SCN_GENERATE_QUERY
     ---------------------------------------------------------------------

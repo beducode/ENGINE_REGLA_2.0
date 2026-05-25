@@ -3,7 +3,8 @@ CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_LGD_REC_DATA (
  P_DOWNLOAD_DATE IN DATE, 
  P_SYSCODE		 IN VARCHAR2 DEFAULT '0',
  P_PRC			 IN VARCHAR2 DEFAULT 'X'
-) 
+)
+AUTHID CURRENT_USER
 AS
 	---- DATE   
     V_CURRDATE DATE;
@@ -31,6 +32,8 @@ AS
 
     ---- RESULT
     V_QUERYS CLOB;
+
+    V_SYSCODE VARCHAR(500);
 BEGIN
    
 	-- Handle default values for P_DOWNLOAD_DATE
@@ -44,7 +47,7 @@ BEGIN
 
     ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
-        P_SYSCODE := '0';
+        V_SYSCODE := '0';
     END IF;
 
     V_MODEL_ID := NVL(P_SYSCODE, '0');
@@ -81,7 +84,7 @@ BEGIN
                  )
                  OR :p2 = ''0''
                )'; 
-    EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
    
     -------- ====== BODY ======
 	-- Clear Session
