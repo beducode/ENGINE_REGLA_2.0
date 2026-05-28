@@ -1,9 +1,10 @@
-CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PD_TERM_STRUCTURE (
+CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PD_TERM_STRUCTURE_DEV (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE,
     P_SYSCODE       IN VARCHAR2 DEFAULT '0',
     P_PRC           IN VARCHAR2 DEFAULT 'S'
 )
+AUTHID CURRENT_USER
 AS
     -- Dates / counters
     V_CURRDATE      DATE;
@@ -31,6 +32,8 @@ AS
 
     -- result query
     V_QUERYS        CLOB;
+
+    V_SYSCODE VARCHAR(500);
 BEGIN
     -- set procedure name
     V_SP_NAME := 'SP_IFRS_PD_TERM_STRUCTURE';
@@ -42,6 +45,11 @@ BEGIN
           FROM PSAK413.IFRS_PRC_DATE; 
     ELSE
         V_CURRDATE := P_DOWNLOAD_DATE;
+    END IF;
+
+    ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
+    IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
+        V_SYSCODE := '0';
     END IF;
 
     IF P_SYSCODE <> '0' THEN
@@ -85,7 +93,7 @@ BEGIN
                  OR :p2 = ''0'' 
                )';
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
-    EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
     ----------------------------------------------------------------
     -- PRE-SIMULATION TABLE: create/drop temp tables if P_PRC = 'S'
     ----------------------------------------------------------------

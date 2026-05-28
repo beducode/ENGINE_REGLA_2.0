@@ -1,9 +1,10 @@
-CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PD_MAA_FLOWRATE_SMOOTH (
+CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PD_MAA_FLOWRATE_SMOOTH_DEV (
     P_RUNID         VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE DATE,
     P_SYSCODE       VARCHAR2 DEFAULT '0',
     P_PRC           VARCHAR2 DEFAULT 'S'
 )
+AUTHID CURRENT_USER
 AS
     -- Date variables
     V_CURRDATE      DATE;
@@ -47,6 +48,8 @@ AS
     V_COLUMNDEST    VARCHAR2(100);
     V_OPERATION     VARCHAR2(100);
     V_SP_NAME       VARCHAR2(100);
+
+    V_SYSCODE VARCHAR(500);
 BEGIN
 	-- set procedure name
     V_SP_NAME := 'SP_IFRS_PD_MAA_FLOWRATE_SMOOTH';
@@ -57,6 +60,12 @@ BEGIN
     ELSE
         V_CURRDATE := P_DOWNLOAD_DATE;
     END IF;
+
+    ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
+    IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
+        V_SYSCODE := '0';
+    END IF;
+
     V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
     V_MODEL_ID := '0';
 
@@ -122,7 +131,7 @@ BEGIN
                  OR :p2 = ''0''
                )';
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
-    EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
     COMMIT;
     -----------------------------
     -- UPDATE DEFF FLOWRATE
@@ -219,8 +228,9 @@ BEGIN
     COMMIT;
 	
     PSAK413.SP_IFRS_PD_LINEST_SMOOTHING(P_RUNID,P_PRC);
+    
     ----------------------------------------------------------------
-    -- Populate TMP_PD_BASE (add predicted logit & predicted pd)
+    -- POPULATE TMP_PD_BASE (ADD PREDICTED LOGIT & PREDICTED PD)
     ----------------------------------------------------------------
     BEGIN
     V_STR_QUERY := '
@@ -305,8 +315,6 @@ BEGIN
 	  	V_LOOP1 := V_LOOP1 + 1;
 	
 		END LOOP ;  
-		 			
-	
 		
 		EXECUTE IMMEDIATE 'TRUNCATE TABLE GTMP_SMOOTH'; 
 			
@@ -328,18 +336,6 @@ BEGIN
 	
 		IF V_LOOP3 > 0 
 	   	THEN
---		    	MERGE INTO GTMP_PD_RESULT A  
---				USING GTMP_SMOOTH B           
---				ON (A.BUCKET_FROM = B.BUCKET_FROM AND A.PD_RULE_ID = B.PD_RULE_ID)
---				WHEN MATCHED THEN
---				    UPDATE SET A.PD_RESULT =
---				        CASE 
---				            WHEN A.FLOWRATE <> A.PD_RESULT
---				             AND A.FLOWRATE > B.LAGPD
---				             AND A.FLOWRATE < B.LEADPD
---				            THEN A.FLOWRATE  
---				            ELSE A.PD_RESULT  
---				        END;
 			MERGE INTO GTMP_PD_RESULT A 
 				USING ( SELECT B.BUCKET_FROM, B.PD_RULE_ID, B.LAGPD, B.LEADPD, 
 				LEAD(A2.PD_RESULT, 1, 0) OVER ( PARTITION BY A2.PD_RULE_ID ORDER BY A2.BUCKET_FROM ) AS NEXT_PD_RESULT 
@@ -348,11 +344,12 @@ BEGIN
 					AND A2.PD_RULE_ID = B.PD_RULE_ID ) X ON ( A.BUCKET_FROM = X.BUCKET_FROM AND A.PD_RULE_ID = X.PD_RULE_ID ) 
 					WHEN MATCHED THEN 
 								UPDATE SET A.PD_RESULT = CASE WHEN A.FLOWRATE <> A.PD_RESULT 
-															AND A.FLOWRATE > X.LAGPD 
-															AND A.FLOWRATE < X.LEADPD 
-															AND X.NEXT_PD_RESULT > A.FLOWRATE 
-															THEN A.FLOWRATE 
-															ELSE A.PD_RESULT END;
+                AND A.FLOWRATE > X.LAGPD 
+                AND A.FLOWRATE < X.LEADPD 
+                AND X.NEXT_PD_RESULT > A.FLOWRATE 
+                THEN A.FLOWRATE 
+                ELSE A.PD_RESULT 
+        END;
 			COMMIT ; 
 	   	ELSE
 	    	NULL;
@@ -399,8 +396,7 @@ BEGIN
     V_OPERATION := 'INSERT';
  
     PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
-    COMMIT;IFRS_PD_LINEST_SMOOTHING
-
+    COMMIT;
 
     ------ ====== RESULT ======
     V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
