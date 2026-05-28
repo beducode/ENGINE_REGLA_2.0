@@ -46,7 +46,7 @@ BEGIN
     IF P_DOWNLOAD_DATE IS NULL THEN
         V_SQL := '
         CREATE TABLE ' || P_SCHEMA || '.' || P_TABLE_COPY || '
-        AS SELECT * FROM ' || P_SCHEMA || '.' || P_TABLE_NAME;
+        AS SELECT * FROM ' || P_SCHEMA || '.' || P_TABLE_NAME || ' WHERE 0=1';
     ELSE
         V_CURRDATE := P_DOWNLOAD_DATE;
         V_SQL := '
