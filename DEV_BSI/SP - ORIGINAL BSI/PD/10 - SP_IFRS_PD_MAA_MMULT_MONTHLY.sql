@@ -12,9 +12,9 @@ AS
     V_FL_SEQ          NUMBER := 0;
     V_PERIOD		  NUMBER := 0;
 
-    V_TBL_MMULT       VARCHAR2(30);
-    V_TBL_FLOWRATE    VARCHAR2(30);
-    V_TBL_FLOWRATE2   VARCHAR2(30);
+    V_TBL_MMULT       VARCHAR2(100);
+    V_TBL_FLOWRATE    VARCHAR2(100);
+    V_TBL_FLOWRATE2   VARCHAR2(100);
 
     V_QRY             CLOB;
    
@@ -45,7 +45,7 @@ AS
 	V_SYSCODE VARCHAR(500);
 BEGIN
 	
-	V_SP_NAME := 'SP_IFRS_PD_MAA_MMULT_MONTHLY';
+	V_SP_NAME := 'SP_IFRS_PD_MAA_MMULT_MONTHLY_DEV';
 
 	-- handle default download date
     IF P_DOWNLOAD_DATE IS NULL THEN
@@ -59,9 +59,11 @@ BEGIN
 	----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
         V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
     END IF;
 
-	V_CURRDATE := LAST_DAY(P_DOWNLOAD_DATE);
+	V_CURRDATE := LAST_DAY(V_CURRDATE);
     V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
     
    IF P_SYSCODE <> '0' THEN
@@ -90,10 +92,10 @@ BEGIN
 		PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('GTMP_RUNNING_PD_MAA_MMULT', V_TABLEINSERT1);
 		PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('TMP_IFRS_MMULT_SEQ', V_TMP_IFRS_MMULT_SEQ);
     ELSE
-    	
 	    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TMP_IFRS_MMULT_SEQ || '';
+		COMMIT;
     END IF;
-    COMMIT;
+    
    
     PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, 0, SYSDATE);
     COMMIT;
@@ -111,14 +113,15 @@ BEGIN
 					 	' FROM IFRS_PD_RULES_CONFIG ' ||
                'WHERE PD_METHOD = ''MAA'' AND IS_DELETED = 0 AND INCREMENT_PERIOD < 12 AND (  
                  UPPER(TRIM(SYSCODE_PD)) IN ( 
-                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
                    FROM DUAL
-                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
                  )
-                 OR :p2 = ''0'' 
+                 OR ''' || V_SYSCODE || ''' = ''0'' 
                )';
-    --DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
+
+    DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
+    EXECUTE IMMEDIATE V_STR_QUERY;
    
     EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1;
     COMMIT;
@@ -195,12 +198,12 @@ BEGIN
 		    )
 		    SELECT
 		        A.EFF_DATE,
-		        TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''),
+		        DATE ''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',
 		        0,
 		        0,
 		        ' || DT_SEQ.PD_RULE_ID || ',
 		        0,
-				' || DT_SEQ.INCREMENT_PERIOD || ' AS FL_MONTH,
+				''' || DT_SEQ.INCREMENT_PERIOD || ''' AS FL_MONTH,
 		        A.BUCKET_GROUP,
 		        A.BUCKET_FROM,
 		        A.BUCKET_TO,
@@ -213,10 +216,10 @@ BEGIN
 		    JOIN IFRS_BUCKET_DETAIL C
 		        ON B.BUCKET_GROUP = C.BUCKET_GROUP
 		       AND A.BUCKET_TO = C.BUCKET_ID
-		    WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-			AND A.PD_RULE_ID = ' || DT_SEQ.PD_RULE_ID || ' ';
+		    WHERE A.EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || '''
+			AND A.PD_RULE_ID = ''' || DT_SEQ.PD_RULE_ID || ''' ';
 		   
-			--DBMS_OUTPUT.PUT_LINE(V_QRY);
+			DBMS_OUTPUT.PUT_LINE(V_QRY);
 		    EXECUTE IMMEDIATE V_QRY;
 		
 		    COMMIT;
@@ -227,7 +230,7 @@ BEGIN
 		
 			WHILE v_fl_seq < V_MAX_ID LOOP
 		    	
-		   v_qry :=
+		   V_QRY :=
 		   'INSERT INTO ' || v_tbl_mmult || '
 		   (
 		     EFF_DATE,
@@ -280,10 +283,10 @@ BEGIN
 		            A.PD_RULE_ID,
 		            A.BUCKET_GROUP,
 		            A.BUCKET_TO,
-		            B.BUCKET_FROM
-				';
-			--DBMS_OUTPUT.PUT_LINE(V_QRY);
-		   EXECUTE IMMEDIATE v_qry;
+		            B.BUCKET_FROM';
+		
+		--    DBMS_OUTPUT.PUT_LINE(V_QRY);
+		   EXECUTE IMMEDIATE V_QRY;
 		   COMMIT;
 		  
 		   v_fl_seq := v_fl_seq + 1;

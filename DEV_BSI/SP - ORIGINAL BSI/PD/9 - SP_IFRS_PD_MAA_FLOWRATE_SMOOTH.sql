@@ -52,7 +52,7 @@ AS
     V_SYSCODE VARCHAR(500);
 BEGIN
 	-- set procedure name
-    V_SP_NAME := 'SP_IFRS_PD_MAA_FLOWRATE_SMOOTH';
+    V_SP_NAME := 'SP_IFRS_PD_MAA_FLOWRATE_SMOOTH_DEV';
     
     -- Set current and previous dates
     IF P_DOWNLOAD_DATE IS NULL THEN
@@ -64,6 +64,8 @@ BEGIN
     ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
         V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
     END IF;
 
     V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
@@ -124,14 +126,14 @@ BEGIN
 					 	' FROM IFRS_PD_RULES_CONFIG ' ||
                'WHERE PD_METHOD = ''MAA'' AND NVL(IS_DELETED,0) = 0 AND (  
                  UPPER(TRIM(SYSCODE_PD)) IN ( 
-                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
                    FROM DUAL
-                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
                  )
-                 OR :p2 = ''0''
+                 OR ''' || V_SYSCODE || ''' = ''0''
                )';
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
     -----------------------------
     -- UPDATE DEFF FLOWRATE
@@ -227,7 +229,7 @@ BEGIN
     END;
     COMMIT;
 	
-    PSAK413.SP_IFRS_PD_LINEST_SMOOTHING(P_RUNID,P_PRC);
+    PSAK413.SP_IFRS_PD_LINEST_SMOOTHING_DEV(P_RUNID,P_PRC);
     
     ----------------------------------------------------------------
     -- POPULATE TMP_PD_BASE (ADD PREDICTED LOGIT & PREDICTED PD)

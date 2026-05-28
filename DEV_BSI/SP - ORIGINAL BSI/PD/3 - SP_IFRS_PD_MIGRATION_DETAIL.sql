@@ -50,9 +50,11 @@ BEGIN
 	----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
         V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
     END IF;
 	
-   	V_SP_NAME := 'SP_IFRS_PD_MIGRATION_DETAIL';
+   	V_SP_NAME := 'SP_IFRS_PD_MIGRATION_DETAIL_DEV';
    
     IF P_SYSCODE <> '0' THEN
    		V_MODEL_ID := '1';
@@ -87,14 +89,14 @@ BEGIN
 					 	' FROM IFRS_PD_RULES_CONFIG ' ||
                'WHERE PD_METHOD = ''MAA'' AND (  
                  UPPER(TRIM(SYSCODE_PD)) IN ( 
-                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
                    FROM DUAL
-                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
                  )
-                 OR :p2 = ''0'' 
+                 OR ''' || V_SYSCODE || ''' = ''0'' 
                )';
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
 
     -------- RECORD RUN_ID --------
    	PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, 0, SYSDATE);

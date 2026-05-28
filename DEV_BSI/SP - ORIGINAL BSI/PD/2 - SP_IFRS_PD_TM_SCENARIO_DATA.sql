@@ -26,7 +26,7 @@ AS
     -- LOG / RESULT
     V_TABLEDEST     VARCHAR2(100);
     V_COLUMNDEST    VARCHAR2(100);
-    V_SP_NAME        VARCHAR2(100) := 'SP_IFRS_PD_TM_SCENARIO_DATA';
+    V_SP_NAME        VARCHAR2(100) := 'SP_IFRS_PD_TM_SCENARIO_DATA_DEV';
     V_OPERATION     VARCHAR2(100);
     V_QUERYS        CLOB;
     V_RETURNROWS2   NUMBER;
@@ -51,6 +51,8 @@ BEGIN
     ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
         V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
     END IF;
 
     V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
@@ -99,14 +101,14 @@ BEGIN
 					 	' FROM IFRS_PD_RULES_CONFIG ' ||
                'WHERE PD_METHOD = ''MAA'' AND (  
                  UPPER(TRIM(SYSCODE_PD)) IN ( 
-                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
                    FROM DUAL
-                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
                  )
-                 OR :p2 = ''0'' 
+                 OR ''' || V_SYSCODE || ''' = ''0'' 
                )';
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
     ---------------------------------------------------------------------
 
    ----------------------------------------------------------------

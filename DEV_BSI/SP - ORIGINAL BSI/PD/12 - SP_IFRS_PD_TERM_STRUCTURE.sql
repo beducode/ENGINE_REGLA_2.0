@@ -36,7 +36,7 @@ AS
     V_SYSCODE VARCHAR(500);
 BEGIN
     -- set procedure name
-    V_SP_NAME := 'SP_IFRS_PD_TERM_STRUCTURE';
+    V_SP_NAME := 'SP_IFRS_PD_TERM_STRUCTURE_DEV';
     
     -- handle default download date
     IF P_DOWNLOAD_DATE IS NULL THEN
@@ -50,6 +50,8 @@ BEGIN
     ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
         V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
     END IF;
 
     IF P_SYSCODE <> '0' THEN
@@ -86,14 +88,14 @@ BEGIN
 					 	' FROM IFRS_PD_RULES_CONFIG ' ||
                'WHERE PD_METHOD = ''MAA'' AND IS_DELETED = 0 AND (  
                  UPPER(TRIM(SYSCODE_PD)) IN ( 
-                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
                    FROM DUAL
-                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
                  )
-                 OR :p2 = ''0'' 
+                 OR ''' || V_SYSCODE || ''' = ''0'' 
                )';
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
     ----------------------------------------------------------------
     -- PRE-SIMULATION TABLE: create/drop temp tables if P_PRC = 'S'
     ----------------------------------------------------------------

@@ -35,7 +35,7 @@ AS
     V_SYSCODE VARCHAR(500);
 BEGIN
 	-- set procedure name
-    V_SPNAME := 'SP_IFRS_PD_MAA_ODR';
+    V_SPNAME := 'SP_IFRS_PD_MAA_ODR_DEV';
     
     ------------------------------------------------------------------------
     -- SET CURRDATE
@@ -49,6 +49,8 @@ BEGIN
     ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
         V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
     END IF;
 
     V_PREVDATE := LAST_DAY(ADD_MONTHS(V_CURRDATE, -1));
@@ -110,8 +112,9 @@ BEGIN
                     -1 * HISTORICAL_DATA)), INCLUDE_CLOSE
         FROM '|| V_TAB_OWNER || '.' || V_TABLEPDCONFIG || '
         WHERE PD_METHOD = ''MAA''
-          AND (''' || V_MODEL_ID || ''' = ''0'' OR PKID = ''' || V_MODEL_ID || ''')
+          AND (''' || V_SYSCODE || ''' = ''0'' OR PKID = ''' || V_SYSCODE || ''')
           AND IS_DELETED = 0 ';
+          
 	EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
     ------------------------------------------------------------------------
@@ -200,7 +203,7 @@ BEGIN
     ------ ====== RESULT ======
     V_QUERYS := 'SELECT * FROM '|| V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
         ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''' ' ||
-        ' AND (PD_RULE_ID = ''' || V_MODEL_ID || ''' OR ''' || V_MODEL_ID || ''' = ''0'')';
+        ' AND (PD_RULE_ID = ''' || V_SYSCODE || ''' OR ''' || V_SYSCODE || ''' = ''0'')';
 
     SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, NVL(V_RETURNROWS2,0), P_RUNID);
     COMMIT;

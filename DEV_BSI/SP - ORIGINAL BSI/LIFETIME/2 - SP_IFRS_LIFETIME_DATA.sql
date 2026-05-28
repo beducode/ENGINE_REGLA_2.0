@@ -40,7 +40,7 @@ AS
 BEGIN
    
 	
-    V_SPNAME := 'SP_IFRS_LIFETIME_DATA';
+    V_SPNAME := 'SP_IFRS_LIFETIME_DATA_DEV';
     V_DATADATE := TO_CHAR(V_CURRDATE, 'YYYY-MM-DD');
     
 	-- Handle default values for P_DOWNLOAD_DATE
@@ -58,6 +58,8 @@ BEGIN
     ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
         V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
     END IF;
   
     IF P_PRC = 'S' THEN 
@@ -86,13 +88,13 @@ BEGIN
                WHERE  IS_DELETED = 0 AND START_HISTORICAL_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') 
 				AND (  
                  UPPER(TRIM(SYSCODE_LIFETIME)) IN ( 
-                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
                    FROM DUAL
-                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
                  )
-                 OR :p2 = 0 
+                 OR ''' || V_SYSCODE || ''' = 0 
                )'; 
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
 
    	V_STR_QUERY := 
 	'DELETE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' A  

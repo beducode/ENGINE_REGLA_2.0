@@ -38,6 +38,8 @@ AS
     
     V_SYSCODE VARCHAR(500);
 BEGIN
+
+    V_SPNAME := 'SP_IFRS_LIFETIME_RULE_DATA_DEV';
    
 	-- Handle default values for P_DOWNLOAD_DATE
     IF P_DOWNLOAD_DATE IS NULL THEN
@@ -54,6 +56,8 @@ BEGIN
     ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
         V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
     END IF;
  
  	IF V_CURRDATE = V_EOMDATE THEN   
@@ -88,15 +92,15 @@ BEGIN
                WHERE  IS_DELETED = 0 AND START_HISTORICAL_DATE <= TO_DATE(''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''', ''YYYY-MM-DD'') 
 				AND (  
                  UPPER(TRIM(SYSCODE_LIFETIME)) IN ( 
-                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
                    FROM DUAL
-                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
                  )
-                 OR :p2 = 0 
+                 OR ''' || V_SYSCODE || ''' = 0 
                )';
     
     DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
 	  
     EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TABLEINSERT1  ; 
     
@@ -151,15 +155,10 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY, 1, 30000));
      EXECUTE IMMEDIATE V_STR_QUERY;
     END LOOP;
-    
-    
-    
-     
 
     -------- ====== LOG ======
     V_TABLEDEST := V_TABLEINSERT1;
     V_COLUMNDEST := '-';
-    V_SPNAME := 'SP_IFRS_LIFETIME_RULE_DATA';
     V_OPERATION := 'INSERT';
     
     PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SPNAME, V_OPERATION, nvl(V_RETURNROWS2,0), P_RUNID);

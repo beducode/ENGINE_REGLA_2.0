@@ -11,9 +11,9 @@ AS
     V_PREVDATE        DATE;
     V_FL_SEQ          NUMBER := 0;
 
-    V_TBL_MMULT       VARCHAR2(30);
-    V_TBL_FLOWRATE    VARCHAR2(30);
-    V_TBL_FLOWRATE2   VARCHAR2(30);
+    V_TBL_MMULT       VARCHAR2(100);
+    V_TBL_FLOWRATE    VARCHAR2(100);
+    V_TBL_FLOWRATE2   VARCHAR2(100);
 
     V_QRY             CLOB;
    
@@ -44,7 +44,7 @@ AS
     V_SYSCODE VARCHAR(500);
 BEGIN
 	
-	V_SP_NAME := 'SP_IFRS_PD_MAA_MMULT';
+	V_SP_NAME := 'SP_IFRS_PD_MAA_MMULT_DEV';
 
 	-- handle default download date
     IF P_DOWNLOAD_DATE IS NULL THEN
@@ -58,6 +58,8 @@ BEGIN
     ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
     IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
         V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
     END IF;
 
 	V_CURRDATE := LAST_DAY(P_DOWNLOAD_DATE);
@@ -109,14 +111,14 @@ BEGIN
 					 	' FROM IFRS_PD_RULES_CONFIG ' ||
                'WHERE PD_METHOD = ''MAA'' AND NVL(IS_DELETED,0) = 0 AND (  
                  UPPER(TRIM(SYSCODE_PD)) IN ( 
-                   SELECT UPPER(TRIM(REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL)))
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
                    FROM DUAL
-                   CONNECT BY REGEXP_SUBSTR(:p1, ''[^;]+'', 1, LEVEL) IS NOT NULL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
                  )
-                 OR :p2 = ''0'' 
+                 OR ''' || V_SYSCODE || ''' = ''0'' 
                )';
     --DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
-    EXECUTE IMMEDIATE V_STR_QUERY USING V_SYSCODE, V_SYSCODE, V_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
    
     EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1;
     COMMIT;
