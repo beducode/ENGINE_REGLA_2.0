@@ -19,6 +19,8 @@ AS
     ---- QUERY  
     V_STR_QUERY CLOB;
 	V_STR_SQL_RULE CLOB;
+    V_SQL_CONDITIONS CLOB;
+    V_SCRIPT1 CLOB;
 
 	---- TABLE LIST 
 	V_TAB_OWNER CONSTANT VARCHAR2(30) := 'PSAK413';
@@ -74,7 +76,7 @@ BEGIN
     END IF;
 
     IF P_PRC = 'S' THEN
-        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_LGD_RULE_DATA', V_TABLEINSERT1);    
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_DEFAULT', V_TABLEINSERT1);    
     END IF;
 
     -------- RECORD RUN_ID --------
@@ -85,7 +87,7 @@ BEGIN
 	EXECUTE IMMEDIATE 'TRUNCATE TABLE PSAK413.GTMP_IFRS_LGD_WORKOUT_RULES_CONFIG';
 	 
     V_STR_QUERY := 'INSERT INTO PSAK413.GTMP_IFRS_LGD_WORKOUT_RULES_CONFIG
-               SELECT * FROM IFRS_LGD_WORKOUT_RULES_CONFIG
+               SELECT * FROM PSAK413.IFRS_LGD_WORKOUT_RULES_CONFIG
                WHERE IS_DELETED = 0 AND (  
                  UPPER(TRIM(SYSCODE_WORKOUT)) IN ( 
                    SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
@@ -108,7 +110,7 @@ BEGIN
 						'CALC_METHOD, HISTORICAL_DATA, EXPECTED_LIFE, INCLUDE_INDIVIDUAL_ACCOUNT, INCLUDE_WO, INCLUDE_CLOSE, DEFAULT_RATIO_BY, ' ||
 						'DEFAULT_RULE_ID, BUCKET_GROUP, ME_CODE, PERIOD_START_DATE, PERIOD_END_DATE, ' ||
 					 	'IS_DELETED, INCREMENT_PERIOD, IS_ACTIVE, CREATED_BY, CREATED_DATE, UPDATED_BY, UPDATED_DATE' || 
-					 	' FROM IFRS_PD_RULES_CONFIG ' ||
+					 	' FROM PSAK413.IFRS_PD_RULES_CONFIG ' ||
                'WHERE PD_METHOD = ''MAA'' AND (  
                  UPPER(TRIM(SYSCODE_PD)) IN ( 
                    SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
@@ -125,20 +127,16 @@ BEGIN
 
     V_STR_QUERY := 'INSERT INTO PSAK413.TMPRULE
     SELECT DISTINCT DEFAULT_RULE_ID
-    FROM GTMP_IFRS_PD_RULES_CONFIG
+    FROM PSAK413.GTMP_IFRS_PD_RULES_CONFIG
     WHERE IS_ACTIVE = 1
-    AND IS_DELETED = 0
-    AND PD_METHOD <> ''VAS''
-    AND (PKID = P_MODEL_ID OR P_MODEL_ID = 0)';
+    AND IS_DELETED = 0';
 
     EXECUTE IMMEDIATE V_STR_QUERY;
 
     V_STR_QUERY := 'INSERT INTO PSAK413.TMPRULE
     SELECT DISTINCT DEFAULT_RULE_ID
-    FROM GTMP_IFRS_LGD_WORKOUT_RULES_CONFIG
-    WHERE IS_DELETED = 0
-    AND LGD_METHOD <> ''VAS''
-    AND (PKID = P_MODEL_ID OR P_MODEL_ID = 0)';
+    FROM PSAK413.GTMP_IFRS_LGD_WORKOUT_RULES_CONFIG
+    WHERE IS_DELETED = 0';
 
     EXECUTE IMMEDIATE V_STR_QUERY;
 
@@ -148,15 +146,15 @@ BEGIN
 
     EXECUTE IMMEDIATE V_STR_QUERY;
 
-    ------------------------------------------------------------------
-    -- LOOP RULE
-    ------------------------------------------------------------------
+    ----------------------------------------------------------------
+    ---- LOOP RULE
+    ----------------------------------------------------------------
     FOR r_rule IN (
         SELECT
 		    A.PKID,
 		    A.SQL_CONDITIONS
-		FROM IFRS_DEFAULT_CRITERIA A
-		JOIN TMPRULE B
+		FROM PSAK413.IFRS_DEFAULT_CRITERIA A
+		JOIN PSAK413.TMPRULE B
 		  ON A.PKID = B.DEFAULT_RULE_ID
 		ORDER BY A.PKID     
     )
@@ -195,8 +193,8 @@ BEGIN
                 NVL(ifrs_master_account.EIR, ifrs_master_account.MARGIN_RATE),
                 ifrs_master_account.CURRENCY,
                 SYSDATE
-            FROM ' || V_TABLENAME || ' ifrs_master_account
-            LEFT JOIN IFRS_MASTER_ACCOUNT_WO B
+            FROM ' || V_TAB_OWNER || '.' || V_TABLE_NAME || ' ifrs_master_account
+            LEFT JOIN PSAK413.IFRS_MASTER_ACCOUNT_WO B
                    ON ifrs_master_account.MASTERID = B.MASTERID
                   AND ifrs_master_account.DOWNLOAD_DATE >= B.DOWNLOAD_DATE
             WHERE ifrs_master_account.DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''
@@ -223,7 +221,7 @@ BEGIN
 	    FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' A
 	    JOIN ' || V_TAB_OWNER || '.' || V_TABLE_NAME || ' B
 	      ON A.MASTERID = B.MASTERID
-	    JOIN TMPRULE C
+	    JOIN PSAK413.TMPRULE C
 	      ON A.RULE_ID = C.DEFAULT_RULE_ID
 	    WHERE B.DOWNLOAD_DATE BETWEEN ADD_MONTHS(A.DOWNLOAD_DATE, -12)
 	                              AND A.DOWNLOAD_DATE
