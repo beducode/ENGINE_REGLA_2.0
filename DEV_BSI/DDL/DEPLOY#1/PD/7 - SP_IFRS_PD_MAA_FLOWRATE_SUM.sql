@@ -16,11 +16,9 @@ AS
 
     -- Table names (simple strings)
     V_TAB_OWNER     CONSTANT VARCHAR2(30) := 'PSAK413';
-    V_GTMP_PD_FLOW_SUM_CONFIG   VARCHAR2(100);
-    V_IFRS_PD_MAA_FLOWRATE_SUM   VARCHAR2(100);
-    V_IFRS_PD_MAA_ENR_SUM       VARCHAR2(100);
-    V_TMP_PD_BUCKET             VARCHAR2(100);
-    V_TMP_PD_TOTAL              VARCHAR2(100);
+    V_TABLEINSERT1  VARCHAR2(100);
+    V_TABLEINSERT2  VARCHAR2(100);
+    V_TABLESELECT1  VARCHAR2(100);
     V_TABLEPDCONFIG VARCHAR2(100);
 
     -- misc
@@ -32,6 +30,8 @@ AS
 
     -- result query (might be long)
     V_QUERYS        CLOB;
+
+    V_SYSCODE VARCHAR(500);
 
 BEGIN
     V_SP_NAME := 'SP_IFRS_PD_MAA_FLOWRATE_SUM_DEV';
@@ -48,69 +48,80 @@ BEGIN
         V_CURRDATE := P_DOWNLOAD_DATE;
     END IF;
 
+    ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
+    IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
+        V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
+    END IF;
+
     IF P_SYSCODE <> '0' THEN
    		V_MODEL_ID := '1';
     ELSE
     	V_MODEL_ID := '0';
     END IF;
 
-    IF P_PRC = 'S' THEN
-        V_GTMP_PD_FLOW_SUM_CONFIG := 'GTMP_PD_FLOW_SUM_CONFIG_' || P_RUNID;
-        V_IFRS_PD_MAA_FLOWRATE_SUM := 'IFRS_PD_MAA_FLOWRATE_SUM_' || P_RUNID;
-        V_IFRS_PD_MAA_ENR_SUM := 'IFRS_PD_MAA_ENR_SUM_' || P_RUNID;
-        V_TMP_PD_BUCKET := 'TMP_PD_BUCKET_' || P_RUNID;
-        V_TMP_PD_TOTAL := 'TMP_PD_TOTAL_' || P_RUNID;
-        V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG_' || P_RUNID;
-    ELSE
-        V_GTMP_PD_FLOW_SUM_CONFIG := 'GTMP_PD_FLOW_SUM_CONFIG';
-        V_IFRS_PD_MAA_FLOWRATE_SUM := 'IFRS_PD_MAA_FLOWRATE_SUM';
-        V_IFRS_PD_MAA_ENR_SUM := 'IFRS_PD_MAA_ENR_SUM';
-        V_TMP_PD_BUCKET := 'TMP_PD_BUCKET';
-        V_TMP_PD_TOTAL := 'TMP_PD_TOTAL';
-        V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG';
-    END IF;
+    V_TABLEPDCONFIG := 'GTMP_IFRS_PD_RULES_CONFIG';
 
-    ----------------------------------------------------------------
-    -- SIMULATION
-    ----------------------------------------------------------------
     IF P_PRC = 'S' THEN
-        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('GTMP_PD_FLOW_SUM_CONFIG', V_GTMP_PD_FLOW_SUM_CONFIG);
-        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_MAA_FLOWRATE_SUM', V_IFRS_PD_MAA_FLOWRATE_SUM);
-        -- PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_MAA_ENR_SUM', V_IFRS_PD_MAA_ENR_SUM);
-        -- PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_RULES_CONFIG', V_TABLEPDCONFIG);
-        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('TMP_PD_BUCKET', V_TMP_PD_BUCKET);
-        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('TMP_PD_TOTAL', V_TMP_PD_TOTAL);
+        V_TABLEINSERT1 := 'GTMP_PD_FLOW_SUM_CONFIG_' || P_RUNID;
+        V_TABLEINSERT2 := 'IFRS_PD_MAA_FLOWRATE_SUM_' || P_RUNID;
+        V_TABLESELECT1 := 'IFRS_PD_MAA_ENR_SUM_' || P_RUNID;
+    ELSE
+        V_TABLEINSERT1 := 'GTMP_PD_FLOW_SUM_CONFIG';
+        V_TABLEINSERT2 := 'IFRS_PD_MAA_FLOWRATE_SUM';
+        V_TABLESELECT1 := 'IFRS_PD_MAA_ENR_SUM';
     END IF;
-    COMMIT;
 
     PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
     COMMIT;
+	
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TABLEPDCONFIG || '' ; 
+	 
+    V_STR_QUERY := 'INSERT INTO ' || V_TABLEPDCONFIG || ' (PKID, SYSCODE_PD, PD_RULE_NAME, SEGMENTATION_ID, PD_METHOD, START_HISTORICAL_DATE,' || 
+						'CALC_METHOD, HISTORICAL_DATA, EXPECTED_LIFE, INCLUDE_INDIVIDUAL_ACCOUNT, INCLUDE_WO, INCLUDE_CLOSE, DEFAULT_RATIO_BY, ' ||
+						'DEFAULT_RULE_ID, BUCKET_GROUP, ME_CODE, PERIOD_START_DATE, PERIOD_END_DATE, ' ||
+					 	'IS_DELETED, INCREMENT_PERIOD, IS_ACTIVE, CREATED_BY, CREATED_DATE, UPDATED_BY, UPDATED_DATE)' ||
+               'SELECT PKID, SYSCODE_PD, PD_RULE_NAME, SEGMENTATION_ID, PD_METHOD, START_HISTORICAL_DATE,' || 
+						'CALC_METHOD, HISTORICAL_DATA, EXPECTED_LIFE, INCLUDE_INDIVIDUAL_ACCOUNT, INCLUDE_WO, INCLUDE_CLOSE, DEFAULT_RATIO_BY, ' ||
+						'DEFAULT_RULE_ID, BUCKET_GROUP, ME_CODE, PERIOD_START_DATE, PERIOD_END_DATE, ' ||
+					 	'IS_DELETED, INCREMENT_PERIOD, IS_ACTIVE, CREATED_BY, CREATED_DATE, UPDATED_BY, UPDATED_DATE' || 
+					 	' FROM IFRS_PD_RULES_CONFIG ' ||
+               'WHERE PD_METHOD = ''MAA'' AND NVL(IS_DELETED,0) = 0 AND (  
+                 UPPER(TRIM(SYSCODE_PD)) IN ( 
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
+                   FROM DUAL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
+                 )
+                 OR ''' || V_SYSCODE || ''' = ''0'' 
+               )';
+              
+    DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    
+    IF P_PRC = 'S' THEN
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('GTMP_PD_FLOW_SUM_CONFIG', V_TABLEINSERT1);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_MAA_FLOWRATE_SUM', V_TABLEINSERT2);
+    END IF;
 
     ----------------------------------------------------------------
-    -- ENSURE V_TABLEINSERT1 EXISTS AND CLEAR IT
+    -- Ensure V_TABLEINSERT1 exists and clear it
     ----------------------------------------------------------------
    
-    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_GTMP_PD_FLOW_SUM_CONFIG;
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1;
     COMMIT;
 
     ----------------------------------------------------------------
-    -- INSERT INTO CONFIG TEMP TABLE (V_TABLEINSERT1)
+    -- Insert into config temp table (V_TABLEINSERT1)
     ----------------------------------------------------------------
-    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_GTMP_PD_FLOW_SUM_CONFIG ||
+    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 ||
                    ' (PD_RULE_ID,INCLUDE_CLOSE, BUCKET_GROUP, HISTORICAL_DATA, CURR_DATE, PREV_DATE, TRANSITION_START_DATE, CUT_OFF_DATE) ' ||
                    ' SELECT PKID,INCLUDE_CLOSE, BUCKET_GROUP, HISTORICAL_DATA, TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''), ' ||
                    ' LAST_DAY(ADD_MONTHS(TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''), -1 * INCREMENT_PERIOD)), ' ||
                    ' LAST_DAY(ADD_MONTHS(TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''), -1 * HISTORICAL_DATA)), START_HISTORICAL_DATE ' ||
-                   ' FROM ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG ||' WHERE PD_METHOD = ''MAA'' AND (  
-                        UPPER(TRIM(SYSCODE_PD)) IN ( 
-                        SELECT UPPER(TRIM(REGEXP_SUBSTR(:1, ''[^;]+'', 1, LEVEL)))
-                        FROM DUAL
-                        CONNECT BY REGEXP_SUBSTR(:2, ''[^;]+'', 1, LEVEL) IS NOT NULL
-                        )
-                        OR :3 = ''0'' 
-                    )';
+                   ' FROM ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG ||' ';
 
-    EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
     
     DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY,1,30000));
@@ -119,12 +130,12 @@ BEGIN
     -- Delete logic on target summary table
     ----------------------------------------------------------------
     IF V_MODEL_ID = '0' THEN
-        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_FLOWRATE_SUM ||
+        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
                        ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
     ELSE
-        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_FLOWRATE_SUM || ' A' ||
+        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' A' ||
                        ' WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
-                       ' AND EXISTS (SELECT 1 FROM ' || V_TAB_OWNER || '.' || V_GTMP_PD_FLOW_SUM_CONFIG || ' B WHERE B.PD_RULE_ID = A.PD_RULE_ID )';
+                       ' AND EXISTS (SELECT 1 FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' B WHERE B.PD_RULE_ID = A.PD_RULE_ID )';
     END IF;
 
     EXECUTE IMMEDIATE V_STR_QUERY;
@@ -132,21 +143,21 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('Delete executed: ' || SUBSTR(V_STR_QUERY,1,30000));
 
     ----------------------------------------------------------------
-    -- CLEAR SESSION TMP TABLES TMP_PD_BUCKET_SUM & TMP_PD_TOTAL_SUM PAKAI TABLE SAMA.
+    -- Clear session tmp tables TMP_PD_BUCKET_SUM & TMP_PD_TOTAL_SUM PAKAI TABLE SAMA.
     ----------------------------------------------------------------
    
-    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_TMP_PD_BUCKET;
-    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_TMP_PD_TOTAL;
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE PSAK413.TMP_PD_BUCKET';
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE PSAK413.TMP_PD_TOTAL';
    
     COMMIT;
 
     ----------------------------------------------------------------
-    -- POPULATE TMP_PD_BUCKET_SUM
+    -- Populate TMP_PD_BUCKET_SUM
     ----------------------------------------------------------------
-    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TMP_PD_BUCKET || ' (PD_RULE_ID, BUCKET_GROUP, BUCKET_FROM, BUCKET_TO, CALC_AMOUNT) ' ||
+    V_STR_QUERY := 'INSERT INTO PSAK413.TMP_PD_BUCKET (PD_RULE_ID, BUCKET_GROUP, BUCKET_FROM, BUCKET_TO, CALC_AMOUNT) ' ||
                    ' SELECT A.PD_RULE_ID, A.BUCKET_GROUP, A.BUCKET_FROM, CASE WHEN C.INCLUDE_CLOSE = 1 AND A.BUCKET_TO = 0 THEN 1 ELSE A.BUCKET_TO END AS BUCKET_TO, SUM(A.CALC_AMOUNT) ' ||
-                   ' FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_ENR_SUM || ' A ' ||
-                   ' INNER JOIN ' || V_TAB_OWNER || '.' || V_GTMP_PD_FLOW_SUM_CONFIG || ' C ON A.PD_RULE_ID = C.PD_RULE_ID ' ||
+                   ' FROM ' || V_TAB_OWNER || '.' || V_TABLESELECT1 || ' A ' ||
+                   ' INNER JOIN ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' C ON A.PD_RULE_ID = C.PD_RULE_ID ' ||
                    ' WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') ' ||
                    ' GROUP BY A.PD_RULE_ID, A.BUCKET_GROUP, A.BUCKET_FROM, CASE WHEN C.INCLUDE_CLOSE = 1 AND A.BUCKET_TO = 0 THEN 1 ELSE A.BUCKET_TO END ';
 
@@ -155,12 +166,12 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
 
     ----------------------------------------------------------------
-    -- POPULATE TMP_PD_TOTAL_SUM
+    -- Populate TMP_PD_TOTAL_SUM
     ----------------------------------------------------------------
-    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TMP_PD_TOTAL || ' (PD_RULE_ID, BUCKET_GROUP, BUCKET_FROM, TOTAL, PREV_DATE) ' ||
+    V_STR_QUERY := 'INSERT INTO PSAK413.TMP_PD_TOTAL (PD_RULE_ID, BUCKET_GROUP, BUCKET_FROM, TOTAL, PREV_DATE) ' ||
                    ' SELECT X.PD_RULE_ID, X.BUCKET_GROUP, X.BUCKET_FROM, SUM(X.CALC_AMOUNT) AS TOTAL, C.PREV_DATE ' ||
-                   ' FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_ENR_SUM || ' X ' ||
-                   ' INNER JOIN ' || V_TAB_OWNER || '.' || V_GTMP_PD_FLOW_SUM_CONFIG || ' C ON X.PD_RULE_ID = C.PD_RULE_ID ' ||
+                   ' FROM ' || V_TAB_OWNER || '.' || V_TABLESELECT1 || ' X ' ||
+                   ' INNER JOIN ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' C ON X.PD_RULE_ID = C.PD_RULE_ID ' ||
                    ' WHERE (X.BUCKET_TO <> 0 OR (X.BUCKET_TO = 0 AND EXISTS (SELECT 1 FROM ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG ||' Y WHERE Y.BUCKET_GROUP = X.BUCKET_GROUP AND Y.INCLUDE_CLOSE = 1))) ' ||
                    ' AND X.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') ' ||
                    ' GROUP BY X.PD_RULE_ID, X.BUCKET_GROUP, X.BUCKET_FROM, C.PREV_DATE';
@@ -170,15 +181,15 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
 
     ----------------------------------------------------------------
-    -- INSERT AGGREGATED FLOWRATE INTO TARGET
+    -- Insert aggregated flowrate into target
     ----------------------------------------------------------------
-    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_FLOWRATE_SUM || ' (EFF_DATE, BASE_DATE, PD_RULE_ID, BUCKET_GROUP, BUCKET_FROM, BUCKET_TO, FLOWRATE,FLOWRATE_ORI, CREATEDBY, CREATEDDATE) ' ||
+    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' (EFF_DATE, BASE_DATE, PD_RULE_ID, BUCKET_GROUP, BUCKET_FROM, BUCKET_TO, FLOWRATE,FLOWRATE_ORI, CREATEDBY, CREATEDDATE) ' ||
                    ' SELECT TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''), B.PREV_DATE, A.PD_RULE_ID, A.BUCKET_GROUP, A.BUCKET_FROM, A.BUCKET_TO, ' ||
                    ' CASE WHEN B.TOTAL = 0 THEN 0 WHEN A.BUCKET_FROM = D.MAX_BUCKET_ID AND A.BUCKET_TO = D.MAX_BUCKET_ID THEN 1 ELSE (A.CALC_AMOUNT / B.TOTAL) END, ' ||
                    ' CASE WHEN B.TOTAL = 0 THEN 0 WHEN A.BUCKET_FROM = D.MAX_BUCKET_ID AND A.BUCKET_TO = D.MAX_BUCKET_ID THEN 1 ELSE (A.CALC_AMOUNT / B.TOTAL) END, ' ||
-                   '''SP_IFRS_PD_MAA_FLOWRATE_SUM_DEV'', SYSDATE ' ||
-                   ' FROM ' || V_TAB_OWNER || '.' || V_TMP_PD_BUCKET || ' A ' ||
-                   ' INNER JOIN ' || V_TAB_OWNER || '.' || V_TMP_PD_TOTAL || ' B ON A.BUCKET_GROUP = B.BUCKET_GROUP AND A.PD_RULE_ID = B.PD_RULE_ID AND A.BUCKET_FROM = B.BUCKET_FROM ' ||
+                   '''SP_IFRS_PD_MAA_FLOWRATE_SUM'', SYSDATE ' ||
+                   ' FROM PSAK413.TMP_PD_BUCKET A ' ||
+                   ' INNER JOIN PSAK413.TMP_PD_TOTAL B ON A.BUCKET_GROUP = B.BUCKET_GROUP AND A.PD_RULE_ID = B.PD_RULE_ID AND A.BUCKET_FROM = B.BUCKET_FROM ' ||
                    ' INNER JOIN ' || V_TAB_OWNER || '.VW_IFRS_MAX_BUCKET D ON A.BUCKET_GROUP = D.BUCKET_GROUP ' ||
                    ' ORDER BY A.PD_RULE_ID, A.BUCKET_FROM, A.BUCKET_TO';
 
@@ -186,26 +197,23 @@ BEGIN
     COMMIT;
     DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
     ----------------------------------------------------------------
-    -- LOG:
+    -- LOG: call exec_and_log
     ----------------------------------------------------------------
-    V_TABLEDEST := V_TAB_OWNER || '.' || V_IFRS_PD_MAA_FLOWRATE_SUM;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLEINSERT2;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
 
     PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
     COMMIT;
 
-    ----------------------------------------------------------------
-    -- RESULT
-    ----------------------------------------------------------------
-    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_FLOWRATE_SUM;
-
+    -------- ====== RESULT ======
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
     PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
-    COMMIT;
+	COMMIT;
+    -------- ====== RESULT ======
 
 EXCEPTION
     WHEN OTHERS THEN
         ROLLBACK;
-
-        RAISE_APPLICATION_ERROR(-20001,'ERROR IN ' || V_SP_NAME || ' : ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20003, 'SP_IFRS_PD_MAA_FLOWRATE_SUM failed: ' || SQLERRM);
 END;

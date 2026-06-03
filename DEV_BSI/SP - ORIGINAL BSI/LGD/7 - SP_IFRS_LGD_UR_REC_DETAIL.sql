@@ -298,7 +298,7 @@ CCY, -- EXCHANGE_RATE,
     -------- ====== LOG ======
 
     -------- ====== RESULT ======
-    V_STR_QUERY := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
+    V_STR_QUERY := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
     PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_STR_QUERY, V_SPNAME, NVL(V_RETURNROWS2,0), P_RUNID);
 	COMMIT;
     -------- ====== RESULT ======

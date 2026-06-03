@@ -17,11 +17,10 @@ AS
 
     -- Table names (unqualified parts)
     V_TAB_OWNER     CONSTANT VARCHAR2(30) := 'PSAK413';
-    V_GTMP_PD_RUNNING_ENR_SUM VARCHAR2(100);
-    V_IFRS_PD_MAA_ENR_SUM VARCHAR2(100);
-    V_IFRS_PD_MAA_ENR VARCHAR2(100);
+    V_TABLEINSERT1  VARCHAR2(100);
+    V_TABLEINSERT2  VARCHAR2(100);
+    V_TABLESELECT1  VARCHAR2(100);
     V_TABLEPDCONFIG VARCHAR2(100);
-    
 
     -- misc
     V_RETURNROWS    NUMBER;
@@ -33,6 +32,8 @@ AS
 
     -- result query
     V_QUERYS        CLOB;
+
+    V_SYSCODE VARCHAR(500);
 
     -- helper to print long SQL
     PROCEDURE PRINT_CLOB(p_clob CLOB) IS
@@ -78,44 +79,74 @@ BEGIN
         V_CURRDATE := P_DOWNLOAD_DATE;
     END IF;
 
+    ----- TAMBAHAN JIKA P_SYSCODE NYA DI DAPAT NULL
+    IF COALESCE(P_SYSCODE, NULL) IS NULL THEN
+        V_SYSCODE := '0';
+	ELSE
+		V_SYSCODE := P_SYSCODE;
+    END IF;
+
     IF P_SYSCODE <> '0' THEN
    		V_MODEL_ID := '1';
     ELSE
     	V_MODEL_ID := '0';
     END IF;
 
+    V_TABLEPDCONFIG := 'GTMP_IFRS_PD_RULES_CONFIG';
+
     IF P_PRC = 'S' THEN 
-        V_GTMP_PD_RUNNING_ENR_SUM := 'GTMP_PD_RUNNING_ENR_SUM_' || P_RUNID;
-        V_IFRS_PD_MAA_ENR_SUM := 'IFRS_PD_MAA_ENR_SUM_' || P_RUNID;
-        V_IFRS_PD_MAA_ENR := 'IFRS_PD_MAA_ENR_' || P_RUNID;
-        V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG_' || P_RUNID;
+        V_TABLEINSERT1 := 'GTMP_PD_RUNNING_ENR_SUM_' || P_RUNID;
+        V_TABLEINSERT2 := 'IFRS_PD_MAA_ENR_SUM_' || P_RUNID;
+        V_TABLESELECT1 := 'IFRS_PD_MAA_ENR_' || P_RUNID;
     ELSE 
-        V_GTMP_PD_RUNNING_ENR_SUM := 'GTMP_PD_RUNNING_ENR_SUM';
-        V_IFRS_PD_MAA_ENR_SUM := 'IFRS_PD_MAA_ENR_SUM';
-        V_IFRS_PD_MAA_ENR := 'IFRS_PD_MAA_ENR';
-        V_TABLEPDCONFIG := 'IFRS_PD_RULES_CONFIG';
+        V_TABLEINSERT1 := 'GTMP_PD_RUNNING_ENR_SUM';
+        V_TABLEINSERT2 := 'IFRS_PD_MAA_ENR_SUM';
+        V_TABLESELECT1 := 'IFRS_PD_MAA_ENR';
     END IF;
-	
-    -- PRE-SIMULATION TABLES
-    ----------------------------------------------------------------
-    IF P_PRC = 'S' THEN
-        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('GTMP_PD_RUNNING_ENR_SUM', V_GTMP_PD_RUNNING_ENR_SUM);
-        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_MAA_ENR_SUM', V_IFRS_PD_MAA_ENR_SUM);
-        -- PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_MAA_ENR', V_IFRS_PD_MAA_ENR);
-        -- PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('GTMP_IFRS_PD_RULES_CONFIG', V_TABLEPDCONFIG);
-    END IF;
+
     
-    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_GTMP_PD_RUNNING_ENR_SUM;
-    COMMIT;
-
-
     PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
     COMMIT;
+	
+    EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_TABLEPDCONFIG || '' ; 
+	 
+    V_STR_QUERY := 'INSERT INTO ' || V_TABLEPDCONFIG || ' (PKID, SYSCODE_PD, PD_RULE_NAME, SEGMENTATION_ID, PD_METHOD, START_HISTORICAL_DATE,' || 
+						'CALC_METHOD, HISTORICAL_DATA, EXPECTED_LIFE, INCLUDE_INDIVIDUAL_ACCOUNT, INCLUDE_WO, INCLUDE_CLOSE, DEFAULT_RATIO_BY, ' ||
+						'DEFAULT_RULE_ID, BUCKET_GROUP, ME_CODE, PERIOD_START_DATE, PERIOD_END_DATE, ' ||
+					 	'IS_DELETED, INCREMENT_PERIOD, IS_ACTIVE, CREATED_BY, CREATED_DATE, UPDATED_BY, UPDATED_DATE)' ||
+               'SELECT PKID, SYSCODE_PD, PD_RULE_NAME, SEGMENTATION_ID, PD_METHOD, START_HISTORICAL_DATE,' || 
+						'CALC_METHOD, HISTORICAL_DATA, EXPECTED_LIFE, INCLUDE_INDIVIDUAL_ACCOUNT, INCLUDE_WO, INCLUDE_CLOSE, DEFAULT_RATIO_BY, ' ||
+						'DEFAULT_RULE_ID, BUCKET_GROUP, ME_CODE, PERIOD_START_DATE, PERIOD_END_DATE, ' ||
+					 	'IS_DELETED, INCREMENT_PERIOD, IS_ACTIVE, CREATED_BY, CREATED_DATE, UPDATED_BY, UPDATED_DATE' || 
+					 	' FROM IFRS_PD_RULES_CONFIG ' ||
+               'WHERE PD_METHOD = ''MAA'' AND (  
+                 UPPER(TRIM(SYSCODE_PD)) IN ( 
+                   SELECT UPPER(TRIM(REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL)))
+                   FROM DUAL
+                   CONNECT BY REGEXP_SUBSTR(''' || V_SYSCODE || ''', ''[^;]+'', 1, LEVEL) IS NOT NULL
+                 )
+                 OR ''' || V_SYSCODE || ''' = ''0'' 
+               )';
+    DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
+    EXECUTE IMMEDIATE V_STR_QUERY;
 
     ----------------------------------------------------------------
-    -- INSERT INTO TEMP CONFIG TABLE (DYNAMIC INSERT...SELECT)
+    -- PRE-SIMULATION TABLES: create/drop temp tables if P_PRC = 'S'
     ----------------------------------------------------------------
-     V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_GTMP_PD_RUNNING_ENR_SUM ||
+    IF P_PRC = 'S' THEN
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('GTMP_PD_RUNNING_ENR_SUM', V_TABLEINSERT1);
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_PD_MAA_ENR_SUM', V_TABLEINSERT2);
+    ELSE 
+    	V_STR_QUERY := 'TRUNCATE TABLE ' || V_TAB_OWNER || '.' || V_TABLEINSERT1;
+        EXECUTE IMMEDIATE V_STR_QUERY;
+    END IF;
+    
+    COMMIT;
+
+    ----------------------------------------------------------------
+    -- Insert into temp config table (dynamic INSERT...SELECT)
+    ----------------------------------------------------------------
+     V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 ||
                    ' (PD_RULE_ID, BUCKET_GROUP, HISTORICAL_DATA, ' ||
                    ' CURR_DATE, INCREMENT_PERIOD, PREV_DATE, TRANSITION_START_DATE, CUT_OFF_DATE,INCLUDE_CLOSE) ' ||
                    ' SELECT PKID, BUCKET_GROUP, HISTORICAL_DATA,  ' ||
@@ -124,16 +155,9 @@ BEGIN
                    ' LAST_DAY(ADD_MONTHS(TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD''), -1 * HISTORICAL_DATA)), ' ||
                    ' START_HISTORICAL_DATE , INCLUDE_CLOSE ' ||
                    ' FROM ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG ||
-                   ' WHERE PD_METHOD = ''MAA'' AND NVL(IS_DELETED,0) = 0 AND (  
-                        UPPER(TRIM(SYSCODE_PD)) IN ( 
-                        SELECT UPPER(TRIM(REGEXP_SUBSTR(:1, ''[^;]+'', 1, LEVEL)))
-                        FROM DUAL
-                        CONNECT BY REGEXP_SUBSTR(:2, ''[^;]+'', 1, LEVEL) IS NOT NULL
-                        )
-                        OR :3 = ''0'' 
-                    )';
+                   ' WHERE PD_METHOD = ''MAA'' AND NVL(IS_DELETED,0) = 0';
 
-    EXECUTE IMMEDIATE V_STR_QUERY USING P_SYSCODE, P_SYSCODE, P_SYSCODE;
+    EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
     
     DBMS_OUTPUT.PUT_LINE(SUBSTR(V_STR_QUERY,1,30000));
@@ -142,12 +166,12 @@ BEGIN
     -- Delete logic on target
     ----------------------------------------------------------------
     IF V_MODEL_ID = '0' THEN
-        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_ENR_SUM ||
+        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
                        ' WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')';
     ELSE
-        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_ENR_SUM || ' A ' ||
+        V_STR_QUERY := 'DELETE FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' A ' ||
                        ' WHERE A.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')' ||
-                       ' AND EXISTS (SELECT 1 FROM ' || V_TAB_OWNER || '.' || V_GTMP_PD_RUNNING_ENR_SUM || ' B WHERE B.PD_RULE_ID = A.PD_RULE_ID)';
+                       ' AND EXISTS (SELECT 1 FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' B WHERE B.PD_RULE_ID = A.PD_RULE_ID)';
     END IF;
 
     EXECUTE IMMEDIATE V_STR_QUERY;
@@ -158,12 +182,12 @@ BEGIN
     ----------------------------------------------------------------
     -- Insert aggregated data into target summary
     ----------------------------------------------------------------
-    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_ENR_SUM || ' ( ' ||
+    V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' ( ' ||
                    ' EFF_DATE, BASE_DATE, PD_RULE_ID, BUCKET_GROUP, BUCKET_FROM, BUCKET_TO, CALC_AMOUNT, CREATEDBY, CREATEDDATE) ' ||
                    ' SELECT B.CURR_DATE, B.PREV_DATE, A.PD_RULE_ID, A.BUCKET_GROUP, A.BUCKET_FROM, CASE WHEN B.INCLUDE_CLOSE = 1 AND A.BUCKET_TO = 0 THEN 1 ELSE A.BUCKET_TO END AS BUCKET_TO, SUM(A.CALC_AMOUNT), ' ||
-                   '''SP_IFRS_PD_MAA_ENR_SUM_DEV'', SYSDATE ' ||
-                   ' FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_ENR || ' A ' ||
-                   ' JOIN ' || V_TAB_OWNER || '.' || V_GTMP_PD_RUNNING_ENR_SUM || ' B ON A.PD_RULE_ID = B.PD_RULE_ID ' ||
+                   '''SP_IFRS_PD_MAA_ENR_SUM'', SYSDATE ' ||
+                   ' FROM ' || V_TAB_OWNER || '.' || V_TABLESELECT1 || ' A ' ||
+                   ' JOIN ' || V_TAB_OWNER || '.' || V_TABLEINSERT1 || ' B ON A.PD_RULE_ID = B.PD_RULE_ID ' ||
                    ' AND A.EFF_DATE BETWEEN B.TRANSITION_START_DATE AND B.CURR_DATE ' ||
                    ' WHERE A.EFF_DATE >= B.CUT_OFF_DATE ' ||
                    ' GROUP BY B.CURR_DATE, B.PREV_DATE, A.PD_RULE_ID, A.BUCKET_GROUP, A.BUCKET_FROM, CASE WHEN B.INCLUDE_CLOSE = 1 AND A.BUCKET_TO = 0 THEN 1 ELSE A.BUCKET_TO END';
@@ -176,24 +200,21 @@ BEGIN
     ----------------------------------------------------------------
     -- LOG: call exec_and_log (assumed signature)
     ----------------------------------------------------------------
-    V_TABLEDEST := V_TAB_OWNER || '.' || V_IFRS_PD_MAA_ENR_SUM;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLEINSERT2;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
 
     PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
     COMMIT;
-    
-    ----------------------------------------------------------------
-    -- RESULT
-    ----------------------------------------------------------------
-    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_IFRS_PD_MAA_ENR_SUM;
-    
+
+    -------- ====== RESULT ======
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
     PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
-    COMMIT;
+	COMMIT;
+    -------- ====== RESULT ======
 
 EXCEPTION
     WHEN OTHERS THEN
         ROLLBACK;
-
-        RAISE_APPLICATION_ERROR(-20001,'ERROR IN ' || V_SP_NAME || ' : ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20001, 'SP_IFRS_PD_MAA_ENR_SUM: ' || SQLERRM);
 END;

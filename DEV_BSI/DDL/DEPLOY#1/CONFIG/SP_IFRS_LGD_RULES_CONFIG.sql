@@ -1,6 +1,7 @@
 CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_LGD_RULES_CONFIG_DEV (
     P_RUNID         IN VARCHAR2 DEFAULT 'S_00000_0000',
     P_DOWNLOAD_DATE IN DATE     DEFAULT NULL,
+    P_SYSCODE       IN VARCHAR2 DEFAULT '0',
     P_PRC           IN VARCHAR2 DEFAULT 'S'
 )
 AUTHID CURRENT_USER
@@ -61,61 +62,53 @@ BEGIN
     ---- PUT YOUR MAIN CODE HERE (E.G. MERGE STATEMENT)
     -----------------------------------------------------------------
     
-	MERGE INTO IFRS_LGD_RULES_CONFIG a
-		USING (
-		
-			SELECT x.*,
-					(SELECT NVL(MAX(PKID),0) FROM IFRS_LGD_RULES_CONFIG)
-					+ ROW_NUMBER() OVER (ORDER BY x."syscode_lgd_config") AS NEW_PKID
-		FROM (
-		
-	SELECT A."syscode_lgd_config" ,
-		A."lgd_name", A."lgd_method", B.PKID AS SEGMENTATION_ID,
-		"start_historical_date", "calculation_method", "historical_data",
-		"workout_period", C.PKID AS DEFAULT_RULE_ID, NVL(A."is_deleted",1) AS IS_DELETED,
-		ROW_NUMBER() OVER (PARTITION BY a."syscode_lgd_config" ORDER BY a."pkid" desc) RN
-	FROM "LgdConfiguration"@DBCONFIGLINK a 
-		JOIN IFRS_SEGMENTATION_MAPPING b ON a."segment_code" = b.SYSCODE_SEGMENTATION
-		JOIN IFRS_DEFAULT_CRITERIA  C ON A."default_criteria_code" = c.SYSCODE_DEFAULT_CRITERIA ) x 
-		WHERE x.rn = 1 
-		) b
-		ON (a.SYSCODE_LGD = b."syscode_lgd_config" )  
-		
-		
-		WHEN MATCHED THEN
-			UPDATE SET   
-				a.UPDATED_BY              = 'SP_IFRS_LGD_RULES_CONFIG_DEV',
-				a.UPDATED_DATE            = sysdate,
-				a.IS_DELETED              = B.IS_DELETED 
-		
-		WHEN NOT MATCHED THEN
-			INSERT (
-				PKID,
-				SYSCODE_LGD, 
-				LGD_RULE_NAME, 
-				LGD_METHOD, 
-				SEGMENTATION_ID, 
-				START_HISTORICAL_DATE, 
-				CALCULATION_METHOD, 
-				HISTORICAL_DATA, 
-				WORKOUT_PERIOD, 
-				DEFAULT_RULE_ID, 
-				IS_DELETED, 
-				CREATED_BY, 
-				CREATED_DATE,
-				CREATEDBY,
-				CREATEDDATE)
-			VALUES (
-				b.NEW_PKID,
-				b."syscode_lgd_config", b."lgd_name", b."lgd_method",
-			b.segmentation_id, b."start_historical_date", b."calculation_method", b."historical_data", 
-			b."workout_period", b.default_rule_id,   B.IS_DELETED,
-			'SP_IFRS_LGD_RULES_CONFIG',sysdate,
-			'SP_IFRS_LGD_RULES_CONFIG',sysdate
-			);
-        
-	COMMIT;
+    MERGE INTO PSAK413.IFRS_LGD_RULES_CONFIG a
+    USING (
 
+    SELECT * 
+    FROM (
+
+    SELECT A."syscode_lgd_config" ,
+    A."lgd_name", A."lgd_method", B.PKID AS SEGMENTATION_ID,
+    "start_historical_date", "calculation_method", "historical_data",
+    "workout_period", C.PKID AS DEFAULT_RULE_ID, NVL(A."is_deleted",1) AS IS_DELETED,
+    ROW_NUMBER() OVER (PARTITION BY a."syscode_lgd_config" ORDER BY a."pkid" desc) RN
+    FROM "LgdConfiguration"@DBCONFIGLINK a 
+    JOIN PSAK413.IFRS_SEGMENTATION_MAPPING b ON a."segment_code" = b.SYSCODE_SEGMENTATION
+    JOIN PSAK413.IFRS_DEFAULT_CRITERIA  C ON A."default_criteria_code" = c.SYSCODE_DEFAULT_CRITERIA ) x 
+    WHERE x.rn = 1 
+    ) b
+    ON (a.SYSCODE_LGD = b."syscode_lgd_config" )  
+
+
+    WHEN MATCHED THEN
+    UPDATE SET   
+    a.UPDATED_BY              = 'SP_IFRS_LGD_RULES_CONFIG',
+    a.UPDATED_DATE            = sysdate,
+    a.IS_DELETED              = B.IS_DELETED 
+
+    WHEN NOT MATCHED THEN
+    INSERT (
+    SYSCODE_LGD, 
+    LGD_RULE_NAME, 
+    LGD_METHOD, 
+    SEGMENTATION_ID, 
+    START_HISTORICAL_DATE, 
+    CALCULATION_METHOD, 
+    HISTORICAL_DATA, 
+    WORKOUT_PERIOD, 
+    DEFAULT_RULE_ID, 
+    IS_DELETED, 
+    CREATED_BY, 
+    CREATED_DATE)
+    VALUES (
+    b."syscode_lgd_config", b."lgd_name", b."lgd_method",
+    b.segmentation_id, b."start_historical_date", b."calculation_method", b."historical_data", 
+    b."workout_period", b.default_rule_id,   B.IS_DELETED,
+    'SP_IFRS_LGD_RULES_CONFIG',sysdate
+    );
+
+    commit;
     ------------------------------------------------------------------
 
     DBMS_OUTPUT.PUT_LINE('PROCEDURE ' || V_SP_NAME || ' EXECUTED SUCCESSFULLY.');
