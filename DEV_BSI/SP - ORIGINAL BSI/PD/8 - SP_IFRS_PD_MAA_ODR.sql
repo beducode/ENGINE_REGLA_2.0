@@ -191,7 +191,6 @@ BEGIN
     ------------------------------------------------------------------------
     V_TABLEDEST := V_TABLEINSERT2;
     V_COLUMNDEST := '-';
-    V_SPNAME := 'SP_IFRS_PD_MAA_ODR';
     V_OPERATION := 'INSERT';
 
     SP_IFRS_EXEC_AND_LOG(
@@ -199,14 +198,15 @@ BEGIN
         V_SPNAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID
     );
     COMMIT;
-    
-    ------ ====== RESULT ======
-    V_QUERYS := 'SELECT * FROM '|| V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
-        ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''' ' ||
-        ' AND (PD_RULE_ID = ''' || V_SYSCODE || ''' OR ''' || V_SYSCODE || ''' = ''0'')';
 
-    SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, NVL(V_RETURNROWS2,0), P_RUNID);
-    COMMIT;
-    ------ ====== RESULT ======
+    -------- ====== RESULT ======
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
+    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SPNAME, NVL(V_RETURNROWS2,0), P_RUNID);
+	COMMIT;
+    -------- ====== RESULT ======
 
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20003, 'SP_IFRS_PD_MAA_MMULT_MONTHLY: ' || SQLERRM);
 END;

@@ -685,14 +685,12 @@ BEGIN
     COMMIT;  
     -------- ====== LOG ======
 
-    ------ ====== RESULT ======
-   	V_QUERYS := 'SELECT * FROM ' || V_TABLEINSERT2 || 
-				' WHERE CURR_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''' ' ||
-               	' AND (PD_RULE_ID IN (SELECT PKID FROM ' || V_TABLEPDCONFIG || ')) ';
-  		
+	-------- ====== RESULT ======
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' WHERE CURR_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
     PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
-    COMMIT;
-    ------ ====== RESULT ======
+	COMMIT;
+    -------- ====== RESULT ======
+
 EXCEPTION
     WHEN OTHERS THEN
         -- ROLLBACK TO SAFE STATE AND RE-RAISE

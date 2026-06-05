@@ -6,19 +6,19 @@ CREATE OR REPLACE PROCEDURE PSAK413.SP_IFRS_PD_MAA_FLOWRATE_SMOOTH_DEV (
 )
 AUTHID CURRENT_USER
 AS
-    -- Date variables
+    -- DATE VARIABLES
     V_CURRDATE      DATE;
     V_PREVDATE      DATE;
     V_MODEL_ID      VARCHAR2(22);
 
-    -- Loop & process variables
+    -- LOOP & PROCESS VARIABLES
     V_LOOP1         PLS_INTEGER;
     V_LOOP2         PLS_INTEGER;
     V_LOOP3			PLS_INTEGER;
    
-   	v_predpd1      NUMBER;
-	v_predpd2      NUMBER;
-	v_nextflowpd   NUMBER;
+   	V_PREDPD1      NUMBER;
+	V_PREDPD2      NUMBER;
+	V_NEXTFLOWPD   NUMBER;
 
     V_CHECK         NUMBER(1);
     V_RESULTPD      BINARY_DOUBLE;
@@ -28,12 +28,12 @@ AS
     V_PREDICTEDPD2  BINARY_DOUBLE;
     V_NEXTFLOWRATEPD BINARY_DOUBLE;
 
-    -- Count & dynamic SQL
+    -- COUNT & DYNAMIC SQL
     V_COUNT         NUMBER;
     V_STR_QUERY     CLOB;
     V_QUERYS		CLOB;
 
-    -- Table names
+    -- TABLE NAMES
     V_TAB_OWNER     CONSTANT VARCHAR2(30) := 'PSAK413';
     V_TABLEINSERT1  VARCHAR2(100);
     V_TABLEINSERT2  VARCHAR2(100);
@@ -42,7 +42,7 @@ AS
     V_TMP_LOGIT_ODR VARCHAR2(100);
     V_LINEST_SMOOTHING VARCHAR2(100);
 
-    -- Logging / result
+    -- LOGGING / RESULT
     V_RETURNROWS2   NUMBER;
     V_TABLEDEST     VARCHAR2(100);
     V_COLUMNDEST    VARCHAR2(100);
@@ -51,10 +51,10 @@ AS
 
     V_SYSCODE VARCHAR(500);
 BEGIN
-	-- set procedure name
+	-- SET PROCEDURE NAME
     V_SP_NAME := 'SP_IFRS_PD_MAA_FLOWRATE_SMOOTH_DEV';
     
-    -- Set current and previous dates
+    -- SET CURRENT AND PREVIOUS DATES
     IF P_DOWNLOAD_DATE IS NULL THEN
         SELECT CURRDATE INTO V_CURRDATE FROM IFRS_PRC_DATE;
     ELSE
@@ -73,7 +73,7 @@ BEGIN
 
     V_TABLEPDCONFIG := 'GTMP_IFRS_PD_RULES_CONFIG';
 
-    -- Determine table names
+    -- DETERMINE TABLE NAMES
     IF P_PRC = 'S' THEN
         V_TABLEINSERT1 := 'GTMP_PD_RUNNING_SMOOTH_CONFIG_' || P_RUNID;
         V_TABLEINSERT2 := 'IFRS_PD_MAA_FLOWRATE_SMOOTH_' || P_RUNID;
@@ -88,13 +88,13 @@ BEGIN
     END IF;
 
     -----------------------------
-    -- Record RUN_ID (log)
+    -- RECORD RUN_ID (LOG)
     -----------------------------
     PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, 0, SYSDATE);
    COMMIT;
   
     ----------------------------------------------------------------
-    -- PRE-SIMULATION TABLE: create/drop temp tables if P_PRC = 'S'
+    -- PRE-SIMULATION TABLE: CREATE/DROP TEMP TABLES IF P_PRC = 'S'
     ----------------------------------------------------------------
     IF P_PRC = 'S' THEN
         PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('GTMP_PD_RUNNING_SMOOTH_CONFIG', V_TABLEINSERT1);
@@ -138,7 +138,7 @@ BEGIN
     -----------------------------
     -- UPDATE DEFF FLOWRATE
     -----------------------------
-    V_STR_QUERY := 'UPDATE IFRS_PD_MAA_FLOWRATE_SUM A '||
+    V_STR_QUERY := 'UPDATE ' || V_TABLESELECT1 || ' A '||
 					' SET (A.FLOWRATE) = A.FLOWRATE_ORI '||
 						'WHERE EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') '||
 						' AND EXISTS ( SELECT 1 FROM ' || V_TABLEPDCONFIG || 
@@ -148,7 +148,7 @@ BEGIN
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
    	-----------------------------
-    -- Insert config data into GTMP
+    -- INSERT CONFIG DATA INTO GTMP
     -----------------------------
    	
     V_STR_QUERY := '
@@ -165,18 +165,18 @@ BEGIN
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
    	----------------------------------------------------------------
-    -- Delete existing rows from target which match running_date
+    -- DELETE EXISTING ROWS FROM TARGET WHICH MATCH RUNNING_DATE
     ----------------------------------------------------------------
     
     V_STR_QUERY := '
-        DELETE FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || 
-        ' tgt WHERE tgt.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
-          AND PD_RULE_ID IN (SELECT PD_RULE_ID FROM ' || V_TABLEINSERT1 || ')';
+    DELETE FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || 
+    ' tgt WHERE tgt.EFF_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'')
+        AND PD_RULE_ID IN (SELECT PD_RULE_ID FROM ' || V_TABLEINSERT1 || ')';
          
-	  EXECUTE IMMEDIATE V_STR_QUERY;
-	  COMMIT;
+    EXECUTE IMMEDIATE V_STR_QUERY;
+    COMMIT;
     -----------------------------
-    -- Initial smoothing base
+    -- INITIAL SMOOTHING BASE
     -----------------------------
     
     V_STR_QUERY := '
@@ -210,9 +210,8 @@ BEGIN
     COMMIT;
 
     ----------------------------------------------------------------
-    -- Populate TMP_LOGIT_ODR
+    -- POPULATE TMP_LOGIT_ODR
     ----------------------------------------------------------------
-    BEGIN
     V_STR_QUERY := '
         INSERT INTO GTMP_LOGIT_ODR (PD_RULE_ID, BUCKET_ID, LOGIT_ODR)
         SELECT PD_RULE_ID, BUCKET_ID, LOGIT_ODR FROM (
@@ -223,10 +222,7 @@ BEGIN
         ) A
         WHERE A.BUCKET_ID < A.MAX_BUCKET';
 
-    	EXECUTE IMMEDIATE V_STR_QUERY;
-    EXCEPTION WHEN OTHERS THEN
-        NULL;
-    END;
+    EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
 	
     PSAK413.SP_IFRS_PD_LINEST_SMOOTHING_DEV(P_RUNID,P_PRC);
@@ -234,7 +230,6 @@ BEGIN
     ----------------------------------------------------------------
     -- POPULATE TMP_PD_BASE (ADD PREDICTED LOGIT & PREDICTED PD)
     ----------------------------------------------------------------
-    BEGIN
     V_STR_QUERY := '
         INSERT INTO GTMP_PD_BASE (EFF_DATE, PD_RULE_ID, BUCKET_GROUP, BUCKET_FROM, BUCKET_TO, FLOWRATE, SMOOTHED_PD, LOGIT_ODR, PREDICTED_LOGIT_ODR, PREDICTED_PD)
         SELECT A.EFF_DATE, A.PD_RULE_ID, A.BUCKET_GROUP, A.BUCKET_FROM, A.BUCKET_TO, A.FLOWRATE, A.SMOOTHED_PD, A.LOGIT_ODR,
@@ -243,14 +238,11 @@ BEGIN
         FROM GTMP_SMOOTHING_BASE A
         JOIN ' || V_TAB_OWNER || '.' || V_LINEST_SMOOTHING || ' B ON A.PD_RULE_ID = B.PD_RULE_ID';
 
-    	EXECUTE IMMEDIATE V_STR_QUERY;
-    EXCEPTION WHEN OTHERS THEN
-        NULL;
-    END;
+    EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
 
     ----------------------------------------------------------------
-    -- Main loops: iterate BUCKET_FROM = 1 .. V_MAXBUCKET
+    -- MAIN LOOPS: ITERATE BUCKET_FROM = 1 .. V_MAXBUCKET
     ----------------------------------------------------------------
     FOR DATA_PD IN (
 		SELECT PD_RULE_ID, MAX(BUCKET_FROM) - 1 AS MAXBUCKET
@@ -261,32 +253,34 @@ BEGIN
 		
 		V_RESULTPD := NULL;
 	    V_CHECK := 1;
-		v_loop1 := 1 ;
+		V_LOOP1 := 1 ;
 		
 		WHILE V_LOOP1 <= DATA_PD.MAXBUCKET 
 		LOOP
 			
-			v_loop2 := 1 ;
+			V_LOOP2 := 1 ;
 			
 			SELECT A.FLOWRATE, A.PREDICTED_PD,
 			   	CASE WHEN B.BUCKET_FROM IS NOT NULL THEN DATA_PD.MAXBUCKET  + 1 ELSE A.BUCKET_FROM END,
 			   	CASE WHEN B.BUCKET_FROM IS NOT NULL OR A.FLOWRATE = 0 THEN A.PREDICTED_PD ELSE NULL END
-		  	INTO v_flowrate1, v_predpd1, v_loop2, v_resultpd
+		  	INTO V_FLOWRATE1, V_PREDPD1, V_LOOP2, V_RESULTPD
 		   	FROM GTMP_PD_BASE A
 		  		LEFT JOIN GTMP_PD_RESULT B ON A.BUCKET_FROM = B.BUCKET_FROM + 1 AND A.FLOWRATE < NVL(B.PD_RESULT, 0) AND A.PD_RULE_ID = B.PD_RULE_ID
-		  	WHERE A.BUCKET_FROM = v_loop1 AND A.PD_RULE_ID =  DATA_PD.PD_RULE_ID;
+		  	WHERE A.BUCKET_FROM = V_LOOP1 AND A.PD_RULE_ID =  DATA_PD.PD_RULE_ID
+            AND ROWNUM = 1;
 			
-			WHILE v_LOOP2 <= DATA_PD.MAXBUCKET  
+			WHILE V_LOOP2 <= DATA_PD.MAXBUCKET  
 			LOOP
 				
 				SELECT NVL(FLOWRATE, 0),
 			    	NVL(LEAD(FLOWRATE, 1, 999) OVER (ORDER BY BUCKET_FROM), 0),
 					PREDICTED_PD
-				INTO V_FLOWRATE2, v_nextflowpd, v_predpd2 
+				INTO V_FLOWRATE2, V_NEXTFLOWPD, V_PREDPD2 
 			   	FROM GTMP_PD_BASE
-			   	WHERE BUCKET_FROM = V_LOOP2 AND PD_RULE_ID = DATA_PD.PD_RULE_ID ;
+			   	WHERE BUCKET_FROM = V_LOOP2 AND PD_RULE_ID = DATA_PD.PD_RULE_ID
+                AND ROWNUM = 1;
 				
-				IF V_FLOWRATE2 < V_FLOWRATE1 OR V_FLOWRATE2 > v_nextflowpd
+				IF V_FLOWRATE2 < V_FLOWRATE1 OR V_FLOWRATE2 > V_NEXTFLOWPD
 				THEN
 					V_CHECK := 0;
 				END IF;
@@ -299,20 +293,19 @@ BEGIN
 			   	END IF;
 	    
 				
-			END LOOP ;-- END LOOP2
+			END LOOP; -- END LOOP2
 			
 		  	IF V_RESULTPD IS NULL AND V_CHECK = 1
 		  	THEN V_RESULTPD := V_FLOWRATE1;
-		  	ELSE V_RESULTPD := v_predpd1;
+		  	ELSE V_RESULTPD := V_PREDPD1;
 		  	END IF;
 	
 		  	INSERT INTO GTMP_PD_RESULT
 		  	SELECT EFF_DATE, PD_RULE_ID, BUCKET_GROUP, V_LOOP1 BUCKET_FROM, BUCKET_TO, V_FLOWRATE1 FLOWRATE, 
-		  		SMOOTHED_PD, LOGIT_ODR, PREDICTED_LOGIT_ODR, v_predpd1 PREDICTED_PD, V_RESULTPD PD_RESULT
+		  		SMOOTHED_PD, LOGIT_ODR, PREDICTED_LOGIT_ODR, V_PREDPD1 PREDICTED_PD, V_RESULTPD PD_RESULT
 		  	FROM 	GTMP_PD_BASE
 		  	WHERE BUCKET_FROM = V_LOOP1 AND PD_RULE_ID= DATA_PD.PD_RULE_ID ; 
-	  		
-		  	COMMIT ; 
+		  	COMMIT; 
 	
 	  	V_LOOP1 := V_LOOP1 + 1;
 	
@@ -326,42 +319,65 @@ BEGIN
 	  		LEAD(PD_RESULT, 1, 999) OVER (PARTITION BY PD_RULE_ID ORDER BY BUCKET_FROM) LEADPD, PD_RULE_ID
 	 	FROM GTMP_PD_RESULT
 	 	ORDER BY BUCKET_FROM;
-		
-		COMMIT ; 
+		COMMIT; 
 		
 		SELECT COUNT(*) 
 		INTO V_LOOP3
 		FROM GTMP_SMOOTH
 		WHERE FLOWRATE <> PD_RESULT
    			AND FLOWRATE > LAGPD
-   			AND FLOWRATE < LEADPD ;
+   			AND FLOWRATE < LEADPD;
 	
-		IF V_LOOP3 > 0 
-	   	THEN
-			MERGE INTO GTMP_PD_RESULT A 
-				USING ( SELECT B.BUCKET_FROM, B.PD_RULE_ID, B.LAGPD, B.LEADPD, 
-				LEAD(A2.PD_RESULT, 1, 0) OVER ( PARTITION BY A2.PD_RULE_ID ORDER BY A2.BUCKET_FROM ) AS NEXT_PD_RESULT 
-				FROM GTMP_SMOOTH B 
-				INNER JOIN GTMP_PD_RESULT A2 ON A2.BUCKET_FROM = B.BUCKET_FROM 
-					AND A2.PD_RULE_ID = B.PD_RULE_ID ) X ON ( A.BUCKET_FROM = X.BUCKET_FROM AND A.PD_RULE_ID = X.PD_RULE_ID ) 
-					WHEN MATCHED THEN 
-								UPDATE SET A.PD_RESULT = CASE WHEN A.FLOWRATE <> A.PD_RESULT 
+		IF V_LOOP3 > 0 THEN
+
+            -- DBMS_OUTPUT.PUT_LINE(V_LOOP3);
+
+            MERGE INTO GTMP_PD_RESULT A 
+                USING (
+                    SELECT * FROM ( 
+                        SELECT 
+                        B.BUCKET_FROM, 
+                        B.PD_RULE_ID, 
+                        B.LAGPD, 
+                        B.LEADPD, 
+                        LEAD(A2.PD_RESULT, 1, 0) OVER (
+                            PARTITION BY A2.PD_RULE_ID 
+                            ORDER BY A2.BUCKET_FROM 
+                        ) AS NEXT_PD_RESULT,
+                        ROW_NUMBER() OVER(
+                            PARTITION BY
+                                B.BUCKET_FROM,
+                                B.PD_RULE_ID
+                            ORDER BY B.BUCKET_FROM
+                        ) RN
+                        FROM GTMP_SMOOTH B 
+                        INNER JOIN GTMP_PD_RESULT A2 
+                        ON A2.BUCKET_FROM = B.BUCKET_FROM 
+                        AND A2.PD_RULE_ID = B.PD_RULE_ID
+                    )
+                    WHERE RN = 1
+                ) X
+                ON (A.BUCKET_FROM = X.BUCKET_FROM AND A.PD_RULE_ID = X.PD_RULE_ID) 
+            WHEN MATCHED THEN 
+                UPDATE SET A.PD_RESULT = 
+                CASE WHEN A.FLOWRATE <> A.PD_RESULT 
                 AND A.FLOWRATE > X.LAGPD 
                 AND A.FLOWRATE < X.LEADPD 
                 AND X.NEXT_PD_RESULT > A.FLOWRATE 
-                THEN A.FLOWRATE 
-                ELSE A.PD_RESULT 
-        END;
-			COMMIT ; 
+                THEN 
+                    A.FLOWRATE 
+                ELSE 
+                    A.PD_RESULT 
+                END;
+                COMMIT;
 	   	ELSE
 	    	NULL;
 	   	END IF;
 		
-	
 	END LOOP;
 	
     ----------------------------------------------------------------
-    -- Insert final result into target table IFRS_PD_MAA_FLOWRATE_SMOOTH
+    -- INSERT FINAL RESULT INTO TARGET TABLE IFRS_PD_MAA_FLOWRATE_SMOOTH
     ----------------------------------------------------------------
     V_STR_QUERY := 'INSERT INTO ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' (EFF_DATE, PD_RULE_ID, BUCKET_GROUP, BUCKET_FROM, BUCKET_TO, FLOWRATE, SMOOTHED_PD, LOGIT_ODR,
 	  PREDICTED_LOGIT_ODR, PREDICTED_PD, FLOWRATE_SMOOTH_PD, CREATEDBY, CREATEDDATE, CREATEDHOST)
@@ -377,8 +393,8 @@ BEGIN
     EXECUTE IMMEDIATE V_STR_QUERY;
     COMMIT;
    
-    V_STR_QUERY := 'MERGE INTO IFRS_PD_MAA_FLOWRATE_SUM A
-    USING IFRS_PD_MAA_FLOWRATE_SMOOTH B
+    V_STR_QUERY := 'MERGE INTO ' || V_TABLESELECT1 || ' A
+    USING ' || V_TABLEINSERT2 || ' B
         ON (A.EFF_DATE = B.EFF_DATE
         AND A.PD_RULE_ID = B.PD_RULE_ID
         AND A.BUCKET_GROUP = B.BUCKET_GROUP
@@ -401,12 +417,14 @@ BEGIN
     COMMIT;
 
     ------ ====== RESULT ======
-    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 ||
-                ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''' ' ||
-                ' AND (PD_RULE_ID IN (SELECT PKID FROM ' || V_TABLEPDCONFIG || ') )';
-
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT2 || ' WHERE EFF_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
     PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
     COMMIT;
     ------ ====== RESULT ======
 
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+
+        RAISE_APPLICATION_ERROR(-20001,'ERROR IN ' || V_SP_NAME || ' : ' || SQLERRM);
 END;

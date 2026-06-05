@@ -247,15 +247,12 @@ BEGIN
  
     PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
     COMMIT;  
-   
-    -------- ====== RESULT ======
-    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_IFRS_SCENARIO_DATA ||
-                ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''' ' ||
-                ' AND (RULE_ID IN (SELECT PKID FROM ' || V_TAB_OWNER || '.' || V_TABLEPDCONFIG || ') )';
 
+    -- -------- ====== RESULT ======
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_IFRS_SCENARIO_DATA || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
     PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
-    COMMIT;
-    -------- ====== RESULT ======
+	COMMIT;
+    -- -------- ====== RESULT ======
 
 
 EXCEPTION

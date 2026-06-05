@@ -35,7 +35,7 @@ AS
     V_SYSCODE VARCHAR(500);
 BEGIN
 	-- set procedure name
-    V_SPNAME := 'SP_IFRS_PD_MAA_ODR';
+    V_SPNAME := 'SP_IFRS_PD_MAA_ODR_DEV';
     
     ------------------------------------------------------------------------
     -- SET CURRDATE
@@ -191,7 +191,6 @@ BEGIN
     ------------------------------------------------------------------------
     V_TABLEDEST := V_TABLEINSERT2;
     V_COLUMNDEST := '-';
-    V_SPNAME := 'SP_IFRS_PD_MAA_ODR';
     V_OPERATION := 'INSERT';
 
     SP_IFRS_EXEC_AND_LOG(
