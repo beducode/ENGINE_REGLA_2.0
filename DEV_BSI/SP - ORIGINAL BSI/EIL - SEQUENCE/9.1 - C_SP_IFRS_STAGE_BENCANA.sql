@@ -1,0 +1,57 @@
+CREATE OR REPLACE PROCEDURE PSAK413.C_SP_IFRS_STAGE_BENCANA_DEV (
+	P_DOWNLOAD_DATE IN DATE
+)
+AS
+    V_STAGE_DETAIL     	VARCHAR2(100);
+    V_STR_SQL        	VARCHAR2(4000);
+    V_CURRDATE       	DATE;
+    V_TABLENAME      	VARCHAR2(100);
+BEGIN
+    ----------------------------------------------------------------
+    -- INIT
+    ----------------------------------------------------------------
+    IF P_DOWNLOAD_DATE IS NULL THEN
+        SELECT CURRDATE INTO V_CURRDATE FROM IFRS_PRC_DATE;
+    ELSE
+        V_CURRDATE := P_DOWNLOAD_DATE;
+    END IF;
+
+    V_TABLENAME := 'IFRS_MASTER_ACCOUNT';
+  
+    ----------------------------------------------------------------
+    -- RESET STAGE (DYNAMIC UPDATE)
+    ----------------------------------------------------------------
+   V_STR_SQL := 'UPDATE ' || V_TABLENAME || ' A
+				SET A.RESTRU_BENCANA_FLAG = 0 
+				WHERE A.DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''' ';
+   
+	EXECUTE IMMEDIATE V_STR_SQL;
+    COMMIT;
+   
+   
+    V_STR_SQL :=
+        'MERGE INTO ' || V_TABLENAME || ' A
+			USING (
+				SELECT I.MASTERID ,I.ACCOUNT_NUMBER, I.STAGE  FROM ' || V_TABLENAME || ' I 
+				INNER JOIN (SELECT X.NOLOAN, MAX(NO_BUCKET) AS NO_BUCKET 
+									FROM IMPORT_LIST_NASABAH_RESTRU_BENCANA_NEW X GROUP BY NOLOAN) J 
+				ON I.ACCOUNT_NUMBER = J.NOLOAN 
+				WHERE I.DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''
+			)B
+			ON(A.DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''
+				AND A.MASTERID = B.MASTERID)
+			WHEN MATCHED THEN 
+			UPDATE SET A.STAGE = 2,
+					A.SICR_FLAG = CASE WHEN A.STAGE = 2 THEN A.SICR_FLAG ELSE 1 END,
+					A.RESTRU_BENCANA_FLAG = 1';
+
+    EXECUTE IMMEDIATE V_STR_SQL;
+    COMMIT;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- ROLLBACK TO SAFE STATE AND RE-RAISE
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('ERROR IN C_SP_IFRS_STAGE_BENCANA: ' || SQLERRM);
+        RAISE;
+END;
