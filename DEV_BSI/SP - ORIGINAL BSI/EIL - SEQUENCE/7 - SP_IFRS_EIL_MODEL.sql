@@ -20,7 +20,9 @@ IS
     V_QUERYS        VARCHAR2(8000);
     V_RETURNROWS2   NUMBER;
 
-	V_SYSCODE VARCHAR(500);
+	P_RUNID 		VARCHAR2(30);
+
+	V_SYSCODE 		VARCHAR(500);
 BEGIN
     ------------------------------------------------------------------
     -- SET TANGGAL
@@ -50,7 +52,7 @@ BEGIN
    
     
     ------------------------------------------------------------------
-    -- Nama tabel target
+    -- NAMA TABEL TARGET
     ------------------------------------------------------------------
    IF P_PRC = 'S' THEN 
         V_TMP1 := 'IFRS_EIL_MODEL_' || P_RUNID || ''; 
@@ -60,32 +62,16 @@ BEGIN
     END IF;
 
     -------- RECORD RUN_ID --------
-    PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, 'SP_IFRS_EIL_MODEL', P_RUNID, 0, CURRENT_DATE); 
+    PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
 	COMMIT;
-    ------------------------------------------------------------------
-    -- Build dynamic SQL
-    ------------------------------------------------------------------
+    -------- RECORD RUN_ID --------
 
+    ------------------------------------------------------------------
+    -- BUILD DYNAMIC SQL
+    ------------------------------------------------------------------
 	IF P_PRC = 'S' THEN
-		SELECT COUNT(*) INTO V_COUNT
-		FROM ALL_TABLES
-		WHERE OWNER = V_TAB_OWNER 
-		 AND TABLE_NAME = UPPER(V_TMP1); 
-        
-		IF V_COUNT > 0 THEN 
-		 V_SCRIPT := '';
-         V_SCRIPT := V_SCRIPT || 'DROP TABLE ' || V_TMP1 || ' ';
-        EXECUTE IMMEDIATE (V_SCRIPT);
-		END IF;
-
-        V_SCRIPT := '';
-        V_SCRIPT := V_SCRIPT || 'CREATE TABLE ' || V_TMP1 || ' AS SELECT * FROM IFRS_EIL_MODEL WHERE 0=1';
-        EXECUTE IMMEDIATE (V_SCRIPT);
-        
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_EIL_MODEL', V_TMP1);    
     END IF;
-	COMMIT;
-	
-	--V_SCRIPT := 'TRUNCATE TABLE PSAK413.' || V_TMP1 || '';
 
     V_SCRIPT := 'DELETE FROM ' || V_TMP1 || ' WHERE DOWNLOAD_DATE = TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') 
 	AND EIL_MODEL_ID =  ' || V_EIL_MODEL_ID  ;
@@ -180,24 +166,21 @@ BEGIN
 		AND A.DOWNLOAD_DATE =  TO_DATE(''' || TO_CHAR(V_CURRDATE,'YYYY-MM-DD') || ''',''YYYY-MM-DD'') '; 
 	EXECUTE IMMEDIATE V_SCRIPT;
 	COMMIT;
-	
 
-	-----------------------------
-    -- Log & insert final data
-    -----------------------------
-    V_TABLEDEST := V_TAB_OWNER || '.' || V_TMP1;
+    -------- ====== LOG ======
+    V_TABLEDEST := V_OWNER || '.' || V_TMP1;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
- 
+    
     PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
-    COMMIT;  
-   
-    ----------------------------------------------------------------
-    -- RESULT PREVIEW
-    ----------------------------------------------------------------
-	V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TMP1 || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
-    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
-    COMMIT;
+	COMMIT;
+    -------- ====== LOG ======
+
+    -------- ====== RESULT ======
+    V_STR_QUERY := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TMP1 || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
+    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_STR_QUERY, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
+	COMMIT;
+    -------- ====== RESULT ======
 
 EXCEPTION
     WHEN OTHERS THEN

@@ -48,30 +48,16 @@ BEGIN
 	
    
      IF P_PRC = 'S' THEN
-        -- DROP TABLE IF EXISTS (OWNED BY CURRENT SCHEMA)
-        SELECT COUNT(*) INTO V_COUNT
-        FROM USER_TABLES
-        WHERE TABLE_NAME = UPPER(V_TABLE_MONTHLY);
-
-        IF V_COUNT > 0 THEN
-            V_STR_SQL := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_TABLE_MONTHLY;
-            EXECUTE IMMEDIATE V_STR_SQL;
-        END IF;
-        	V_STR_SQL := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_TABLE_MONTHLY || ' AS SELECT * FROM IFRS_MASTER_ACCOUNT_MONTHLY WHERE 1=0';
-        EXECUTE IMMEDIATE V_STR_SQL;
-        
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_MASTER_ACCOUNT_MONTHLY', V_TABLE_MONTHLY);
     ELSE    
         EXECUTE IMMEDIATE 'DELETE FROM ' || V_TABLE_MONTHLY || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || ''' ' ;
     END IF;
 
 
-    BEGIN
-        SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, 0, SYSTIMESTAMP);
-    EXCEPTION
-        WHEN OTHERS THEN
-            DBMS_OUTPUT.PUT_LINE('WARNING: SP_IFRS_RUNNING_LOG FAILED: ' || SQLERRM);
-    END;
-    COMMIT;
+    -------- RECORD RUN_ID --------
+    PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
+	COMMIT;
+    -------- RECORD RUN_ID --------
    
     ----------------------------------------------------------------
     -- INSERT IMA_MONTHLY
@@ -117,23 +103,21 @@ BEGIN
 			 
 	EXECUTE IMMEDIATE V_STR_SQL;
     COMMIT;
-   
-    -----------------------------
-    -- LOG & INSERT FINAL DATA
-    -----------------------------
-    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLE_MONTHLY;
+
+    -------- ====== LOG ======
+    V_TABLEDEST := V_OWNER || '.' || V_TABLE_MONTHLY;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
- 
+    
     PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
-    COMMIT;  
-   
-    ----------------------------------------------------------------
-    -- RESULT PREVIEW
-    ----------------------------------------------------------------
-	V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLE_MONTHLY || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
-    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
-    COMMIT;
+	COMMIT;
+    -------- ====== LOG ======
+
+    -------- ====== RESULT ======
+    V_STR_QUERY := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLE_MONTHLY || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
+    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_STR_QUERY, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
+	COMMIT;
+    -------- ====== RESULT ======
 
 EXCEPTION
     WHEN OTHERS THEN

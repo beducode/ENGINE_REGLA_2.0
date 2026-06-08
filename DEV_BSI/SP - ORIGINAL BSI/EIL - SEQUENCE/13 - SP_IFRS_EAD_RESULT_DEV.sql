@@ -12,7 +12,7 @@ AS
     V_COUNT          NUMBER;
 	V_MODEL_ID       NUMBER;
 
--- DYNAMIC NAMES / QUERY
+    -- DYNAMIC NAMES / QUERY
     V_STR_QUERY      CLOB;
 
     -- TABLE NAMES
@@ -58,30 +58,14 @@ BEGIN
     	V_IFRS_EIL_IMA			:= 'IFRS_EIL_IMA';
     END IF;
 
-    BEGIN
-        SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, 0, SYSTIMESTAMP);
-    EXCEPTION
-        WHEN OTHERS THEN
-            DBMS_OUTPUT.PUT_LINE('WARNING: SP_IFRS_RUNNING_LOG FAILED: ' || SQLERRM);
-    END;
-    COMMIT;
+    -------- RECORD RUN_ID --------
+    PSAK413.SP_IFRS_RUNNING_LOG(V_CURRDATE, V_SP_NAME, P_RUNID, TO_NUMBER(SYS_CONTEXT('USERENV','SESSIONID')), SYSDATE);
+	COMMIT;
+    -------- RECORD RUN_ID --------
 
     IF P_PRC = 'S' THEN
-        -- DROP TABLE IF EXISTS (OWNED BY CURRENT SCHEMA)
-        SELECT COUNT(*) INTO V_COUNT
-        FROM USER_TABLES
-        WHERE TABLE_NAME = UPPER(V_IFRS_EAD_RESULT);
-
-        IF V_COUNT > 0 THEN
-            V_STR_QUERY := 'DROP TABLE ' || V_TAB_OWNER || '.' || V_IFRS_EAD_RESULT;
-            EXECUTE IMMEDIATE V_STR_QUERY;
-        END IF;
-
-        V_STR_QUERY := 'CREATE TABLE ' || V_TAB_OWNER || '.' || V_IFRS_EAD_RESULT || ' AS SELECT * FROM IFRS_EAD_RESULT WHERE 1=0';
-        EXECUTE IMMEDIATE V_STR_QUERY;
-        
-    ELSE
-    	    
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_EAD_RESULT', V_IFRS_EAD_RESULT);
+    ELSE    
 	   	EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || V_IFRS_EAD_RESULT || ' ' ;
    
     END IF;
@@ -148,22 +132,21 @@ BEGIN
 		
 			COMMIT;
 	END LOOP;
-    -----------------------------
-    -- Log & insert final data
-    -----------------------------
-    V_TABLEDEST := V_TAB_OWNER || '.' || V_IFRS_EAD_RESULT;
+
+    -------- ====== LOG ======
+    V_TABLEDEST := V_OWNER || '.' || V_IFRS_EAD_RESULT;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
- 
+    
     PSAK413.SP_IFRS_EXEC_AND_LOG(V_CURRDATE, V_TABLEDEST, V_COLUMNDEST, V_SP_NAME, V_OPERATION, NVL(V_RETURNROWS2,0), P_RUNID);
-    COMMIT;  
-   
-    ----------------------------------------------------------------
-    -- RESULT PREVIEW
-    ----------------------------------------------------------------
-	V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_IFRS_EAD_RESULT || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
-    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), V_RUNID);
-    COMMIT;
+	COMMIT;
+    -------- ====== LOG ======
+
+    -------- ====== RESULT ======
+    V_STR_QUERY := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_IFRS_EAD_RESULT || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
+    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_STR_QUERY, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
+	COMMIT;
+    -------- ====== RESULT ======
 
 EXCEPTION
     WHEN OTHERS THEN
