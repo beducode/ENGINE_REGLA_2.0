@@ -84,7 +84,7 @@ BEGIN
     ----------------------------
     
     -------- ====== LOG ======
-    V_TABLEDEST := V_OWNER || '.' || V_TABLEINSERT1;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLEINSERT1;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
     

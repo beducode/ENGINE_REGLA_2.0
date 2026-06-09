@@ -93,7 +93,7 @@ BEGIN
         
 
     -------- ====== LOG ======
-    V_TABLEDEST := V_OWNER || '.' || V_IFRS_EIL_RESULT_HEADER;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_IFRS_EIL_RESULT_HEADER;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
     

@@ -105,7 +105,7 @@ BEGIN
     COMMIT;
 
     -------- ====== LOG ======
-    V_TABLEDEST := V_OWNER || '.' || V_TABLE_MONTHLY;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLE_MONTHLY;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
     
@@ -114,8 +114,8 @@ BEGIN
     -------- ====== LOG ======
 
     -------- ====== RESULT ======
-    V_STR_QUERY := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLE_MONTHLY || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
-    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_STR_QUERY, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
+    V_STR_SQL := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLE_MONTHLY || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
+    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_STR_SQL, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
 	COMMIT;
     -------- ====== RESULT ======
 

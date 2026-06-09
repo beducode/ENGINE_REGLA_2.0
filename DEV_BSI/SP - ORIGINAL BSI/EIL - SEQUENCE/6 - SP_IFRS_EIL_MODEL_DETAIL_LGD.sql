@@ -10,7 +10,7 @@ AS
     -- VARIABLES
     ----------------------------------------------------------------
     V_SP_NAME     VARCHAR2(100) := 'SP_IFRS_EIL_MODEL_DETAIL_LGD_DEV';
-    V_OWNER       VARCHAR2(30);
+    
     V_CURRDATE      DATE;
 
     -- TABLE NAMES (UNQUALIFIED PARTS)
@@ -21,16 +21,11 @@ AS
     V_TABLEDEST     VARCHAR2(100);
     V_COLUMNDEST    VARCHAR2(100);
     V_OPERATION     VARCHAR2(100);
-    P_RUNID        VARCHAR2(30);
 
     -- RESULT QUERY
+    V_TAB_OWNER CONSTANT VARCHAR2(30) := 'PSAK413';
     V_QUERYS        CLOB;
 BEGIN
-
-    ----------------------------------------------------------------
-    -- GET OWNER
-    ----------------------------------------------------------------
-    SELECT USERNAME INTO V_OWNER FROM USER_USERS;
 
     ----------------------------------------------------------------
     -- INSERT VCURRDATE DETERMINATION IF NULL
@@ -45,8 +40,6 @@ BEGIN
     ELSE
         V_CURRDATE := P_DOWNLOAD_DATE;
     END IF;
-
-    P_RUNID := NVL(P_RUNID, 'P_00000_0000');
 
     ----------------------------------------------------------------
     -- TABLE DETERMINATION
@@ -105,7 +98,7 @@ BEGIN
     ----------------------------------------------------------------
     -- LOG: CALL EXEC_AND_LOG (ASSUMED SIGNATURE)
     ----------------------------------------------------------------
-    V_TABLEDEST := V_OWNER || '.' || V_TABLEINSERT1;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLEINSERT1;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
 
@@ -115,7 +108,7 @@ BEGIN
     ----------------------------------------------------------------
     -- RESULT PREVIEW
     ----------------------------------------------------------------
-    V_QUERYS := 'SELECT * FROM ' || V_OWNER || '.' || V_TABLEINSERT1;
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLEINSERT1;
 
     PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
     COMMIT;

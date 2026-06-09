@@ -18,7 +18,7 @@ AS
 	V_DATADATE VARCHAR(20); 
     ---- QUERY  
     V_STR_QUERY CLOB;
-	V_STR_SQL_RULE CLOB;
+	V_STR_SQL CLOB;
     V_SQL_CONDITIONS CLOB;
     V_SCRIPT1 CLOB;
 
@@ -29,6 +29,9 @@ AS
     V_TABLESELECT1 VARCHAR2(100);
     V_TABLELGDCONFIG VARCHAR2(100);
 	V_TABLE_NAME VARCHAR2(100);
+    V_STAGE_DETAIL VARCHAR(100);
+    V_IS_SICR NUMBER;
+    V_CONDITION VARCHAR2(4000);
 
     ---- CONDITION
     V_RETURNROWS NUMBER;
@@ -58,13 +61,13 @@ BEGIN
     END IF;
 
     IF P_PRC = 'S' THEN 
-        V_TABLENAME := 'IFRS_MASTER_ACCOUNT_' || P_RUNID || ''; 
+        V_TABLE_NAME := 'IFRS_MASTER_ACCOUNT_' || P_RUNID || ''; 
     ELSE 
-        V_TABLENAME := 'IFRS_MASTER_ACCOUNT'; 
+        V_TABLE_NAME := 'IFRS_MASTER_ACCOUNT'; 
     END IF;
 
     IF P_PRC = 'S' THEN
-        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_MASTER_ACCOUNT', V_TABLENAME); 
+        PSAK413.SP_IFRS_CREATE_TABLE_SIMULATE('IFRS_MASTER_ACCOUNT', V_TABLE_NAME); 
     END IF;
 
     -------- RECORD RUN_ID --------
@@ -75,12 +78,13 @@ BEGIN
     ----------------------------------------------------------------
     -- RESET STAGE (DYNAMIC UPDATE)
     ----------------------------------------------------------------
-    V_STR_SQL := 'UPDATE ' || V_TABLENAME || ' A ' ||
+    V_STR_SQL := 'UPDATE ' || V_TABLE_NAME || ' A ' ||
         'SET A.STAGE = NULL ' ||
         'WHERE A.ACCOUNT_STATUS = ''A'' AND A.DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
 
     EXECUTE IMMEDIATE V_STR_SQL;
     COMMIT;
+
     ----------------------------------------------------------------
     -- CURSOR LOOP
     ----------------------------------------------------------------
@@ -96,23 +100,24 @@ BEGIN
         V_CONDITION      := rec.SQL_CONDITIONS;
 
         V_STR_SQL :=
-            'UPDATE ' || V_TABLENAME || ' ifrs_master_account ' ||
+            'UPDATE ' || V_TABLE_NAME || ' ifrs_master_account ' ||
             ' SET ifrs_master_account.STAGE = CASE WHEN ''' || V_STAGE_DETAIL || ''' = ''Stage 1'' THEN 1 ' ||
             ' WHEN ''' || V_STAGE_DETAIL || ''' = ''Stage 2'' THEN 2 END, ' ||
             ' SICR_FLAG = 0 ' ||
             ' WHERE (' || V_CONDITION || ') ' ||
             ' AND ifrs_master_account.ACCOUNT_STATUS = ''A'' AND ifrs_master_account.DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
 
+        DBMS_OUTPUT.PUT_LINE(V_STR_SQL);
         EXECUTE IMMEDIATE V_STR_SQL;
-    END LOOP;
 
+    END LOOP;
     COMMIT;
    
-   --------------------------------------------------------------------------------------
    	FOR rec IN (
         SELECT PKID , STAGE_DETAIL ,IS_SICR  , SQL_CONDITIONS 
         FROM IFRS_STAGE_CONFIG
         WHERE IS_DELETE = 0 AND IS_SICR = 1
+        AND SQL_CONDITIONS IS NOT NULL
     	)
     LOOP
    		V_RULE_ID        := rec.PKID;
@@ -120,20 +125,21 @@ BEGIN
         V_IS_SICR		 := rec.IS_SICR;
         V_CONDITION      := rec.SQL_CONDITIONS;
 
-	   	V_STR_SQL := 'UPDATE ' || V_TABLENAME || ' ifrs_master_account ' ||
+	   	V_STR_SQL := 'UPDATE ' || V_TABLE_NAME || ' ifrs_master_account ' ||
 	            ' SET ifrs_master_account.STAGE = 2 , SICR_FLAG = 1 ' ||
 	            ' WHERE (' || V_CONDITION || ') ' ||
 	            ' AND ifrs_master_account.ACCOUNT_STATUS = ''A'' AND ifrs_master_account.STAGE = 1 AND ifrs_master_account.DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
-	
+        
+        DBMS_OUTPUT.PUT_LINE(V_STR_QUERY);
 	    EXECUTE IMMEDIATE V_STR_SQL;
+
     END LOOP;
-   
     COMMIT;
    
-   	PSAK413.C_SP_IFRS_STAGE_BENCANA(V_CURRDATE);
+   	PSAK413.C_SP_IFRS_STAGE_BENCANA_DEV(V_CURRDATE);
 
     -------- ====== LOG ======
-    V_TABLEDEST := V_OWNER || '.' || V_TABLENAME;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLE_NAME;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
     
@@ -142,7 +148,7 @@ BEGIN
     -------- ====== LOG ======
 
     -------- ====== RESULT ======
-    V_STR_QUERY := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLENAME || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
+    V_STR_QUERY := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TABLE_NAME || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
     PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_STR_QUERY, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
 	COMMIT;
     -------- ====== RESULT ======

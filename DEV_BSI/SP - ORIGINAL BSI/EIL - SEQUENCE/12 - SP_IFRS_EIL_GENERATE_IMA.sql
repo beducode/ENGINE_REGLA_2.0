@@ -25,7 +25,7 @@ AS
     V_PMA				  			VARCHAR2(100);
     V_TMP_PD  						VARCHAR2(100);
     V_IFRS_EIL_IMA					VARCHAR2(100);
-    v_eil_model_id				 	NUMBER;
+    V_EIL_MODEL_ID				 	NUMBER;
     V_MAXRN			 				NUMBER;
     V_IFRS_SEGMENTATION_MAPPING 	VARCHAR2(100);
     V_TABLEPDCONFIG					VARCHAR2(100);
@@ -79,15 +79,20 @@ BEGIN
 	    COMMIT;
     END IF;
 
-  -- Pilih nama tabel sesuai PRC
-  v_table_name := V_PMA;
+  -- PILIH NAMA TABEL SESUAI PRC
+  V_TABLE_NAME := V_PMA;
 
-  -- Ambil EIL_MODEL_ID yang aktif atau persis p_model_id
-  SELECT pkid
-    INTO v_eil_model_id
-    FROM IFRS_EIL_MODEL_HEADER
-   WHERE pkid = v_model_id
-      OR (v_model_id = 0 AND IS_EOM = 1);
+  -- AMBIL EIL_MODEL_ID YANG AKTIF ATAU PERSIS P_MODEL_ID
+  SELECT PKID
+  INTO V_EIL_MODEL_ID
+  FROM (
+  SELECT PKID
+  FROM IFRS_EIL_MODEL_HEADER
+  WHERE PKID = v_model_id
+  OR (v_model_id = 0 AND IS_EOM = 1)
+  ORDER BY PKID
+  )
+  WHERE ROWNUM = 1;
 
   EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_QRY';
 
@@ -116,7 +121,7 @@ BEGIN
       || NVL(A.LIFETIME,0) || ' ELSE MONTHS_BETWEEN( LAST_DAY(NVL(A.LOAN_DUE_DATE,''31 JAN 1990'')), LAST_DAY(A.DOWNLOAD_DATE)) + 1 END AS LIFETIME, NVL(A.' 
       || TO_CHAR(A.EAD_BALANCE) || ',0) , ' || TO_CHAR(A.EAD_BALANCE_INTEREST) || ' AS EAD_BALANCE_INTEREST,'
       || TO_CHAR(A.EAD_BALANCE_ADDITIONAL) || ', 0 AS EAD_BALANCE_INTEREST_ADDITIONAL, A.MARGIN_ACCRUED '
-      || 'FROM ' || v_table_name || ' A '
+      || 'FROM ' || V_TABLE_NAME || ' A '
       || 'JOIN IFRS_SEGMENTATION_MAPPING B ON A.SEGMENTATION_ID = B.PKID '
       || 'LEFT JOIN IFRS_BUCKET_HEADER C ON ''' || A.BUCKET_GROUP || ''' = C.BUCKET_GROUP '
       || 'LEFT JOIN IFRS_BUCKET_DETAIL D ON C.BUCKET_GROUP = D.BUCKET_GROUP '
@@ -138,7 +143,7 @@ BEGIN
     AS QRY
   FROM IFRS_EIL_MODEL A
   WHERE A.DOWNLOAD_DATE = v_currdate
-    AND A.EIL_MODEL_ID = v_eil_model_id;
+    AND A.EIL_MODEL_ID = V_EIL_MODEL_ID;
 
   COMMIT; 
 
@@ -164,7 +169,7 @@ BEGIN
     COMMIT;
 
     -------- ====== LOG ======
-    V_TABLEDEST := V_OWNER || '.' || V_IFRS_EIL_IMA;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_IFRS_EIL_IMA;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
     

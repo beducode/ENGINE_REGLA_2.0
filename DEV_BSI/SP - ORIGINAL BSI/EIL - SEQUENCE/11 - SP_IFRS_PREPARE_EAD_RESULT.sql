@@ -35,7 +35,7 @@ AS
     V_ID             NUMBER := 0;
     V_MAX_ID         NUMBER := 0;
     V_SEQUENCE       VARCHAR2(50);
-    V_SEGMENTATION_ID             NUMBER := 0;
+    V_SEGMENTATION_ID NUMBER := 0;
     
 BEGIN
 	-- HANDLE DEFAULT DOWNLOAD DATE
@@ -49,7 +49,7 @@ BEGIN
     IF P_PRC = 'S' THEN
         V_IFRS_EAD_RESULT		:= 'IFRS_EAD_RESULT_' || P_RUNID;
         V_IFRS_EIL_IMA			:= 'IFRS_EIL_IMA_' || P_RUNID;
-    	V_TABLEPDCONFIG 		:= 'TEMP_IFRS_PAYM_SCHD_EAD_' || P_RUNID
+    	V_TABLEPDCONFIG 		:= 'TEMP_IFRS_PAYM_SCHD_EAD_' || P_RUNID;
     ELSE
     	V_TABLEPDCONFIG 		:= 'TEMP_IFRS_PAYM_SCHD_EAD';
     	V_IFRS_EAD_RESULT		:= 'IFRS_EAD_RESULT';
@@ -85,7 +85,7 @@ BEGIN
     COMMIT;
 	
     -------- ====== LOG ======
-    V_TABLEDEST := V_OWNER || '.' || V_TABLEPDCONFIG;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_TABLEPDCONFIG;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
     

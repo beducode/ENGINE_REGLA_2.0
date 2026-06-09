@@ -134,7 +134,7 @@ BEGIN
 	END LOOP;
 
     -------- ====== LOG ======
-    V_TABLEDEST := V_OWNER || '.' || V_IFRS_EAD_RESULT;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_IFRS_EAD_RESULT;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
     

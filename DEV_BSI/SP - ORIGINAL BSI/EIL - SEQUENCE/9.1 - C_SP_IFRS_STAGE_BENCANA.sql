@@ -6,6 +6,7 @@ AS
     V_STR_SQL        	VARCHAR2(4000);
     V_CURRDATE       	DATE;
     V_TABLENAME      	VARCHAR2(100);
+    V_SP_NAME       VARCHAR2(100) := 'SP_IFRS_EIL_UPDATE_PORTFOLIO_DEV';
 BEGIN
     ----------------------------------------------------------------
     -- INIT
@@ -52,6 +53,6 @@ EXCEPTION
     WHEN OTHERS THEN
         -- ROLLBACK TO SAFE STATE AND RE-RAISE
         ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('ERROR IN C_SP_IFRS_STAGE_BENCANA: ' || SQLERRM);
+        DBMS_OUTPUT.PUT_LINE('ERROR IN ' || V_SP_NAME || ': ' || SQLERRM);
         RAISE;
 END;

@@ -19,9 +19,7 @@ IS
     V_OPERATION     VARCHAR2(100);
     V_QUERYS        VARCHAR2(8000);
     V_RETURNROWS2   NUMBER;
-
-	P_RUNID 		VARCHAR2(30);
-
+	
 	V_SYSCODE 		VARCHAR(500);
 BEGIN
     ------------------------------------------------------------------
@@ -168,7 +166,7 @@ BEGIN
 	COMMIT;
 
     -------- ====== LOG ======
-    V_TABLEDEST := V_OWNER || '.' || V_TMP1;
+    V_TABLEDEST := V_TAB_OWNER || '.' || V_TMP1;
     V_COLUMNDEST := '-';
     V_OPERATION := 'INSERT';
     
@@ -177,8 +175,8 @@ BEGIN
     -------- ====== LOG ======
 
     -------- ====== RESULT ======
-    V_STR_QUERY := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TMP1 || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
-    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_STR_QUERY, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
+    V_QUERYS := 'SELECT * FROM ' || V_TAB_OWNER || '.' || V_TMP1 || ' WHERE DOWNLOAD_DATE = DATE ''' || TO_CHAR(V_CURRDATE, 'YYYY-MM-DD') || '''';
+    PSAK413.SP_IFRS_RESULT_PREV(V_CURRDATE, V_QUERYS, V_SP_NAME, NVL(V_RETURNROWS2,0), P_RUNID);
 	COMMIT;
     -------- ====== RESULT ======
 
